@@ -1,0 +1,746 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-08-17 03:12+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: .\company\settings.py:120
+msgid "Turkish"
+msgstr ""
+
+#: .\company\settings.py:121
+msgid "English"
+msgstr ""
+
+#: .\main\forms.py:16 .\main\forms.py:18
+msgid "Your Name"
+msgstr ""
+
+#: .\main\forms.py:24 .\main\forms.py:26
+msgid "Your Email"
+msgstr ""
+
+#: .\main\forms.py:33 .\main\forms.py:35
+msgid "Subject"
+msgstr ""
+
+#: .\main\forms.py:41 .\main\forms.py:43
+msgid "Message"
+msgstr ""
+
+#: .\main\forms.py:57
+msgid "Your Name*"
+msgstr ""
+
+#: .\main\forms.py:58
+msgid "Your Email*"
+msgstr ""
+
+#: .\main\forms.py:59
+msgid "Your Comment*"
+msgstr ""
+
+#: .\main\forms.py:66 .\templates\base.html:145 .\templates\contact.html:49
+msgid "Email"
+msgstr ""
+
+#: .\main\forms.py:72 .\main\forms.py:83 .\templates\registration\login.html:42
+msgid "Username"
+msgstr ""
+
+#: .\main\forms.py:84
+msgid "First Name"
+msgstr ""
+
+#: .\main\forms.py:85
+msgid "Last Name"
+msgstr ""
+
+#: .\main\forms.py:86
+msgid "Email Address"
+msgstr ""
+
+#: .\main\forms.py:89
+msgid "Enter your username"
+msgstr ""
+
+#: .\main\forms.py:90
+msgid "Enter your first name"
+msgstr ""
+
+#: .\main\forms.py:91
+msgid "Enter your last name"
+msgstr ""
+
+#: .\main\forms.py:92
+msgid "Enter your email address"
+msgstr ""
+
+#: .\main\forms.py:100
+msgid "Profile Picture"
+msgstr ""
+
+#: .\main\forms.py:101 .\templates\profile.html:45
+msgid "About Me"
+msgstr ""
+
+#: .\main\forms.py:102
+msgid "Phone Number"
+msgstr ""
+
+#: .\main\forms.py:103
+msgid "Country"
+msgstr ""
+
+#: .\main\forms.py:104
+msgid "City"
+msgstr ""
+
+#: .\main\forms.py:105
+msgid "Address"
+msgstr ""
+
+#: .\main\forms.py:106
+msgid "Birth Date"
+msgstr ""
+
+#: .\main\forms.py:110
+msgid "Write something about yourself..."
+msgstr ""
+
+#: .\main\forms.py:111
+msgid "Your phone number"
+msgstr ""
+
+#: .\main\forms.py:112
+msgid "Country you live in"
+msgstr ""
+
+#: .\main\forms.py:113
+msgid "City you live in"
+msgstr ""
+
+#: .\main\forms.py:114
+msgid "Your full address"
+msgstr ""
+
+#: .\main\forms.py:127 .\main\forms.py:128
+msgid "Enter your email"
+msgstr ""
+
+#: .\main\models.py:279
+msgid "Sepette"
+msgstr ""
+
+#: .\main\models.py:280
+msgid "Tamamlandı"
+msgstr ""
+
+#: .\main\models.py:282
+msgid "Kullanıcı"
+msgstr ""
+
+#: .\main\models.py:283
+msgid "Oluşturulma Tarihi"
+msgstr ""
+
+#: .\main\models.py:284
+msgid "Durum"
+msgstr ""
+
+#: .\main\views.py:349
+msgid "Thank you for subscribing!"
+msgstr ""
+
+#: .\main\views.py:353
+msgid "Invalid email address."
+msgstr ""
+
+#: .\main\views.py:356
+msgid "Invalid request."
+msgstr ""
+
+#: .\main\views.py:375 .\main\views.py:443 .\main\views.py:490
+msgid "Your purchase was successful! You can view it in your purchase history."
+msgstr ""
+
+#: .\main\views.py:400
+msgid "Your account has been updated!"
+msgstr ""
+
+#: .\main\views.py:456
+msgid "The project has been added to your cart."
+msgstr ""
+
+#: .\main\views.py:458
+msgid "This project is already in your cart."
+msgstr ""
+
+#: .\main\views.py:476
+msgid "The item has been removed from your cart."
+msgstr ""
+
+#: .\templates\about.html:5 .\templates\about.html:13 .\templates\about.html:17
+#: .\templates\base.html:66
+msgid "About"
+msgstr ""
+
+#: .\templates\about.html:16 .\templates\base.html:65 .\templates\base.html:163
+#: .\templates\blog-details.html:25 .\templates\blog.html:27
+#: .\templates\contact.html:16 .\templates\index.html:5
+#: .\templates\order_history.html:13 .\templates\portfolio-details.html:21
+#: .\templates\portfolio.html:17 .\templates\profile.html:13
+#: .\templates\registration\login.html:16
+#: .\templates\registration\register.html:16 .\templates\search_results.html:18
+#: .\templates\service-details.html:16 .\templates\services.html:16
+#: .\templates\team.html:16 .\templates\testimonials.html:16
+msgid "Home"
+msgstr ""
+
+#: .\templates\about.html:28
+msgid "Consequatur eius et magnam"
+msgstr ""
+
+#: .\templates\about.html:30
+msgid "Est 1988"
+msgstr ""
+
+#: .\templates\about.html:31
+msgid "Our Story"
+msgstr ""
+
+#: .\templates\about.html:32
+msgid ""
+"Inventore aliquam beatae at et id alias. Ipsa dolores amet consequuntur "
+"minima quia maxime autem. Quidem id sed ratione. Tenetur provident autem in "
+"reiciendis rerum at dolor. Aliquam consectetur laudantium temporibus dicta "
+"minus dolor."
+msgstr ""
+
+#: .\templates\about.html:34
+msgid "Ullamco laboris nisi ut aliquip ex ea commo"
+msgstr ""
+
+#: .\templates\about.html:35
+msgid "Duis aute irure dolor in reprehenderit in"
+msgstr ""
+
+#: .\templates\about.html:36
+msgid "Ullamco laboris nisi ut aliquip ex ea"
+msgstr ""
+
+#: .\templates\about.html:38
+msgid ""
+"Vitae autem velit excepturi fugit. Animi ad non. Eligendi et non nesciunt "
+"suscipit repellendus porro in quo eveniet. Molestias in maxime doloremque."
+msgstr ""
+
+#: .\templates\about.html:41 .\templates\index.html:71
+msgid "Watch Video"
+msgstr ""
+
+#: .\templates\about.html:51
+msgid "Our Team"
+msgstr ""
+
+#: .\templates\about.html:52 .\templates\about.html:82
+#: .\templates\about.html:103 .\templates\index.html:109
+#: .\templates\index.html:136 .\templates\services.html:53
+msgid ""
+"Necessitatibus eius consequatur ex aliquid fuga eum quidem sint consectetur "
+"velit"
+msgstr ""
+"It is the necessity of the situation that something must be done, yet it is "
+"the feeling of the chosen one to escape it."
+
+#: .\templates\about.html:81
+msgid "Our Skills"
+msgstr ""
+
+#: .\templates\about.html:102 .\templates\index.html:135
+msgid "Clients"
+msgstr ""
+
+#: .\templates\base.html:69 .\templates\team.html:5 .\templates\team.html:13
+#: .\templates\team.html:17
+msgid "Team"
+msgstr ""
+
+#: .\templates\base.html:70 .\templates\testimonials.html:5
+#: .\templates\testimonials.html:13 .\templates\testimonials.html:17
+msgid "Testimonials"
+msgstr ""
+
+#: .\templates\base.html:73 .\templates\base.html:165
+#: .\templates\service-details.html:17 .\templates\services.html:5
+#: .\templates\services.html:13 .\templates\services.html:17
+msgid "Services"
+msgstr ""
+
+#: .\templates\base.html:74 .\templates\index.html:108
+#: .\templates\portfolio-details.html:22 .\templates\portfolio.html:5
+#: .\templates\portfolio.html:14 .\templates\portfolio.html:18
+msgid "Portfolio"
+msgstr ""
+
+#: .\templates\base.html:75 .\templates\blog-details.html:26
+#: .\templates\blog.html:9 .\templates\blog.html:23 .\templates\blog.html:29
+msgid "Blog"
+msgstr ""
+
+#: .\templates\base.html:76 .\templates\contact.html:5
+#: .\templates\contact.html:13 .\templates\contact.html:17
+msgid "Contact"
+msgstr ""
+
+#: .\templates\base.html:83
+msgid "Welcome"
+msgstr ""
+
+#: .\templates\base.html:89
+msgid "Logout"
+msgstr ""
+
+#: .\templates\base.html:95 .\templates\registration\login.html:5
+#: .\templates\registration\login.html:13
+#: .\templates\registration\login.html:17
+#: .\templates\registration\login.html:51
+msgid "Login"
+msgstr ""
+
+#: .\templates\base.html:96 .\templates\registration\register.html:5
+#: .\templates\registration\register.html:13
+#: .\templates\registration\register.html:17
+#: .\templates\registration\register.html:62
+msgid "Register"
+msgstr ""
+
+#: .\templates\base.html:144 .\templates\profile.html:47
+msgid "Phone"
+msgstr ""
+
+#: .\templates\base.html:161
+msgid "Useful Links"
+msgstr ""
+
+#: .\templates\base.html:164
+msgid "About us"
+msgstr ""
+
+#: .\templates\base.html:166
+msgid "Terms of service"
+msgstr ""
+
+#: .\templates\base.html:167
+msgid "Privacy policy"
+msgstr ""
+
+#: .\templates\base.html:172
+msgid "Our Services"
+msgstr ""
+
+#: .\templates\base.html:177
+msgid "No services available."
+msgstr ""
+
+#: .\templates\base.html:183
+msgid "Our Newsletter"
+msgstr ""
+
+#: .\templates\base.html:184
+msgid ""
+"Subscribe to our newsletter and receive the latest news about our products "
+"and services!"
+msgstr ""
+
+#: .\templates\base.html:189
+msgid "Subscribe"
+msgstr ""
+
+#: .\templates\base.html:200
+msgid "All Rights Reserved"
+msgstr ""
+
+#: .\templates\base.html:255
+msgid "An error occurred. Please try again."
+msgstr ""
+
+#: .\templates\blog-details.html:5 .\templates\blog-details.html:22
+msgid "Blog Details"
+msgstr ""
+
+#: .\templates\blog-details.html:16
+msgid "Please correct the errors in the form."
+msgstr ""
+
+#: .\templates\blog-details.html:17
+msgid "A server error occurred while sending your message. Please try again."
+msgstr ""
+
+#: .\templates\blog-details.html:51
+#, python-format
+msgid ""
+"\n"
+"                        %(comment_count)s Comment\n"
+"                      "
+msgid_plural ""
+"\n"
+"                        %(comment_count)s Comments\n"
+"                      "
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\templates\blog-details.html:86
+#, python-format
+msgid ""
+"\n"
+"                %(comment_count)s Yorum\n"
+"              "
+msgid_plural ""
+"\n"
+"                %(comment_count)s Yorumlar\n"
+"              "
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\templates\blog-details.html:95
+msgid "Comment Author"
+msgstr ""
+
+#: .\templates\blog-details.html:104
+msgid "No comments have been posted yet. Be the first to comment!"
+msgstr ""
+
+#: .\templates\blog-details.html:120
+msgid "Post a Comment"
+msgstr ""
+
+#: .\templates\blog-details.html:121
+msgid ""
+"Your email address will not be published. Required fields are marked with *"
+msgstr ""
+
+#: .\templates\blog-details.html:130
+msgid "Post Comment"
+msgstr ""
+
+#: .\templates\blog-details.html:140 .\templates\blog-details.html:143
+msgid "Search"
+msgstr ""
+
+#: .\templates\blog-details.html:147
+msgid "Recent Posts"
+msgstr ""
+
+#: .\templates\blog-details.html:154
+msgid "No recent posts found."
+msgstr ""
+
+#: .\templates\blog-details.html:158
+msgid "Tags"
+msgstr ""
+
+#: .\templates\blog.html:7
+msgid "Category Posts"
+msgstr ""
+
+#: .\templates\blog.html:21 .\templates\portfolio-details.html:61
+msgid "Category"
+msgstr ""
+
+#: .\templates\blog.html:65 .\templates\index.html:19 .\templates\index.html:28
+#: .\templates\index.html:37 .\templates\search_results.html:51
+msgid "Read More"
+msgstr ""
+
+#: .\templates\blog.html:71
+msgid "No posts found in this category."
+msgstr ""
+
+#: .\templates\cart_detail.html:3 .\templates\cart_detail.html:8
+msgid "Shopping Cart"
+msgstr ""
+
+#: .\templates\cart_detail.html:22
+msgid "Project"
+msgstr ""
+
+#: .\templates\cart_detail.html:23 .\templates\portfolio-details.html:67
+msgid "Price"
+msgstr ""
+
+#: .\templates\cart_detail.html:32
+msgid "Remove"
+msgstr ""
+
+#: .\templates\cart_detail.html:38 .\templates\checkout.html:27
+msgid "Total"
+msgstr ""
+
+#: .\templates\cart_detail.html:46
+msgid "Proceed to Checkout"
+msgstr ""
+
+#: .\templates\cart_detail.html:51
+msgid "Your shopping cart is empty."
+msgstr ""
+
+#: .\templates\cart_detail.html:52
+msgid "Continue Shopping"
+msgstr ""
+
+#: .\templates\checkout.html:3 .\templates\checkout.html:9
+msgid "Checkout"
+msgstr ""
+
+#: .\templates\checkout.html:18
+msgid "Order Summary"
+msgstr ""
+
+#: .\templates\checkout.html:33
+msgid "Click the button below to complete your purchase."
+msgstr ""
+
+#: .\templates\checkout.html:34
+msgid "Confirm Purchase"
+msgstr ""
+
+#: .\templates\contact.html:35
+msgid "Get in touch"
+msgstr ""
+
+#: .\templates\contact.html:36
+msgid ""
+"Et id eius voluptates atque nihil voluptatem enim in tempore minima sit ad "
+"mollitia commodi minus."
+msgstr ""
+
+#: .\templates\contact.html:41 .\templates\profile.html:46
+msgid "Location"
+msgstr ""
+
+#: .\templates\contact.html:57
+msgid "Call"
+msgstr ""
+
+#: .\templates\contact.html:96
+msgid "Send Message"
+msgstr ""
+
+#: .\templates\index.html:15
+msgid "Carousel Image 1"
+msgstr ""
+
+#: .\templates\index.html:17
+msgid "We are professional"
+msgstr ""
+
+#: .\templates\index.html:18
+msgid ""
+"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
+"tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, "
+"quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo "
+"consequat."
+msgstr ""
+
+#: .\templates\index.html:24
+msgid "Carousel Image 2"
+msgstr ""
+
+#: .\templates\index.html:26
+msgid "At vero eos et accusamus"
+msgstr ""
+
+#: .\templates\index.html:27
+msgid ""
+"Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit "
+"quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda "
+"est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis "
+"debitis aut."
+msgstr ""
+
+#: .\templates\index.html:33
+msgid "Carousel Image 3"
+msgstr ""
+
+#: .\templates\index.html:35
+msgid "Temporibus autem quibusdam"
+msgstr ""
+
+#: .\templates\index.html:36
+msgid ""
+"Beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas "
+"sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos "
+"qui ratione voluptatem sequi nesciunt omnis iste natus error sit voluptatem "
+"accusantium."
+msgstr ""
+
+#: .\templates\index.html:123 .\templates\portfolio.html:48
+msgid "More Details"
+msgstr ""
+
+#: .\templates\order_history.html:5 .\templates\order_history.html:10
+msgid "Purchase History"
+msgstr ""
+
+#: .\templates\order_history.html:14 .\templates\profile.html:14
+msgid "Profile"
+msgstr ""
+
+#: .\templates\order_history.html:15
+msgid "Orders"
+msgstr ""
+
+#: .\templates\order_history.html:36
+msgid "My Orders"
+msgstr ""
+
+#: .\templates\order_history.html:41
+msgid "Order"
+msgstr ""
+
+#: .\templates\order_history.html:54
+msgid "You have not made any purchases yet."
+msgstr ""
+
+#: .\templates\portfolio-details.html:5 .\templates\portfolio-details.html:18
+msgid "Portfolio Details"
+msgstr ""
+
+#: .\templates\portfolio-details.html:58
+msgid "Project information"
+msgstr ""
+
+#: .\templates\portfolio-details.html:64
+msgid "Client"
+msgstr ""
+
+#: .\templates\portfolio-details.html:70
+msgid "Add to Cart"
+msgstr ""
+
+#: .\templates\portfolio-details.html:73
+msgid "Project date"
+msgstr ""
+
+#: .\templates\portfolio-details.html:77
+msgid "Project URL"
+msgstr ""
+
+#: .\templates\portfolio-details.html:81
+msgid "Visit Website"
+msgstr ""
+
+#: .\templates\portfolio.html:30
+msgid "All"
+msgstr ""
+
+#: .\templates\profile.html:5 .\templates\profile.html:10
+msgid "My Profile"
+msgstr ""
+
+#: .\templates\profile.html:48
+msgid "View Purchase History"
+msgstr ""
+
+#: .\templates\profile.html:60
+msgid "Update Profile"
+msgstr ""
+
+#: .\templates\profile.html:125
+msgid "Update"
+msgstr ""
+
+#: .\templates\registration\login.html:30
+msgid "Login to Your Account"
+msgstr ""
+
+#: .\templates\registration\login.html:34
+msgid "Incorrect username or password. Please try again."
+msgstr ""
+
+#: .\templates\registration\login.html:46
+msgid "Password"
+msgstr ""
+
+#: .\templates\registration\login.html:56
+#, python-format
+msgid "Don't have an account? <a href=\"%(register_url)s\">Register</a>"
+msgstr ""
+
+#: .\templates\registration\register.html:29
+msgid "Create a New Account"
+msgstr ""
+
+#: .\templates\registration\register.html:67
+#, python-format
+msgid "Already have an account? <a href=\"%(login_url)s\">Login</a>"
+msgstr ""
+
+#: .\templates\search_results.html:6
+msgid "Search results for"
+msgstr ""
+
+#: .\templates\search_results.html:15
+msgid "Search Results"
+msgstr ""
+
+#: .\templates\search_results.html:36
+msgid "No Image Available"
+msgstr ""
+
+#: .\templates\search_results.html:58
+#, python-format
+msgid "No results found for \"<strong>%(query)s</strong>\"."
+msgstr ""
+
+#: .\templates\service-details.html:5 .\templates\service-details.html:13
+msgid "Service Details"
+msgstr ""
+
+#: .\templates\service-details.html:34
+msgid "Enim qui eos rerum in delectus"
+msgstr "Services"
+
+#: .\templates\service-details.html:35
+msgid ""
+"Nam voluptatem quasi numquam quas fugiat ex temporibus quo est. Quia aut "
+"quam quod facere ut non occaecati ut aut. Nesciunt mollitia illum tempore "
+"corrupti sed eum reiciendis. Maxime modi rerum."
+msgstr ""
+"We are here to provide all the professional services you need for your "
+"projects. With our expert team, we turn your ideas into reality."
+
+#: .\templates\services.html:42
+msgid "No services have been added yet."
+msgstr ""
+
+#: .\templates\services.html:52
+msgid "Features"
+msgstr ""
+
+#: .\templates\services.html:60
+msgid "Lorem Ipsum"
+msgstr ""
+
+#: .\templates\team.html:49
+msgid "No team members have been added yet."
+msgstr ""
+
+#: .\templates\testimonials.html:49
+msgid "No testimonials have been added yet."
+msgstr ""

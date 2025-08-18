@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+    {% if category %}
+        {{ category.name }} {% trans "Category Posts" %}
+    {% else %}
+        {% trans "Blog" %}
+    {% endif %}
+    - Company Bootstrap Template
+{% endblock %}
+
+{% block body_class %}blog-page{% endblock %}
+
+{% block content %}
+
+    <div class="page-title accent-background">
+        <div class="container d-lg-flex justify-content-between align-items-center">
+            {% if category %}
+                <h1 class="mb-2 mb-lg-0">{% trans "Category" %}: {{ category.name }}</h1>
+            {% else %}
+                <h1 class="mb-2 mb-lg-0">{% trans "Blog" %}</h1>
+            {% endif %}
+            <nav class="breadcrumbs">
+                <ol>
+                    <li><a href="{% url 'index' %}">{% trans "Home" %}</a></li>
+                    <li class="current">
+                        {% if category %}{{ category.name }}{% else %}{% trans "Blog" %}{% endif %}
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <section id="blog-posts" class="blog-posts section">
+        <div class="container">
+            <div class="row gy-4">
+                {% for post in page_obj %}
+                    <div class="col-lg-4">
+                        <article class="position-relative h-100">
+                            <div class="post-img position-relative overflow-hidden">
+                                {% if post.image %}
+                                    <img src="{{ post.image.url }}" class="img-fluid" alt="{{ post.title }}">{% endif %}
+                                <span class="post-date">{{ post.created_at|date:"d M" }}</span>
+                            </div>
+                            <div class="post-content d-flex flex-column">
+                                <h3 class="post-title">{{ post.title }}</h3>
+                                <div class="meta d-flex align-items-center">
+                                    <div class="d-flex align-items-center"><i class="bi bi-person"></i> <span
+                                            class="ps-2">{{ post.author.get_full_name|default:post.author.username }}</span>
+                                    </div>
+                                    {% if post.category %}
+                                        <span class="px-3 text-black-50">/</span>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-folder2"></i>
+                                            <span class="ps-2"><a
+                                                    href="{% url 'posts_by_category' post.category.slug %}">{{ post.category.name }}</a></span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <p>{{ post.content|safe|truncatewords:25 }}</p>
+                                <hr>
+                                <a href="{{ post.get_absolute_url }}"
+                                   class="readmore stretched-link"><span>{% trans "Read More" %}</span><i
+                                        class="bi bi-arrow-right"></i></a>
+                            </div>
+                        </article>
+                    </div>
+                {% empty %}
+                    <div class="col-12"><p class="text-center">{% trans "No posts found in this category." %}</p></div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section id="blog-pagination" class="blog-pagination section">
+        <div class="container">
+            <div class="d-flex justify-content-center">
+
+                {% if page_obj.paginator.num_pages > 1 %}
+                    <ul>
+                        {% if page_obj.has_previous %}
+                            <li><a href="?page={{ page_obj.previous_page_number }}"><i
+                                    class="bi bi-chevron-left"></i></a></li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li><a href="?page={{ num }}" class="active">{{ num }}</a></li>
+                            {% else %}
+                                <li><a href="?page={{ num }}">{{ num }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li><a href="?page={{ page_obj.next_page_number }}"><i class="bi bi-chevron-right"></i></a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                {% endif %}
+
+            </div>
+        </div>
+    </section>
+
+{% endblock %}

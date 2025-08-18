@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Login" %}{% endblock %}
+
+{% block body_class %}login-page{% endblock %}
+
+{% block content %}
+
+  <div class="page-title accent-background">
+    <div class="container d-lg-flex justify-content-between align-items-center">
+      <h1 class="mb-2 mb-lg-0">{% trans "Login" %}</h1>
+      <nav class="breadcrumbs">
+        <ol>
+          <li><a href="{% url 'index' %}">{% trans "Home" %}</a></li>
+          <li class="current">{% trans "Login" %}</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <section id="login" class="login section">
+    <div class="container" data-aos="fade-up">
+      <div class="row justify-content-center">
+        <div class="col-lg-6">
+
+          <div class="card p-4 shadow-sm">
+            <div class="card-body">
+              <h2 class="card-title text-center mb-4">{% trans "Login to Your Account" %}</h2>
+
+              {% if form.errors %}
+                  <div class="alert alert-danger text-center">
+                      {% trans "Incorrect username or password. Please try again." %}
+                  </div>
+              {% endif %}
+
+              <form method="post">
+                  {% csrf_token %}
+
+                  <div class="mb-3">
+                      <label for="id_username" class="form-label">{% trans "Username" %}</label>
+                      <input type="text" name="username" class="form-control" required id="id_username">
+                  </div>
+                  <div class="mb-3">
+                      <label for="id_password" class="form-label">{% trans "Password" %}</label>
+                      <input type="password" name="password" class="form-control" required id="id_password">
+                  </div>
+
+                  <div class="d-grid mt-4">
+                      <button type="submit" class="btn btn-primary">{% trans "Login" %}</button>
+                  </div>
+              </form>
+              <p class="text-center mt-3">
+                  {% url 'register' as register_url %}
+                  {% blocktrans %}Don't have an account? <a href="{{ register_url }}">Register</a>{% endblocktrans %}
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+{% endblock %}

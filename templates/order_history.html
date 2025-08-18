@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Sipariş Geçmişi{% endblock %}
+
+{% block content %}
+<div class="page-title accent-background">
+    <div class="container d-lg-flex justify-content-between align-items-center">
+        <h1 class="mb-2 mb-lg-0">Sipariş Geçmişi</h1>
+    </div>
+</div>
+
+<section class="order-history-section section">
+<div class="container" data-aos="fade-up">
+    {% if orders %}
+        {% for order in orders %}
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">Sipariş #{{ order.id }}</h5>
+                        <small class="text-muted">{{ order.created_at|date:"d F Y, H:i" }}</small>
+                    </div>
+                    <div>
+                        {% if order.status == 'completed' %}
+                            <span class="badge bg-success">Tamamlandı</span>
+                        {% elif order.status == 'pending' %}
+                            <span class="badge bg-warning">Beklemede</span>
+                        {% elif order.status == 'cancelled' %}
+                            <span class="badge bg-danger">İptal Edildi</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ order.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6>Sipariş İçeriği:</h6>
+                            {% for item in order.items.all %}
+                                <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                    <span>{{ item.portfolio_item.title }}</span>
+                                    <span class="text-success">{{ item.price }} TL</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-4">
+                            {% if order.payment_method %}
+                                <p><strong>Ödeme Yöntemi:</strong> {{ order.get_payment_method_display }}</p>
+                            {% endif %}
+                            {% if order.transaction_id %}
+                                <p><strong>İşlem ID:</strong> <code>{{ order.transaction_id }}</code></p>
+                            {% endif %}
+                            {% if order.payment_date %}
+                                <p><strong>Ödeme Tarihi:</strong> {{ order.payment_date|date:"d F Y, H:i" }}</p>
+                            {% endif %}
+                            <p><strong>Toplam Tutar:</strong> <span class="h5 text-success">{{ order.get_total_cost }} TL</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-bag-x display-4 text-muted d-block mb-3"></i>
+            <h4>Henüz Siparişiniz Yok</h4>
+            <p>Henüz hiç satın alma işlemi yapmadınız.</p>
+            <a href="{% url 'portfolio' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Alışverişe Başla
+            </a>
+        </div>
+    {% endif %}
+</div>
+</section>
+{% endblock %}

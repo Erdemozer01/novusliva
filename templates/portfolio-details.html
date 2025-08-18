@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ item.title }} - {% trans "Portfolio Details" %}{% endblock %}
+
+{% block meta_description %}
+    <meta name="description" content="{{ item.meta_description|default:'Portfolyo projesi detayı' }}">
+{% endblock %}
+
+{% block body_class %}portfolio-details-page{% endblock %}
+
+{% block content %}
+
+    <!-- Page Title -->
+    <div class="page-title accent-background">
+        <div class="container d-lg-flex justify-content-between align-items-center">
+            <h1 class="mb-2 mb-lg-0">{% trans "Portfolio Details" %}</h1>
+            <nav class="breadcrumbs">
+                <ol>
+                    <li><a href="{% url 'index' %}">{% trans "Home" %}</a></li>
+                    <li><a href="{% url 'portfolio' %}">{% trans "Portfolio" %}</a></li>
+                    <li class="current">{{ item.title|truncatechars:30 }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div><!-- End Page Title -->
+
+    <!-- Portfolio Details Section -->
+    <section id="portfolio-details" class="portfolio-details section">
+        <div class="container" data-aos="fade-up">
+            <div class="portfolio-details-slider swiper init-swiper">
+                <div class="swiper-wrapper align-items-center">
+                    {% for image in item.images.all %}
+                        <div class="swiper-slide">
+                            <img src="{{ image.image.url }}" alt="{{ item.title }}">
+                        </div>
+                    {% empty %}
+                        <div class="swiper-slide">
+                            <img src="{{ item.main_image.url }}" alt="{{ item.title }}">
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="swiper-button-prev"></div>
+                <div class="swiper-button-next"></div>
+                <div class="swiper-pagination"></div>
+            </div>
+
+            <div class="row justify-content-between gy-4 mt-4">
+                <div class="col-lg-8" data-aos="fade-up">
+                    <div class="portfolio-description">
+                        <h2>{{ item.title }}</h2>
+                        <p>{{ item.long_description|safe }}</p>
+                    </div>
+                </div>
+                <div class="col-lg-3" data-aos="fade-up" data-aos-delay="100">
+                    <div class="portfolio-info">
+                        <h3>{% trans "Project information" %}</h3>
+                        <ul>
+                            {% if item.category %}
+                                <li><strong>{% trans "Category" %}</strong>: {{ item.category.name }}</li>
+                            {% endif %}
+                            {% if item.client %}
+                                <li><strong>{% trans "Client" %}</strong>: {{ item.client }}</li>
+                            {% endif %}
+                            {% if item.price %}
+                                <li><strong>{% trans "Price" %}</strong>: {{ item.price }} TL</li>
+
+                                <li><a href="{% url 'add_to_cart' item.id %}"
+                                       class="btn btn-primary btn-sm mt-2 w-100">Sepete Ekle</a></li>
+                            {% endif %}
+                            {% if item.project_date %}
+                                <li><strong>{% trans "Project date" %}</strong>: {{ item.project_date|date:"d M, Y" }}
+                                </li>
+                            {% endif %}
+                            {% if item.project_url %}
+                                <li><strong>{% trans "Project URL" %}</strong>: <a href="{{ item.project_url }}"
+                                                                                   target="_blank">{{ item.project_url }}</a>
+                                </li>
+                                <li><a href="{{ item.project_url }}" target="_blank"
+                                       class="btn-visit align-self-start">{% trans "Visit Website" %}</a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ post.title }} - {% trans "Blog Details" %}{% endblock %}
+
+{% block meta_description %}
+<meta name="description" content="{{ post.meta_description|default:'Blog yazısı detayı' }}">
+{% endblock %}
+
+{% block body_class %}blog-details-page{% endblock %}
+
+{% block content %}
+
+  <div id="js-translation-strings" style="display: none;"
+       data-form-error="{% trans 'Please correct the errors in the form.' %}"
+       data-server-error="{% trans 'A server error occurred while sending your message. Please try again.' %}">
+  </div>
+
+  <div class="page-title accent-background">
+    <div class="container d-lg-flex justify-content-between align-items-center">
+      <h1 class="mb-2 mb-lg-0">{% trans "Blog Details" %}</h1>
+      <nav class="breadcrumbs">
+        <ol>
+          <li><a href="{% url 'index' %}">{% trans "Home" %}</a></li>
+          <li><a href="{% url 'blog' %}">{% trans "Blog" %}</a></li>
+          <li class="current">{{ post.title|truncatechars:30 }}</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8">
+        <section id="blog-details" class="blog-details section">
+          <div class="container">
+            <article class="article">
+              <div class="post-img">
+                {% if post.image %}
+                  <img src="{{ post.image.url }}" alt="{{ post.title }}" class="img-fluid">
+                {% endif %}
+              </div>
+              <h2 class="title">{{ post.title }}</h2>
+              <div class="meta-top">
+                <ul>
+                  <li class="d-flex align-items-center"><i class="bi bi-person"></i> <a href="#">{{ post.author.get_full_name|default:post.author.username }}</a></li>
+                  <li class="d-flex align-items-center"><i class="bi bi-clock"></i> <a href="#"><time datetime="{{ post.created_at|date:"Y-m-d" }}">{{ post.created_at|date:"d M, Y" }}</time></a></li>
+                  <li class="d-flex align-items-center"><i class="bi bi-chat-dots"></i>
+                    <a href="#blog-comments">
+                      {% blocktrans count comment_count=comments.count %}
+                        {{ comment_count }} Comment
+                      {% plural %}
+                        {{ comment_count }} Comments
+                      {% endblocktrans %}
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              <div class="content">
+                {{ post.content|safe }}
+              </div>
+              <div class="meta-bottom">
+                {% if post.category %}
+                <i class="bi bi-folder"></i>
+                <ul class="cats">
+                  <li><a href="{% url 'posts_by_category' post.category.slug %}">{{ post.category.name }}</a></li>
+                </ul>
+                {% endif %}
+                {% if post.tags.all %}
+                <i class="bi bi-tags"></i>
+                <ul class="tags">
+                  {% for tag in post.tags.all %}
+                    <li><a href="#">{{ tag.name }}</a></li>
+                  {% endfor %}
+                </ul>
+                {% endif %}
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="blog-comments" class="blog-comments section">
+          <div class="container">
+            <h4 class="comments-count">
+              {% blocktrans count comment_count=comments.count %}
+                {{ comment_count }} Yorum
+              {% plural %}
+                {{ comment_count }} Yorumlar
+              {% endblocktrans %}
+            </h4>
+            {% for comment in comments %}
+            <div id="comment-{{ comment.id }}" class="comment">
+              <div class="d-flex">
+                <div class="comment-img"><img src="{% static 'assets/img/blog/comments-1.jpg' %}" alt="{% trans 'Comment Author' %}"></div>
+                <div>
+                  <h5><a href="">{{ comment.name }}</a></h5>
+                  <time datetime="{{ comment.created_at|date:"Y-m-d" }}">{{ comment.created_at|date:"d M, Y - H:i" }}</time>
+                  <p>{{ comment.body|linebreaks }}</p>
+                </div>
+              </div>
+            </div>
+            {% empty %}
+              <p>{% trans "No comments have been posted yet. Be the first to comment!" %}</p>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section id="comment-form" class="comment-form section">
+          <div class="container">
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert alert-success" role="alert">
+                  {{ message }}
+                </div>
+              {% endfor %}
+            {% endif %}
+            <form action="." method="post">
+              {% csrf_token %}
+              <h4>{% trans "Post a Comment" %}</h4>
+              <p>{% trans "Your email address will not be published. Required fields are marked with *" %}</p>
+              <div class="row">
+                <div class="col-md-6 form-group">{{ comment_form.name }}{{ comment_form.name.errors }}</div>
+                <div class="col-md-6 form-group">{{ comment_form.email }}{{ comment_form.email.errors }}</div>
+              </div>
+              <div class="row">
+                <div class="col form-group">{{ comment_form.body }}{{ comment_form.body.errors }}</div>
+              </div>
+              <div class="text-center">
+                <button type="submit" class="btn btn-primary">{% trans "Post Comment" %}</button>
+              </div>
+            </form>
+          </div>
+        </section>
+      </div>
+
+      <div class="col-lg-4 sidebar">
+        <div class="widgets-container">
+          <div class="search-widget widget-item">
+            <h3 class="widget-title">{% trans "Search" %}</h3>
+            <form action="{% url 'search' %}" method="GET">
+              <input type="text" name="q">
+              <button type="submit" title="{% trans 'Search' %}"><i class="bi bi-search"></i></button>
+            </form>
+          </div>
+          <div class="recent-posts-widget widget-item">
+            <h3 class="widget-title">{% trans "Recent Posts" %}</h3>
+            {% for recent_post in recent_posts %}
+              <div class="post-item">
+                <h4 class="text-break"><a href="{{ recent_post.get_absolute_url }}">{{ recent_post.title }}</a></h4>
+                <time datetime="{{ recent_post.created_at|date:"Y-m-d" }}">{{ recent_post.created_at|date:"d M, Y" }}</time>
+              </div>
+            {% empty %}
+              <p>{% trans "No recent posts found." %}</p>
+            {% endfor %}
+          </div>
+          <div class="tags-widget widget-item">
+            <h3 class="widget-title">{% trans "Tags" %}</h3>
+            <ul>
+              {% for tag in all_tags %}
+                <li><a href="#">{{ tag.name }}</a></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const commentForm = document.querySelector('#comment-form form');
+    const formSection = document.querySelector('#comment-form .container');
+    // Çeviri metinlerini HTML'den alıyoruz
+    const translationStrings = document.getElementById('js-translation-strings').dataset;
+
+    commentForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const formData = new FormData(commentForm);
+        fetch(commentForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const existingAlert = formSection.querySelector('.alert');
+            if (existingAlert) { existingAlert.remove(); }
+
+            const newAlert = document.createElement('div');
+            if (data.success) {
+                newAlert.className = 'alert alert-success';
+                newAlert.textContent = data.message;
+                commentForm.reset();
+            } else {
+                newAlert.className = 'alert alert-danger';
+                // Çevrilmiş metni kullanıyoruz
+                newAlert.innerHTML = translationStrings.formError + '<br>';
+                for (const field in data.errors) {
+                    newAlert.innerHTML += `<strong>${field}:</strong> ${data.errors[field][0].message}<br>`;
+                }
+            }
+            formSection.insertBefore(newAlert, commentForm);
+        })
+        .catch(error => {
+            console.error('Bir hata oluştu:', error);
+            // Çevrilmiş metni kullanıyoruz
+            alert(translationStrings.serverError);
+        });
+    });
+});
+</script>
+
+{% endblock %}

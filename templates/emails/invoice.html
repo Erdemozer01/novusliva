@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fatura Bilgileriniz</title>
+    <style>
+        /* E-posta istemcileri için genel sıfırlamalar */
+        body {
+            margin: 0;
+            padding: 0;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img {
+            -ms-interpolation-mode: bicubic;
+        }
+
+        /* Ana konteyner */
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        /* Başlık ve logo alanı */
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2em;
+            color: #333;
+        }
+
+        /* Fatura detayları */
+        .invoice-details {
+            margin-bottom: 20px;
+        }
+        .invoice-details p {
+            margin: 5px 0;
+        }
+        .invoice-details strong {
+            color: #555;
+        }
+
+        /* Ürün tablosu */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        /* Toplam tutar */
+        .total {
+            text-align: right;
+            font-weight: bold;
+            font-size: 1.2em;
+            padding-top: 10px;
+            border-top: 1px dashed #ddd;
+        }
+        .total p {
+            margin: 5px 0;
+        }
+
+        /* Alt bilgi ve link */
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #777;
+        }
+        .footer a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Fatura</h1>
+            <h3>{{ site_name }}</h3>
+        </div>
+
+        <div class="invoice-details">
+            <p><strong>Fatura Numarası:</strong> #{{ order.id }}</p>
+            <p><strong>Fatura Tarihi:</strong> {{ order.payment_date|date:"d M Y" }}</p>
+            <p><strong>Müşteri:</strong> {{ order.billing_name }}</p>
+            <p><strong>E-posta:</strong> {{ order.billing_email }}</p>
+            <p><strong>Adres:</strong> {{ order.billing_address }}, {{ order.billing_city }}</p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Ürün</th>
+                    <th>Fiyat (TL)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td>{{ item.portfolio_item.title }}</td>
+                    <td>{{ item.price|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="total">
+            <p>Toplam Tutar: {{ order.get_total_cost|floatformat:2 }} TL</p>
+        </div>
+
+        <div class="footer">
+            <p>
+                Bu e-posta, başarılı ödemenizi teyit eder ve faturanızın bir kopyasıdır.
+                Faturanızı online görüntülemek için: <a href="{{ invoice_url }}">Buraya Tıklayın</a>
+            </p>
+            <p>İyi günler dileriz.</p>
+        </div>
+    </div>
+</body>
+</html>

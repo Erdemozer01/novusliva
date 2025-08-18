@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}Sipariş Faturası #{{ order.id }}{% endblock %}
+
+{% block content %}
+<section class="invoice-section section">
+    <div class="container">
+        <div class="card p-4 shadow-sm">
+            <h2 class="mb-4">Fatura #{{ order.id }}</h2>
+            <hr>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <h4>Müşteri Bilgileri</h4>
+                    <p><strong>Ad Soyad:</strong> {{ order.billing_name }}</p>
+                    <p><strong>E-posta:</strong> {{ order.billing_email }}</p>
+                    <p><strong>Adres:</strong> {{ order.billing_address }}</p>
+                    <p><strong>Şehir:</strong> {{ order.billing_city }}</p>
+                    <p><strong>Posta Kodu:</strong> {{ order.billing_postal_code }}</p>
+                </div>
+                <div class="col-md-6 mb-3 text-md-end">
+                    <h4>Fatura Bilgileri</h4>
+                    <p><strong>Sipariş Numarası:</strong> #{{ order.id }}</p>
+                    <p><strong>Ödeme Tarihi:</strong> {{ order.payment_date|date:"d M Y H:i" }}</p>
+                    <p><strong>İşlem ID:</strong> {{ order.transaction_id }}</p>
+                    <p><strong>Durum:</strong> {{ order.get_status_display }}</p>
+                </div>
+            </div>
+
+            <hr>
+            <h4>Sipariş Özeti</h4>
+            <ul class="list-group mb-3">
+                {% for item in order.items.all %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold">{{ item.portfolio_item.title }}</div>
+                    </div>
+                    <span class="badge bg-primary rounded-pill">{{ item.price }} TL</span>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <div class="d-flex justify-content-end align-items-center pt-3 border-top">
+                <span class="h5 me-3">Toplam:</span>
+                <span class="h5 text-success">{{ order.get_total_cost }} TL</span>
+            </div>
+            
+            <a href="{% url 'order_history' %}" class="btn btn-outline-secondary mt-4">Siparişlerim Sayfasına Geri Dön</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

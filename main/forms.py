@@ -1,0 +1,159 @@
+from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+from django.utils.translation import gettext_lazy as _
+from .models import ContactMessage, Comment, Subscriber, Profile, Order
+
+# Mevcut formlarınız burada kalacak...
+
+class ContactForm(forms.ModelForm):
+    class Meta:
+        model = ContactMessage
+        fields = ['name', 'email', 'subject', 'message']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': _('Your Name'),
+                'required': True
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': _('Your Email'),
+                'required': True
+            }),
+            'subject': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': _('Subject'),
+                'required': True
+            }),
+            'message': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': _('Message'),
+                'rows': 7,
+                'required': True
+            }),
+        }
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ('name', 'email', 'body')
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Your Name*')}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': _('Your Email*')}),
+            'body': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': _('Your Comment*')}),
+        }
+
+class SubscriberForm(forms.ModelForm):
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'placeholder': _('Enter your email'), 'required': True}),
+        label=_('Email')
+    )
+
+    class Meta:
+        model = Subscriber
+        fields = ['email']
+
+class UserRegisterForm(UserCreationForm):
+    username = forms.CharField(max_length=150, widget=forms.TextInput(attrs={'placeholder': _('Enter your username')}))
+    first_name = forms.CharField(max_length=30, widget=forms.TextInput(attrs={'placeholder': _('Enter your first name')}))
+    last_name = forms.CharField(max_length=30, widget=forms.TextInput(attrs={'placeholder': _('Enter your last name')}))
+    email = forms.EmailField(widget=forms.EmailInput(attrs={'placeholder': _('Enter your email address')}))
+
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email', 'password1', 'password2']
+        labels = {
+            'username': _('Username'),
+            'first_name': _('First Name'),
+            'last_name': _('Last Name'),
+            'email': _('Email Address'),
+        }
+
+class UserUpdateForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email']
+
+class ProfileUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['image', 'bio', 'phone_number', 'country', 'city', 'address', 'birth_date']
+        labels = {
+            'image': _('Profile Picture'),
+            'bio': _('About Me'),
+            'phone_number': _('Phone Number'),
+            'country': _('Country'),
+            'city': _('City'),
+            'address': _('Address'),
+            'birth_date': _('Birth Date'),
+        }
+        widgets = {
+            'bio': forms.Textarea(attrs={'rows': 4, 'placeholder': _('Write something about yourself...')}),
+            'phone_number': forms.TextInput(attrs={'placeholder': _('Your phone number')}),
+            'country': forms.TextInput(attrs={'placeholder': _('Country you live in')}),
+            'city': forms.TextInput(attrs={'placeholder': _('City you live in')}),
+            'address': forms.TextInput(attrs={'placeholder': _('Your full address')}),
+            'birth_date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+# YENİ EKLENEN CHECKOUT FORM
+class CheckoutForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = [
+            'payment_method',
+            'billing_name',
+            'billing_email',
+            'billing_address',
+            'billing_city',
+            'billing_postal_code'
+        ]
+        widgets = {
+            'payment_method': forms.Select(attrs={'class': 'form-select'}),
+            'billing_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'required': True,
+                'placeholder': 'Adınızı ve soyadınızı girin'
+            }),
+            'billing_email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'required': True,
+                'placeholder': 'E-posta adresinizi girin'
+            }),
+            'billing_address': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'required': True,
+                'placeholder': 'Tam adresinizi girin'
+            }),
+            'billing_city': forms.TextInput(attrs={
+                'class': 'form-control',
+                'required': True,
+                'placeholder': 'Şehir adını girin'
+            }),
+            'billing_postal_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'required': True,
+                'placeholder': 'Posta kodunu girin'
+            }),
+        }
+        labels = {
+            'payment_method': 'Ödeme Yöntemi',
+            'billing_name': 'Ad Soyad',
+            'billing_email': 'E-posta Adresi',
+            'billing_address': 'Adres',
+            'billing_city': 'Şehir',
+            'billing_postal_code': 'Posta Kodu',
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        # Eğer user varsa, form alanlarını doldur
+        if user:
+            # Kullanıcının tam adını birleştirerek initial değerini ayarla
+            full_name = f"{user.first_name} {user.last_name}".strip()
+            self.fields['billing_name'].initial = full_name or user.username
+            self.fields['billing_email'].initial = user.email

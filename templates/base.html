@@ -1,0 +1,315 @@
+{% load static %}
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <title>{% block title %}Company Bootstrap Template{% endblock %}</title>
+
+    {% block meta_description %}
+        <meta name="description" content="Projenizin varsayılan meta açıklaması buraya gelecek.">
+    {% endblock %}
+
+    <meta name="keywords" content="">
+
+    <link href="{% static 'assets/img/favicon.svg' %}" rel="icon">
+    <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Nunito:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+          rel="stylesheet">
+
+    <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/aos/aos.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet">
+
+    <link href="{% static 'assets/css/main.css' %}" rel="stylesheet">
+
+    <style>
+        /* Dil ve Çıkış Yap butonlarının link gibi görünmesi için stiller */
+        .language-form button, .logout-form button {
+            background: none !important;
+            border: none !important;
+            padding: 10px 20px !important; /* Bu değeri kontrol edin */
+            text-align: left !important;
+            width: 100% !important;
+            color: #333 !important;
+            font-weight: 400 !important;
+            font-size: 14px !important;
+            padding-left: 16px !important; /* Örnek değer, diğer dropdown item'larla aynı olmalı */
+        }
+
+        .language-form button:hover, .logout-form button:hover {
+            background-color: #f2f2f2 !important;
+            color: #007bff !important; /* Temanızın ana rengi */
+        }
+
+        /* Sepet ikonunu büyüt */
+        .cart-icon {
+            font-size: 20px !important; /* İkon boyutunu artır */
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Opsiyonel: Hover efekti ekle */
+        .cart-icon:hover {
+            color: #007bff !important;
+            transform: scale(1.1);
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-menu .dropdown-item {
+            padding: 10px 16px !important; /* Genellikle bu değer kullanılır */
+        }
+
+        .language-form button:hover, .logout-form button:hover {
+            background-color: #f2f2f2 !important;
+            color: #007bff !important;
+        }
+    </style>
+
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+<header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container position-relative d-flex align-items-center">
+
+        <a href="{% url 'index' %}" class="logo d-flex align-items-center me-auto">
+            <h1 class="sitename">Company</h1><span>.</span>
+        </a>
+
+        <nav id="navmenu" class="navmenu">
+            <ul>
+                <li><a href="{% url 'index' %}">{% trans "Home" %}</a></li>
+                <li class="dropdown"><a href="{% url 'about' %}"><span>{% trans "About" %}</span> <i
+                        class="bi bi-chevron-down toggle-dropdown"></i></a>
+                    <ul>
+                        <li><a href="{% url 'team' %}">{% trans "Team" %}</a></li>
+                        <li><a href="{% url 'testimonials' %}">{% trans "Testimonials" %}</a></li>
+                    </ul>
+                </li>
+                <li><a href="{% url 'services' %}">{% trans "Services" %}</a></li>
+                <li><a href="{% url 'portfolio' %}">{% trans "Portfolio" %}</a></li>
+                <li><a href="{% url 'blog' %}">{% trans "Blog" %}</a></li>
+                <li><a href="{% url 'contact' %}">{% trans "Contact" %}</a></li>
+
+                <li><a href="{% url 'cart_detail' %}" class="cart-icon"><i class="bi bi-cart"></i></a></li>
+
+                {% if user.is_authenticated %}
+                    <li class="dropdown">
+                        <a href="#">
+                            <span><i class="bi bi-person me-1"></i>
+                                {{ user.username }}
+                            </span>
+                            <i class="bi bi-chevron-down toggle-dropdown"></i>
+                        </a>
+                        <ul>
+                            <li><a href="{% url 'profile' %}"><i class="bi bi-person me-2"></i>{% trans "Profile" %}</a>
+                            </li>
+                            <li><a href="{% url 'order_history' %}"><i
+                                    class="bi bi-box-seam me-2"></i>{% trans "Orders" %}</a></li>
+                            {% if user.is_superuser %}
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="text-danger" href="{% url 'admin:index' %}"><i
+                                        class="bi bi-tools me-2"></i>{% trans "Admin Panel" %}</a></li>
+                            {% endif %}
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a href="#" class="dropdown-item"
+                                   onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                    <i class="bi bi-box-arrow-right me-2"></i>
+                                    Çıkış Yap
+                                </a>
+                                <form id="logout-form" action="{% url 'logout' %}" method="post" style="display: none;">
+                                    {% csrf_token %}
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li>
+                        <a href="{% url 'login' %}" class="btn btn-primary me-2">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>{% trans "Login" %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'register' %}" class="btn btn-outline-primary">
+                            {% trans "Register" %}
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% get_current_language as LANGUAGE_CODE %}
+                {% get_language_info_list for LANGUAGES as languages %}
+                <li class="dropdown">
+                    <a href="#">
+                        <span><small class="bi bi-translate"></small> {{ LANGUAGE_CODE|upper }}</span>
+                        <i class="bi bi-chevron-down toggle-dropdown"></i>
+                    </a>
+                    <ul>
+                        {% for language in languages %}
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post" class="language-form">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                                    <input name="language" type="hidden" value="{{ language.code }}">
+                                    <button type="submit" class="dropdown-item">
+                                        {{ language.name_local }}
+                                    </button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            </ul>
+            <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
+
+    </div>
+</header>
+<main class="main">
+    {% block content %}
+    {% endblock %}
+</main>
+
+<footer id="footer" class="footer dark-background">
+    <div class="container footer-top">
+        <div class="row gy-4">
+            <div class="col-lg-4 col-md-6 footer-about">
+                <a href="{% url 'index' %}" class="logo d-flex align-items-center">
+                    <span class="sitename">Company</span>
+                </a>
+                {% if site_settings %}
+                    <div class="footer-contact pt-3">
+                        <p>{{ site_settings.address }}</p>
+                        <p class="mt-3"><strong>{% trans "Phone" %}:</strong> <span>{{ site_settings.phone }}</span></p>
+                        <p><strong>{% trans "Email" %}:</strong> <span>{{ site_settings.email }}</span></p>
+                    </div>
+                    <div class="social-links d-flex mt-4">
+                        {% if site_settings.twitter_url %}<a href="{{ site_settings.twitter_url }}" target="_blank"><i
+                                class="bi bi-twitter-x"></i></a>{% endif %}
+                        {% if site_settings.facebook_url %}<a href="{{ site_settings.facebook_url }}" target="_blank"><i
+                                class="bi bi-facebook"></i></a>{% endif %}
+                        {% if site_settings.instagram_url %}
+                            <a href="{{ site_settings.instagram_url }}" target="_blank"><i class="bi bi-instagram"></i></a>{% endif %}
+                        {% if site_settings.linkedin_url %}<a href="{{ site_settings.linkedin_url }}" target="_blank"><i
+                                class="bi bi-linkedin"></i></a>{% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="col-lg-2 col-md-3 footer-links">
+                <h4>{% trans "Useful Links" %}</h4>
+                <ul>
+                    <li><a href="{% url 'index' %}">{% trans "Home" %}</a></li>
+                    <li><a href="{% url 'about' %}">{% trans "About us" %}</a></li>
+                    <li><a href="{% url 'services' %}">{% trans "Services" %}</a></li>
+                    <li><a href="#">{% trans "Terms of service" %}</a></li>
+                    <li><a href="#">{% trans "Privacy policy" %}</a></li>
+                </ul>
+            </div>
+
+            <div class="col-lg-2 col-md-3 footer-links">
+                <h4>{% trans "Our Services" %}</h4>
+                <ul>
+                    {% for service in services %}
+                        <li><a href="{% url 'service_details' service.id %}">{{ service.title }}</a></li>
+                    {% empty %}
+                        <li>{% trans "No services available." %}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="col-lg-4 col-md-12 footer-newsletter">
+                <h4>{% trans "Our Newsletter" %}</h4>
+                <p>{% trans "Subscribe to our newsletter and receive the latest news about our products and services!" %}</p>
+                <form id="newsletter-form" action="{% url 'subscribe' %}" method="post">
+                    {% csrf_token %}
+                    <div class="newsletter-form">
+                        <input type="email" name="email" required>
+                        <input type="submit" value="{% trans 'Subscribe' %}">
+                    </div>
+                    <div class="mt-2" id="newsletter-message"></div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="container copyright text-center mt-4">
+        <p>© <span>Copyright</span> <strong class="px-1 sitename">Company</strong>
+            <span>{% trans "All Rights Reserved" %}</span></p>
+        <div class="credits">
+            Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
+        </div>
+    </div>
+</footer>
+
+<a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i
+        class="bi bi-arrow-up-short"></i></a>
+
+<div id="preloader"></div>
+
+<script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'assets/vendor/aos/aos.js' %}"></script>
+<script src="{% static 'assets/vendor/glightbox/js/glightbox.min.js' %}"></script>
+<script src="{% static 'assets/vendor/imagesloaded/imagesloaded.pkgd.min.js' %}"></script>
+<script src="{% static 'assets/vendor/isotope-layout/isotope.pkgd.min.js' %}"></script>
+<script src="{% static 'assets/vendor/waypoints/noframework.waypoints.js' %}"></script>
+<script src="{% static 'assets/vendor/swiper/swiper-bundle.min.js' %}"></script>
+
+<script src="{% static 'assets/js/main.js' %}"></script>
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const newsletterForm = document.getElementById('newsletter-form');
+            const newsletterMessage = document.getElementById('newsletter-message');
+
+            if (newsletterForm) {
+                newsletterForm.addEventListener('submit', function (event) {
+                    event.preventDefault();
+
+                    const formData = new FormData(newsletterForm);
+
+                    fetch(newsletterForm.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            newsletterMessage.style.display = 'block';
+                            if (data.success) {
+                                newsletterMessage.className = 'alert alert-success';
+                                newsletterForm.reset();
+                            } else {
+                                newsletterMessage.className = 'alert alert-danger';
+                            }
+                            newsletterMessage.textContent = data.message;
+                        })
+                        .catch(error => {
+                            console.error('Subscription error:', error);
+                            newsletterMessage.className = 'alert alert-danger';
+                            newsletterMessage.textContent = '{% trans "An error occurred. Please try again." %}';
+                        });
+                });
+            }
+        });
+    </script>
+{% endblock %}
+
+</body>
+</html>

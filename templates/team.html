@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Team" %} - Company Bootstrap Template{% endblock %}
+
+{% block body_class %}team-page{% endblock %}
+
+{% block content %}
+
+  <div class="page-title accent-background">
+    <div class="container d-lg-flex justify-content-between align-items-center">
+      <h1 class="mb-2 mb-lg-0">{% trans "Team" %}</h1>
+      <nav class="breadcrumbs">
+        <ol>
+          <li><a href="{% url 'index' %}">{% trans "Home" %}</a></li>
+          <li class="current">{% trans "Team" %}</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <section id="team" class="team section">
+    <div class="container">
+      <div class="row gy-4">
+
+        {% for member in team_members %}
+          <div class="col-lg-3 col-md-6 d-flex align-items-stretch" data-aos="fade-up" data-aos-delay="100">
+            <div class="team-member">
+              <div class="member-img">
+                {% if member.photo %}
+                  <img src="{{ member.photo.url }}" class="img-fluid" alt="{{ member.full_name }}">
+                {% endif %}
+                <div class="social">
+                  {% if member.twitter_url %}<a href="{{ member.twitter_url }}" target="_blank"><i class="bi bi-twitter-x"></i></a>{% endif %}
+                  {% if member.facebook_url %}<a href="{{ member.facebook_url }}" target="_blank"><i class="bi bi-facebook"></i></a>{% endif %}
+                  {% if member.instagram_url %}<a href="{{ member.instagram_url }}" target="_blank"><i class="bi bi-instagram"></i></a>{% endif %}
+                  {% if member.linkedin_url %}<a href="{{ member.linkedin_url }}" target="_blank"><i class="bi bi-linkedin"></i></a>{% endif %}
+                </div>
+              </div>
+              <div class="member-info">
+                <h4>{{ member.full_name }}</h4>
+                <span>{{ member.title }}</span>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+            <div class="col-12">
+                <p class="text-center">{% trans "No team members have been added yet." %}</p>
+            </div>
+        {% endfor %}
+
+      </div>
+    </div>
+  </section>
+
+{% endblock %}
