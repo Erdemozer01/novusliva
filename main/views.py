@@ -582,6 +582,7 @@ def checkout_view(request):
                     print(f"Stripe hata mesajı: {e}")
                     return redirect('cart_detail')
             else:
+                print("Form doğrulama hatası:", form.errors)
                 messages.error(request, 'Lütfen tüm gerekli alanları doğru şekilde doldurun.')
 
     else:  # GET isteği için
