@@ -505,6 +505,10 @@ def cart_detail_view(request):
 
 @login_required
 def checkout_view(request):
+    """
+    Kullanıcının sepetindeki ürünler için ödeme sayfasına yönlendirir.
+    """
+    # Mevcut sepeti bul
     cart = Order.objects.filter(user=request.user, status='cart').first()
 
     if not cart or not cart.items.exists():
@@ -512,81 +516,97 @@ def checkout_view(request):
         return redirect('portfolio')
 
     if request.method == 'POST':
-
         form = CheckoutForm(request.POST, user=request.user)
 
-        if form.is_valid():
+        # İşlem bütünlüğünü sağlamak için veritabanı işlemlerini atomik hale getirir
+        with transaction.atomic():
+            if form.is_valid():
+                order = cart
+                # Formdan gelen fatura bilgilerini sipariş nesnesine kaydet
+                order.payment_method = form.cleaned_data['payment_method']
+                order.billing_name = form.cleaned_data['billing_name']
+                order.billing_email = form.cleaned_data['billing_email']
+                order.billing_address = form.cleaned_data['billing_address']
+                order.billing_city = form.cleaned_data['billing_city']
+                order.billing_postal_code = form.cleaned_data['billing_postal_code']
+                order.save()
 
-            order = cart
-            order.payment_method = form.cleaned_data['payment_method']
-            order.billing_name = form.cleaned_data['billing_name']
-            order.billing_email = form.cleaned_data['billing_email']
-            order.billing_address = form.cleaned_data['billing_address']
-            order.billing_city = form.cleaned_data['billing_city']
-            order.billing_postal_code = form.cleaned_data['billing_postal_code']
-            order.save()
+                try:
+                    MIN_STRIPE_AMOUNT_CENTS = 1700  # 17.00 TL'ye eşittir
 
+                    total_amount_cents = int(order.get_total_cost() * 100)
 
-            try:
-                line_items = []
-                for item in order.items.all():
-                    line_items.append({
-                        'price_data': {
-                            'currency': 'try',
-                            'product_data': {
-                                'name': item.portfolio_item.title,
+                    if total_amount_cents < MIN_STRIPE_AMOUNT_CENTS:
+                        messages.error(
+                            request,
+                            f"Ödeme tutarı çok düşük. En az {MIN_STRIPE_AMOUNT_CENTS / 100} TL'lik bir sipariş vermelisiniz."
+                        )
+                        return redirect('cart_detail')
+
+                    # Stripe Line Items oluştur
+                    line_items = []
+                    for item in order.items.all():
+                        line_items.append({
+                            'price_data': {
+                                'currency': 'try',
+                                'product_data': {
+                                    'name': item.portfolio_item.title,
+                                },
+                                'unit_amount': int(item.price * 100),
                             },
-                            'unit_amount': int(item.price * 100),
-                        },
-                        'quantity': 1,
-                    })
+                            'quantity': 1,
+                        })
 
-                checkout_session = stripe.checkout.Session.create(
-                    payment_method_types=['card'],
-                    line_items=line_items,
-                    mode='payment',
-                    success_url=request.build_absolute_uri(reverse('payment_success')),
-                    cancel_url=request.build_absolute_uri(reverse('payment_cancel')),
-                    client_reference_id=str(order.id),
-                    customer_email=order.billing_email,
-                    metadata={
-                        'billing_name': order.billing_name,
-                        'billing_email': order.billing_email,
-                        'billing_address': order.billing_address,
-                        'billing_city': order.billing_city,
-                        'billing_postal_code': order.billing_postal_code,
-                    }
-                )
+                    # Stripe Checkout Session'ı oluştur
+                    checkout_session = stripe.checkout.Session.create(
+                        payment_method_types=['card'],
+                        line_items=line_items,
+                        mode='payment',
+                        success_url=request.build_absolute_uri(reverse('payment_success')),
+                        cancel_url=request.build_absolute_uri(reverse('payment_cancel')),
+                        client_reference_id=str(order.id),
+                        customer_email=order.billing_email,
+                        metadata={
+                            'billing_name': order.billing_name,
+                            'billing_email': order.billing_email,
+                            'billing_address': order.billing_address,
+                            'billing_city': order.billing_city,
+                            'billing_postal_code': order.billing_postal_code,
+                        }
+                    )
 
-                return redirect(checkout_session.url, code=303)
+                    return redirect(checkout_session.url, code=303)
 
-            except Exception as e:
-                messages.error(request, f"Ödeme oturumu oluşturulurken bir hata oluştu: {e}")
-                print(f"Stripe hata mesajı: {e}")
-                return redirect('cart_detail')
-    else:
-        # GET isteği için
+                except Exception as e:
+                    messages.error(request, f"Ödeme oturumu oluşturulurken bir hata oluştu: {e}")
+                    print(f"Stripe hata mesajı: {e}")
+                    return redirect('cart_detail')
+            else:
+                messages.error(request, 'Lütfen tüm gerekli alanları doğru şekilde doldurun.')
+
+    else:  # GET isteği için
         form = CheckoutForm(user=request.user)
-        if cart:
+        # Eğer daha önce fatura bilgileri girilmişse, formu önceden doldur
+        if cart and cart.billing_name:
             form.fields['billing_name'].initial = cart.billing_name
             form.fields['billing_email'].initial = cart.billing_email
             form.fields['billing_address'].initial = cart.billing_address
             form.fields['billing_city'].initial = cart.billing_city
             form.fields['billing_postal_code'].initial = cart.billing_postal_code
-        else:  # Eğer sepet yoksa ve kullanıcı giriş yapmışsa, profil bilgilerini kullan
-            if request.user.is_authenticated:
-                form.fields['billing_name'].initial = request.user.get_full_name() or request.user.username
-                form.fields['billing_email'].initial = request.user.email
-                if hasattr(request.user, 'profile'):
-                    profile = request.user.profile
-                    form.fields['billing_address'].initial = profile.address
-                    form.fields['billing_city'].initial = profile.city
-                    form.fields['billing_postal_code'].initial = profile.postal_code
+        # Aksi halde, kullanıcı profilinden varsayılan bilgileri al
+        elif request.user.is_authenticated:
+            form.fields['billing_name'].initial = request.user.get_full_name() or request.user.username
+            form.fields['billing_email'].initial = request.user.email
+            if hasattr(request.user, 'profile'):
+                profile = request.user.profile
+                form.fields['billing_address'].initial = profile.address
+                form.fields['billing_city'].initial = profile.city
+                # Postal code'un profil modelinde olmadığını varsayarak bu satırı eklemedik.
 
     context = {
         'cart': cart,
         'form': form,
-        'total': cart.get_total_cost()
+        'total': cart.get_total_cost() if cart else 0
     }
     return render(request, 'checkout.html', context)
 
