@@ -647,9 +647,25 @@ def send_order_confirmation_email(order):
 
 @login_required
 def remove_from_cart_view(request, item_id):
-    item = get_object_or_404(OrderItem, id=item_id, order__user=request.user, order__status='cart')
-    item.delete()
-    messages.success(request, _('Ürün sepetinizden kaldırıldı.'))
+    """
+    Kullanıcının sepetinden bir ürünü siler.
+    """
+    if request.method == 'POST':
+        try:
+
+            item = get_object_or_404(OrderItem, id=item_id)
+
+            # Bu öğenin kullanıcının mevcut sepetine ait olduğunu doğrula
+            # Bu, güvenlik için çok önemli bir kontrol!
+            if item.order.user == request.user and item.order.status == 'cart':
+                item.delete()
+                messages.success(request, 'Ürün sepetinizden başarıyla silindi.')
+            else:
+                messages.error(request, 'Bu ürün sepetinizde bulunmuyor veya silme işlemi başarısız oldu.')
+
+        except OrderItem.DoesNotExist:
+            messages.error(request, 'Bu ürün sepetinizde bulunmuyor.')
+
     return redirect('cart_detail')
 
 
