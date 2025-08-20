@@ -70,12 +70,14 @@
                                 <li><strong>{% trans "Project date" %}</strong>: {{ item.project_date|date:"d M, Y" }}
                                 </li>
                             {% endif %}
+
                             {% if item.price %}
                                 <li><strong>{% trans "Price" %}</strong>: {{ item.price }} TL</li>
 
                                 <li><a href="{% url 'add_to_cart' item.id %}"
                                        class="btn btn-primary btn-sm mt-2 w-100">Sepete Ekle</a></li>
                             {% endif %}
+
                             {% if item.project_url %}
                                 <li><strong>{% trans "Project URL" %}</strong>: <a href="{{ item.project_url }}"
                                                                                    target="_blank">{{ item.project_url }}</a>
@@ -83,6 +85,7 @@
                                 <li><a href="{{ item.project_url }}" target="_blank"
                                        class="btn-visit align-self-start">{% trans "Visit Website" %}</a></li>
                             {% endif %}
+
                         </ul>
                     </div>
                 </div>
