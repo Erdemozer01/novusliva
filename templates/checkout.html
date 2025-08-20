@@ -11,97 +11,110 @@
 </div>
 
 <section class="checkout-section section">
-<div class="container" data-aos="fade-up">
-    <div class="row">
-        <div class="col-lg-4 order-2 order-lg-1">
-            <div class="card p-4 shadow-sm">
-                <h4 class="mb-3">Sipariş Özeti</h4>
-                <ul class="list-group list-group-flush">
-                    {% for item in cart.items.all %}
-                    <li class="list-group-item d-flex justify-content-between align-items-start">
-                        <div class="me-auto">
-                            <div class="fw-bold">{{ item.portfolio_item.title }}</div>
-                            <small class="text-muted">{{ item.portfolio_item.short_description|truncatechars:50 }}</small>
+    <div class="container" data-aos="fade-up">
+        <div class="row">
+            <div class="col-lg-4 order-2 order-lg-1">
+                <div class="card p-4 shadow-sm">
+                    <h4 class="mb-3">Sipariş Özeti</h4>
+                    <ul class="list-group list-group-flush">
+                        {% for item in cart.items.all %}
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="me-auto">
+                                <div class="fw-bold">{{ item.portfolio_item.title }}</div>
+                                <small class="text-muted">{{ item.portfolio_item.short_description|truncatechars:50 }}</small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">{{ item.price }} TL</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                        <span class="h5">Toplam</span>
+                        <span class="h5 text-success">{{ total }} TL</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8 order-1 order-lg-2">
+                <div class="card p-4 shadow-sm">
+                    <h4 class="mb-4">Ödeme Bilgileri</h4>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <h5 class="mb-3">Fatura Bilgileri</h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.billing_name.id_for_label }}" class="form-label">
+                                    {{ form.billing_name.label }} *
+                                </label>
+                                {{ form.billing_name }}
+                                {% if form.billing_name.errors %}<div class="text-danger small mt-1">{{ form.billing_name.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.billing_email.id_for_label }}" class="form-label">
+                                    {{ form.billing_email.label }} *
+                                </label>
+                                {{ form.billing_email }}
+                                {% if form.billing_email.errors %}<div class="text-danger small mt-1">{{ form.billing_email.errors }}</div>{% endif %}
+                            </div>
                         </div>
-                        <span class="badge bg-primary rounded-pill">{{ item.price }} TL</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                    <span class="h5">Toplam</span>
-                    <span class="h5 text-success">{{ total }} TL</span>
+
+                        <div class="mb-3">
+                            <label for="{{ form.billing_address.id_for_label }}" class="form-label">
+                                {{ form.billing_address.label }} *
+                            </label>
+                            {{ form.billing_address }}
+                            {% if form.billing_address.errors %}<div class="text-danger small mt-1">{{ form.billing_address.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label for="{{ form.billing_city.id_for_label }}" class="form-label">
+                                    {{ form.billing_city.label }} *
+                                </label>
+                                {{ form.billing_city }}
+                                {% if form.billing_city.errors %}<div class="text-danger small mt-1">{{ form.billing_city.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.billing_postal_code.id_for_label }}" class="form-label">
+                                    {{ form.billing_postal_code.label }} *
+                                </label>
+                                {{ form.billing_postal_code }}
+                                {% if form.billing_postal_code.errors %}<div class="text-danger small mt-1">{{ form.billing_postal_code.errors }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5 class="mb-3">Ödeme Yöntemi</h5>
+                        <div class="mb-3">
+                            {% for radio in form.payment_method %}
+                                <div class="form-check">
+                                    {{ radio.tag }}
+                                    <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                        {{ radio.choice_label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                            {% if form.payment_method.errors %}<div class="text-danger small mt-1">{{ form.payment_method.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-credit-card me-2"></i>
+                                Ödemeye Git ({{ total }} TL)
+                            </button>
+                            <a href="{% url 'cart_detail' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                Sepete Geri Dön
+                            </a>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
-
-        <div class="col-lg-8 order-1 order-lg-2">
-            <div class="card p-4 shadow-sm">
-                <h4 class="mb-4">Ödeme Bilgileri</h4>
-
-                <form method="post">
-                    {% csrf_token %}
-
-                    <h5 class="mb-3">Fatura Bilgileri</h5>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="{{ form.billing_name.id_for_label }}" class="form-label">
-                                {{ form.billing_name.label }} *
-                            </label>
-                            {{ form.billing_name }}
-                            {% if form.billing_name.errors %}<div class="text-danger small mt-1">{{ form.billing_name.errors }}</div>{% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <label for="{{ form.billing_email.id_for_label }}" class="form-label">
-                                {{ form.billing_email.label }} *
-                            </label>
-                            {{ form.billing_email }}
-                            {% if form.billing_email.errors %}<div class="text-danger small mt-1">{{ form.billing_email.errors }}</div>{% endif %}
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="{{ form.billing_address.id_for_label }}" class="form-label">
-                            {{ form.billing_address.label }} *
-                        </label>
-                        {{ form.billing_address }}
-                        {% if form.billing_address.errors %}<div class="text-danger small mt-1">{{ form.billing_address.errors }}</div>{% endif %}
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-8">
-                            <label for="{{ form.billing_city.id_for_label }}" class="form-label">
-                                {{ form.billing_city.label }} *
-                            </label>
-                            {{ form.billing_city }}
-                            {% if form.billing_city.errors %}<div class="text-danger small mt-1">{{ form.billing_city.errors }}</div>{% endif %}
-                        </div>
-                        <div class="col-md-4">
-                            <label for="{{ form.billing_postal_code.id_for_label }}" class="form-label">
-                                {{ form.billing_postal_code.label }} *
-                            </label>
-                            {{ form.billing_postal_code }}
-                            {% if form.billing_postal_code.errors %}<div class="text-danger small mt-1">{{ form.billing_postal_code.errors }}</div>{% endif %}
-                        </div>
-                    </div>
-
-                    <hr class="my-4">
-
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-success btn-lg">
-                            <i class="bi bi-credit-card me-2"></i>
-                            Ödemeye Git ({{ total }} TL)
-                        </button>
-                        <a href="{% url 'cart_detail' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-2"></i>
-                            Sepete Geri Dön
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </div>
     </div>
-</div>
 </section>
 
 {% endblock %}

@@ -418,48 +418,69 @@ def checkout_view(request):
                 order.billing_postal_code = form.cleaned_data['billing_postal_code']
                 order.save()
 
-                try:
-                    MIN_STRIPE_AMOUNT_CENTS = 1700
-                    total_amount_cents = int(order.get_total_cost() * 100)
+                # Bu if bloğu sadece kartla ödeme seçildiğinde çalışır.
+                # 'payment_method' değeri 'credit_card' veya 'debit_card' ise.
+                if order.payment_method in ['credit_card', 'debit_card']:
+                    try:
+                        MIN_STRIPE_AMOUNT_CENTS = 1700
+                        total_amount_cents = int(order.get_total_cost() * 100)
 
-                    if total_amount_cents < MIN_STRIPE_AMOUNT_CENTS:
-                        messages.error(
-                            request,
-                            f"Ödeme tutarı çok düşük. En az {MIN_STRIPE_AMOUNT_CENTS / 100} TL'lik bir sipariş vermelisiniz."
+                        if total_amount_cents < MIN_STRIPE_AMOUNT_CENTS:
+                            messages.error(
+                                request,
+                                f"Ödeme tutarı çok düşük. En az {MIN_STRIPE_AMOUNT_CENTS / 100} TL'lik bir sipariş vermelisiniz."
+                            )
+                            return redirect('cart_detail')
+
+                        line_items = [{
+                            'price_data': {
+                                'currency': 'try',
+                                'product_data': {'name': item.portfolio_item.title},
+                                'unit_amount': int(item.price * 100),
+                            },
+                            'quantity': 1,
+                        } for item in order.items.all()]
+
+                        # Hatalı satırı kaldırıyoruz
+                        checkout_session = stripe.checkout.Session.create(
+                            line_items=line_items,
+                            mode='payment',
+                            success_url=request.build_absolute_uri(reverse('payment_success')),
+                            cancel_url=request.build_absolute_uri(reverse('payment_cancel')),
+                            client_reference_id=str(order.id),
+                            customer_email=order.billing_email,
+                            metadata={
+                                'billing_name': order.billing_name,
+                                'billing_email': order.billing_email,
+                                'billing_address': order.billing_address,
+                                'billing_city': order.billing_city,
+                                'billing_postal_code': order.billing_postal_code,
+                            }
                         )
+                        return redirect(checkout_session.url, code=303)
+
+                    except Exception as e:
+                        logger.error(f"Ödeme oturumu oluşturulurken bir hata oluştu: {e}")
+                        messages.error(request, "Ödeme oturumu oluşturulurken bir hata oluştu.")
                         return redirect('cart_detail')
 
-                    line_items = [{
-                        'price_data': {
-                            'currency': 'try',
-                            'product_data': {'name': item.portfolio_item.title},
-                            'unit_amount': int(item.price * 100),
-                        },
-                        'quantity': 1,
-                    } for item in order.items.all()]
+                # Bu elif bloğu, havale/EFT ve nakit ödeme için çalışır
+                elif order.payment_method in ['bank_transfer', 'cash']:
+                    order.status = 'pending'
+                    order.save()
+                    messages.success(request, 'Siparişiniz alındı. Ödeme bilgileri e-postanıza gönderildi.')
 
-                    checkout_session = stripe.checkout.Session.create(
-                        payment_method_types=['card'],
-                        line_items=line_items,
-                        mode='payment',
-                        success_url=request.build_absolute_uri(reverse('payment_success')),
-                        cancel_url=request.build_absolute_uri(reverse('payment_cancel')),
-                        client_reference_id=str(order.id),
-                        customer_email=order.billing_email,
-                        metadata={
-                            'billing_name': order.billing_name,
-                            'billing_email': order.billing_email,
-                            'billing_address': order.billing_address,
-                            'billing_city': order.billing_city,
-                            'billing_postal_code': order.billing_postal_code,
-                        }
+                    # E-posta gönderme (Havale/EFT bilgileri için)
+                    context = {'order': order, 'user': order.user}
+                    html_message = render_to_string('emails/invoice.html', context)
+                    send_email_wrapper(
+                        subject=f"Siparişiniz Beklemede - #{order.id}",
+                        recipient_list=[order.billing_email],
+                        html_content=html_message
                     )
-                    return redirect(checkout_session.url, code=303)
 
-                except Exception as e:
-                    logger.error(f"Ödeme oturumu oluşturulurken bir hata oluştu: {e}")
-                    messages.error(request, "Ödeme oturumu oluşturulurken bir hata oluştu.")
-                    return redirect('cart_detail')
+                    return redirect('order_history')
+
         else:
             messages.error(request, 'Lütfen tüm gerekli alanları doğru şekilde doldurun.')
     else:
@@ -495,6 +516,7 @@ def checkout_view(request):
 def payment_success_view(request):
     messages.success(request, _('Your purchase was successful! You can view it in your purchase history.'))
     return redirect('order_history')
+
 
 @login_required
 def payment_cancel_view(request):
@@ -576,6 +598,7 @@ def stripe_webhook_view(request):
         logger.info(f"İşlem yapılmayan olay tipi: {event['type']}")
 
     return HttpResponse(status=200)
+
 
 @login_required
 def invoice_view(request, order_id):

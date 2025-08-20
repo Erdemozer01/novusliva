@@ -110,7 +110,8 @@ class CheckoutForm(forms.ModelForm):
             'billing_postal_code'
         ]
         widgets = {
-            'payment_method': forms.Select(attrs={'class': 'form-select'}),
+            # payment_method için RadioSelect widget'ını kullanın
+            'payment_method': forms.RadioSelect(attrs={'class': 'form-check-input'}),
             'billing_name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'required': True,
