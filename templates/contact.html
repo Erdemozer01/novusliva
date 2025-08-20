@@ -8,100 +8,109 @@
 
 {% block content %}
 
-  <div class="page-title accent-background">
-    <div class="container d-lg-flex justify-content-between align-items-center">
-      <h1 class="mb-2 mb-lg-0">{% trans "Contact" %}</h1>
-      <nav class="breadcrumbs">
-        <ol>
-          <li><a href="{% url 'index' %}">{% trans "Home" %}</a></li>
-          <li class="current">{% trans "Contact" %}</li>
-        </ol>
-      </nav>
-    </div>
-  </div>
-
-  <section id="contact" class="contact section">
-
-    <div class="mb-5">
-      <iframe style="width: 100%; height: 400px;" src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d12097.433213460943!2d-74.0062269!3d40.7101282!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0xb89d1fe6bc499443!2sDowntown+Conference+Center!5e0!3m2!1smk!2sbg!4v1539943755621" frameborder="0" allowfullscreen=""></iframe>
+    <div class="page-title accent-background">
+        <div class="container d-lg-flex justify-content-between align-items-center">
+            <h1 class="mb-2 mb-lg-0">{% trans "Contact" %}</h1>
+            <nav class="breadcrumbs">
+                <ol>
+                    <li><a href="{% url 'index' %}">{% trans "Home" %}</a></li>
+                    <li class="current">{% trans "Contact" %}</li>
+                </ol>
+            </nav>
+        </div>
     </div>
 
-    <div class="container" data-aos="fade">
+    <section id="contact" class="contact section">
 
-      <div class="row gy-5 gx-lg-5">
-
-        <div class="col-lg-4">
-          <div class="info">
-            <h3>{% trans "Get in touch" %}</h3>
-            <p>{% blocktrans %}Et id eius voluptates atque nihil voluptatem enim in tempore minima sit ad mollitia commodi minus.{% endblocktrans %}</p>
-
-            <div class="info-item d-flex">
-              <i class="bi bi-geo-alt flex-shrink-0"></i>
-              <div>
-                <h4>{% trans "Location" %}:</h4>
-                <p>A108 Adam Street, New York, NY 535022</p>
-              </div>
-            </div>
-
-            <div class="info-item d-flex">
-              <i class="bi bi-envelope flex-shrink-0"></i>
-              <div>
-                <h4>{% trans "Email" %}:</h4>
-                <p>info@example.com</p>
-              </div>
-            </div>
-
-            <div class="info-item d-flex">
-              <i class="bi bi-phone flex-shrink-0"></i>
-              <div>
-                <h4>{% trans "Call" %}:</h4>
-                <p>+1 5589 55488 55</p>
-              </div>
-            </div>
-
-          </div>
+        <div class="mb-5">
+            <iframe style="width: 100%; height: 400px;"
+                    src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d12097.433213460943!2d-74.0062269!3d40.7101282!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0xb89d1fe6bc499443!2sDowntown+Conference+Center!5e0!3m2!1smk!2sbg!4v1539943755621"
+                    frameborder="0" allowfullscreen=""></iframe>
         </div>
 
-        <div class="col-lg-8">
+        <div class="container" data-aos="fade">
 
-          {% if messages %}
-            {% for message in messages %}
-              <div class="alert alert-success" role="alert">
-                {{ message }}
-              </div>
-            {% endfor %}
-          {% endif %}
+            <div class="row gy-5 gx-lg-5">
 
-          <form action="{% url 'contact' %}" method="post" role="form">
-            {% csrf_token %}
-            <div class="row">
-              <div class="col-md-6 form-group">
-                {{ form.name }}
-                {{ form.name.errors }}
-              </div>
-              <div class="col-md-6 form-group mt-3 mt-md-0">
-                {{ form.email }}
-                {{ form.email.errors }}
-              </div>
-            </div>
-            <div class="form-group mt-3">
-              {{ form.subject }}
-              {{ form.subject.errors }}
-            </div>
-            <div class="form-group mt-3">
-              {{ form.message }}
-              {{ form.message.errors }}
-            </div>
+                <div class="col-lg-4">
+                    <div class="info">
+                        <h3>{% trans "Get in touch" %}</h3>
+                        <p>{% blocktrans %}Et id eius voluptates atque nihil voluptatem enim in tempore minima sit ad
+                            mollitia commodi minus.{% endblocktrans %}</p>
 
-            <div class="text-center mt-3"><button type="submit" class="btn btn-primary">{% trans "Send Message" %}</button></div>
-          </form>
+                        <div class="info-item d-flex">
+                            <i class="bi bi-geo-alt flex-shrink-0"></i>
+                            <div>
+                                <h4>{% trans "Location" %}:</h4>
+                                <p>A108 Adam Street, New York, NY 535022</p>
+                            </div>
+                        </div>
+
+                        <div class="info-item d-flex">
+                            <i class="bi bi-envelope flex-shrink-0"></i>
+                            <div>
+                                <h4>{% trans "Email" %}:</h4>
+                                <p>info@example.com</p>
+                            </div>
+                        </div>
+
+                        <div class="info-item d-flex">
+                            <i class="bi bi-phone flex-shrink-0"></i>
+                            <div>
+                                <h4>{% trans "Call" %}:</h4>
+                                <p>+1 5589 55488 55</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="col-lg-8">
+
+                    {% if messages %}
+                        <div class="container mt-4">
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form action="{% url 'contact' %}" method="post" role="form">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 form-group">
+                                {{ form.name }}
+                                {{ form.name.errors }}
+                            </div>
+                            <div class="col-md-6 form-group mt-3 mt-md-0">
+                                {{ form.email }}
+                                {{ form.email.errors }}
+                            </div>
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.subject }}
+                            {{ form.subject.errors }}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.message }}
+                            {{ form.message.errors }}
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <button type="submit" class="btn btn-primary">{% trans "Send Message" %}</button>
+                        </div>
+                    </form>
+
+                </div>
+
+            </div>
 
         </div>
 
-      </div>
-
-    </div>
-
-  </section>
+    </section>
 
 {% endblock %}

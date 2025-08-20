@@ -57,21 +57,24 @@
                     <div class="portfolio-info">
                         <h3>{% trans "Project information" %}</h3>
                         <ul>
+
                             {% if item.category %}
                                 <li><strong>{% trans "Category" %}</strong>: {{ item.category.name }}</li>
                             {% endif %}
+
                             {% if item.client %}
                                 <li><strong>{% trans "Client" %}</strong>: {{ item.client }}</li>
+                            {% endif %}
+
+                            {% if item.project_date %}
+                                <li><strong>{% trans "Project date" %}</strong>: {{ item.project_date|date:"d M, Y" }}
+                                </li>
                             {% endif %}
                             {% if item.price %}
                                 <li><strong>{% trans "Price" %}</strong>: {{ item.price }} TL</li>
 
                                 <li><a href="{% url 'add_to_cart' item.id %}"
                                        class="btn btn-primary btn-sm mt-2 w-100">Sepete Ekle</a></li>
-                            {% endif %}
-                            {% if item.project_date %}
-                                <li><strong>{% trans "Project date" %}</strong>: {{ item.project_date|date:"d M, Y" }}
-                                </li>
                             {% endif %}
                             {% if item.project_url %}
                                 <li><strong>{% trans "Project URL" %}</strong>: <a href="{{ item.project_url }}"
