@@ -1,70 +1,109 @@
 {% extends 'base.html' %}
 {% load i18n %}
-{% block title %}Alışveriş Sepeti{% endblock %}
+{% block title %}Sepetim{% endblock %}
 
 {% block content %}
     <div class="page-title accent-background">
         <div class="container d-lg-flex justify-content-between align-items-center">
-            <h1 class="mb-2 mb-lg-0">Alışveriş Sepeti</h1>
+            <h1 class="mb-2 mb-lg-0">Sepetim</h1>
         </div>
     </div>
 
     <section class="cart-section section">
         <div class="container" data-aos="fade-up">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    {% if cart and cart.items.count > 0 %}
-                        <div class="cart-content">
-                            <h3>Sepet İçeriği</h3>
-                            {% for item in cart.items.all %}
-                                <div class="cart-item border p-3 mb-3 rounded">
-                                    <div class="row align-items-center">
-                                        <div class="col-md-8">
-                                            <h5 class="mb-1">{{ item.portfolio_item.title }}</h5>
-                                            <p class="text-muted mb-0">{{ item.portfolio_item.short_description|truncatechars:80 }}</p>
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if cart_items %}
+                <div class="card p-4 shadow-sm">
+                    <h4 class="mb-4">Sepetinizde Bulunan Ürünler</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                            <tr>
+                                <th scope="col">Ürün</th>
+                                <th scope="col">Fiyat</th>
+                                <th scope="col">Adet</th>
+                                <th scope="col">Toplam</th>
+                                <th scope="col">İşlemler</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for item in cart_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ item.portfolio_item.main_image.url }}"
+                                                 alt="{{ item.portfolio_item.title }}" class="img-fluid me-3"
+                                                 style="width: 80px; height: 80px; object-fit: cover;">
+                                            <div>
+                                                <a href="{% url 'portfolio_details' item_id=item.portfolio_item.pk %}"
+                                                   class="fw-bold text-decoration-none">{{ item.portfolio_item.title }}</a>
+                                                <div class="text-muted small">{{ item.portfolio_item.short_description|truncatechars:50 }}</div>
+                                            </div>
                                         </div>
-                                        <div class="col-md-2 text-center">
-                                            <span class="h5 text-success">{{ item.price }} TL</span>
-                                        </div>
-                                        <div class="col-md-2 text-end">
-                                            <form action="{% url 'remove_from_cart' item.id %}" method="post">
+                                    </td>
+                                    <td>{{ item.price|floatformat:2 }} TL</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <form action="{% url 'remove_from_cart' item_id=item.id %}" method="post">
                                                 {% csrf_token %}
-                                                <button type="submit" class="btn btn-danger">Sil</button>
+                                                <button type="submit" class="btn btn-outline-secondary btn-sm me-2">-
+                                                </button>
+                                            </form>
+                                            <span>{{ item.quantity }}</span>
+                                            <form action="{% url 'add_to_cart' item_id=item.portfolio_item.id %}"
+                                                  method="post">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-secondary btn-sm ms-2">+
+                                                </button>
                                             </form>
                                         </div>
-                                    </div>
-                                </div>
+                                    </td>
+                                    <td><span class="fw-bold">{{ item.get_cost|floatformat:2 }} TL</span></td>
+                                    <td>
+                                        <form action="{% url 'remove_item' item_id=item.id %}" method="post">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm"
+                                                    onclick="return confirm('Bu ürünü sepetinizden tamamen kaldırmak istediğinizden emin misiniz?');">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
                             {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
 
-                            <div class="cart-summary mt-4 p-3 bg-light rounded">
-                                <div class="row align-items-center">
-                                    <div class="col-md-6">
-                                        <h4>Toplam Tutar: <span class="text-success">{{ cart.get_total_cost }} TL</span>
-                                        </h4>
-                                    </div>
-                                    <div class="col-md-6 text-end">
-                                        <a href="{% url 'checkout' %}" class="btn btn-success me-2">
-                                            <i class="bi bi-credit-card me-2"></i>Ödemeye Git
-                                        </a>
-                                        <a href="{% url 'portfolio' %}" class="btn btn-outline-secondary">
-                                            <i class="bi bi-arrow-left me-2"></i>Alışverişe Devam Et
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info text-center">
-                            <i class="bi bi-cart-x display-4 text-muted d-block mb-3"></i>
-                            <h4>Sepetiniz Boş</h4>
-                            <p>Henüz sepetinize ürün eklememişsiniz.</p>
-                            <a href="{% url 'portfolio' %}" class="btn btn-primary">
-                                <i class="bi bi-plus-circle me-2"></i>Alışverişe Başla
+                    <div class="d-flex justify-content-end align-items-center mt-4">
+                        <div class="text-end">
+                            <h5 class="mb-2">Toplam Tutar: <span
+                                    class="text-success">{{ cart.get_total_cost|floatformat:2 }} TL</span></h5>
+                            <a href="{% url 'checkout' %}" class="btn btn-success btn-lg">
+                                <i class="bi bi-credit-card me-2"></i>
+                                Ödemeye Git
                             </a>
                         </div>
-                    {% endif %}
+                    </div>
                 </div>
-            </div>
+            {% else %}
+                <div class="alert alert-info text-center" role="alert">
+                    Sepetinizde henüz hiç ürün bulunmamaktadır.
+                </div>
+                <div class="text-center mt-4">
+                    <a href="{% url 'portfolio' %}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-bag-plus me-2"></i>
+                        Hemen Ürünleri İnceleyin
+                    </a>
+                </div>
+            {% endif %}
         </div>
     </section>
 {% endblock %}

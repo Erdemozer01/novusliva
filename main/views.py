@@ -375,16 +375,49 @@ def order_history_view(request):
 def add_to_cart_view(request, item_id):
     item = get_object_or_404(PortfolioItem, id=item_id)
     with transaction.atomic():
-        cart = Order.objects.filter(user=request.user, status='cart').first()
-        if cart is None:
-            cart = Order.objects.create(user=request.user, status='cart')
+        cart, created = Order.objects.get_or_create(user=request.user, status='cart')
 
-        OrderItem.objects.create(
+        # Ürün sepette zaten varsa miktarını artır
+        order_item, item_created = OrderItem.objects.get_or_create(
             order=cart,
             portfolio_item=item,
-            price=item.price or 0
+            defaults={'price': item.price or 0, 'quantity': 1}
         )
-    messages.success(request, f'"{item.title}" sepete eklendi.')
+
+        if not item_created:
+            # Ürün zaten sepetteydi, miktarını 1 artır
+            order_item.quantity += 1
+            order_item.save()
+
+    messages.success(request, f'"{item.title}" sepete eklendi. Sepetteki adedi: {order_item.quantity}')
+    return redirect('cart_detail')
+
+
+@login_required
+def remove_from_cart_view(request, item_id):
+    if request.method == 'POST':
+        try:
+            # Kullanıcının sepetindeki ilgili OrderItem nesnesini bul
+            order_item = get_object_or_404(
+                OrderItem,
+                id=item_id,
+                order__user=request.user,
+                order__status='cart'
+            )
+
+            # Miktar 1'den fazlaysa, bir adet azalt
+            if order_item.quantity > 1:
+                order_item.quantity -= 1
+                order_item.save()
+                messages.success(request, f'"{order_item.portfolio_item.title}" ürününün adedi bir azaltıldı.')
+            else:
+                # Miktar 1 ise, ürünü tamamen sil
+                order_item.delete()
+                messages.success(request, f'"{order_item.portfolio_item.title}" sepetinizden kaldırıldı.')
+
+        except OrderItem.DoesNotExist:
+            messages.error(request, 'Bu ürün sepetinizde bulunmuyor veya silme işlemi başarısız oldu.')
+
     return redirect('cart_detail')
 
 
@@ -530,16 +563,52 @@ def payment_cancel_view(request):
 def remove_from_cart_view(request, item_id):
     if request.method == 'POST':
         try:
-            item = get_object_or_404(OrderItem, id=item_id)
-            if item.order.user == request.user and item.order.status == 'cart':
-                item.delete()
-                messages.success(request, 'Ürün sepetinizden başarıyla silindi.')
+            # Buradaki 'item_id', OrderItem'ın kendi ID'si olmalı
+            order_item = get_object_or_404(
+                OrderItem,
+                id=item_id,
+                order__user=request.user,
+                order__status='cart'
+            )
+
+            item_title = order_item.portfolio_item.title
+
+            if order_item.quantity > 1:
+                # Miktar 1'den fazlaysa, sadece bir adet azalt
+                order_item.quantity -= 1
+                order_item.save()
+                messages.success(request, f'"{item_title}" ürününün adedi bir azaltıldı.')
             else:
-                messages.error(request, 'Bu ürün sepetinizde bulunmuyor veya silme işlemi başarısız oldu.')
+                # Miktar 1 ise, ürünü tamamen sil
+                order_item.delete()
+                messages.success(request, f'"{item_title}" sepetinizden kaldırıldı.')
+
         except OrderItem.DoesNotExist:
-            messages.error(request, 'Bu ürün sepetinizde bulunmuyor.')
+            messages.error(request, 'Bu ürün sepetinizde bulunmuyor veya silme işlemi başarısız oldu.')
+
     return redirect('cart_detail')
 
+
+@login_required
+def remove_item_view(request, item_id):
+    """
+    Sepetteki bir ürünü, adedi ne olursa olsun tamamen siler.
+    """
+    if request.method == 'POST':
+        try:
+            order_item = get_object_or_404(
+                OrderItem,
+                id=item_id,
+                order__user=request.user,
+                order__status='cart'
+            )
+            item_title = order_item.portfolio_item.title
+            order_item.delete()
+            messages.success(request, f'"{item_title}" sepetinizden tamamen kaldırıldı.')
+        except OrderItem.DoesNotExist:
+            messages.error(request, 'Bu ürün sepetinizde bulunmuyor veya silme işlemi başarısız oldu.')
+
+    return redirect('cart_detail')
 
 @csrf_exempt
 def stripe_webhook_view(request):
