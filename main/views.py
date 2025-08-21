@@ -333,7 +333,9 @@ def service_details_view(request, service_id):
 
 
 @login_required
-def profile_view(request):
+def profile_view(request, username):
+
+
     Profile.objects.get_or_create(user=request.user)
     if request.method == 'POST':
         u_form = UserUpdateForm(request.POST, instance=request.user)

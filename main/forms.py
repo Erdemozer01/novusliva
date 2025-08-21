@@ -1,10 +1,11 @@
+# forms.py
+
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 from .models import ContactMessage, Comment, Subscriber, Profile, Order
 
-# Mevcut formlarınız burada kalacak...
 
 class ContactForm(forms.ModelForm):
     class Meta:
@@ -34,6 +35,7 @@ class ContactForm(forms.ModelForm):
             }),
         }
 
+
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
@@ -44,9 +46,14 @@ class CommentForm(forms.ModelForm):
             'body': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': _('Your Comment*')}),
         }
 
+
 class SubscriberForm(forms.ModelForm):
     email = forms.EmailField(
-        widget=forms.EmailInput(attrs={'placeholder': _('Enter your email'), 'required': True}),
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',  # 'form-control' sınıfı eklendi
+            'placeholder': _('Enter your email'),
+            'required': True
+        }),
         label=_('Email')
     )
 
@@ -54,11 +61,24 @@ class SubscriberForm(forms.ModelForm):
         model = Subscriber
         fields = ['email']
 
+
 class UserRegisterForm(UserCreationForm):
-    username = forms.CharField(max_length=150, widget=forms.TextInput(attrs={'placeholder': _('Enter your username')}))
-    first_name = forms.CharField(max_length=30, widget=forms.TextInput(attrs={'placeholder': _('Enter your first name')}))
-    last_name = forms.CharField(max_length=30, widget=forms.TextInput(attrs={'placeholder': _('Enter your last name')}))
-    email = forms.EmailField(widget=forms.EmailInput(attrs={'placeholder': _('Enter your email address')}))
+    # Tüm alanlar için 'form-control' widget'ları eklendi.
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Enter your username')})
+    )
+    first_name = forms.CharField(
+        max_length=30,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Enter your first name')})
+    )
+    last_name = forms.CharField(
+        max_length=30,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Enter your last name')})
+    )
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': _('Enter your email address')})
+    )
 
     class Meta:
         model = User
@@ -69,11 +89,25 @@ class UserRegisterForm(UserCreationForm):
             'last_name': _('Last Name'),
             'email': _('Email Address'),
         }
+        # Şifre alanlarına da 'form-control' widget'ı eklendi.
+        widgets = {
+            'password1': forms.PasswordInput(attrs={'class': 'form-control'}),
+            'password2': forms.PasswordInput(attrs={'class': 'form-control'}),
+        }
+
 
 class UserUpdateForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['username', 'first_name', 'last_name', 'email']
+        # 'form-control' widget'ları eklendi.
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
 
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
@@ -89,13 +123,15 @@ class ProfileUpdateForm(forms.ModelForm):
             'birth_date': _('Birth Date'),
         }
         widgets = {
-            'bio': forms.Textarea(attrs={'rows': 4, 'placeholder': _('Write something about yourself...')}),
-            'phone_number': forms.TextInput(attrs={'placeholder': _('Your phone number')}),
-            'country': forms.TextInput(attrs={'placeholder': _('Country you live in')}),
-            'city': forms.TextInput(attrs={'placeholder': _('City you live in')}),
-            'address': forms.TextInput(attrs={'placeholder': _('Your full address')}),
-            'birth_date': forms.DateInput(attrs={'type': 'date'}),
+            'bio': forms.Textarea(
+                attrs={'class': 'form-control', 'rows': 4, 'placeholder': _('Write something about yourself...')}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Your phone number')}),
+            'country': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Country you live in')}),
+            'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('City you live in')}),
+            'address': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Your full address')}),
+            'birth_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
+
 
 # YENİ EKLENEN CHECKOUT FORM
 class CheckoutForm(forms.ModelForm):
@@ -158,3 +194,5 @@ class CheckoutForm(forms.ModelForm):
             full_name = f"{user.first_name} {user.last_name}".strip()
             self.fields['billing_name'].initial = full_name or user.username
             self.fields['billing_email'].initial = user.email
+
+
