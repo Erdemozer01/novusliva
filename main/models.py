@@ -1,15 +1,41 @@
 # main/models.py
-
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+class BankAccount(models.Model):
+    """Site sahibinin havale/EFT ödemeleri için banka hesap bilgilerini tutar."""
+    bank_name = models.CharField(max_length=100, verbose_name=_("Banka Adı"))
+    account_holder = models.CharField(max_length=100, verbose_name=_("Hesap Sahibi"))
+    iban = models.CharField(max_length=34, verbose_name=_("IBAN"))
+    swift_code = models.CharField(max_length=11, blank=True, verbose_name=_("SWIFT Kodu"))
+    is_active = models.BooleanField(
+        default=False,
+        verbose_name=_("Aktif mi?"),
+        help_text=_("Sadece bir tane aktif hesap olabilir.")
+    )
 
-# ==============================================================================
-# TÜM MODELLERİN TAMAMI EKSİKSİZ VE GELİŞTİRİLMİŞ HALİ
-# ==============================================================================
+    def __str__(self):
+        return f"{self.bank_name} - {self.account_holder}"
+
+    def clean(self):
+        """Sadece bir tane aktif hesap olmasını sağlar."""
+        if self.is_active:
+            if BankAccount.objects.filter(is_active=True).exclude(pk=self.pk).exists():
+                raise ValidationError(
+                    _("Aynı anda yalnızca bir banka hesabı aktif olabilir. Lütfen diğerini pasif yapın.")
+                )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = _("Banka Hesabı")
+        verbose_name_plural = _("Banka Hesapları")
 
 class Service(models.Model):
     title = models.CharField(max_length=200, verbose_name=_("Başlık"))

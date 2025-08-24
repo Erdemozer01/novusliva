@@ -428,8 +428,10 @@ def cart_detail_view(request):
 
 
 @login_required
+@login_required
 def checkout_view(request):
     cart = Order.objects.filter(user=request.user, status='cart').first()
+
     if not cart or not cart.items.exists():
         messages.error(request, 'Sepetiniz boş. Lütfen önce ürün ekleyin.')
         return redirect('portfolio')
@@ -448,8 +450,7 @@ def checkout_view(request):
                 order.billing_postal_code = form.cleaned_data['billing_postal_code']
                 order.save()
 
-                # Bu if bloğu sadece kartla ödeme seçildiğinde çalışır.
-                # 'payment_method' değeri 'credit_card' veya 'debit_card' ise.
+                # Kredi Kartı/Banka Kartı ile ödeme
                 if order.payment_method in ['credit_card', 'debit_card']:
                     try:
                         MIN_STRIPE_AMOUNT_CENTS = 1700
@@ -493,14 +494,28 @@ def checkout_view(request):
                         messages.error(request, "Ödeme oturumu oluşturulurken bir hata oluştu.")
                         return redirect('cart_detail')
 
-                # Bu elif bloğu, havale/EFT ve nakit ödeme için çalışır
+                # Havale/EFT ve Nakit ödeme
                 elif order.payment_method in ['bank_transfer', 'cash']:
                     order.status = 'pending'
                     order.save()
                     messages.success(request, 'Siparişiniz alındı. Ödeme bilgileri e-postanıza gönderildi.')
 
+                    # Aktif banka hesabını veritabanından çekme
+                    try:
+                        active_bank_account = BankAccount.objects.get(is_active=True)
+                    except BankAccount.DoesNotExist:
+                        active_bank_account = None
+                        logger.error("Aktif bir banka hesabı bulunamadı. Lütfen kontrol edin.")
+                    except BankAccount.MultipleObjectsReturned:
+                        active_bank_account = BankAccount.objects.filter(is_active=True).first()
+                        logger.warning("Birden fazla aktif banka hesabı bulundu. Sadece ilki kullanıldı.")
+
                     # E-posta gönderme (Havale/EFT bilgileri için)
-                    context = {'order': order, 'user': order.user}
+                    context = {
+                        'order': order,
+                        'user': order.user,
+                        'bank_details': active_bank_account
+                    }
                     html_message = render_to_string('emails/invoice.html', context)
                     send_email_wrapper(
                         subject=f"Siparişiniz Beklemede - #{order.id}",
@@ -513,6 +528,7 @@ def checkout_view(request):
         else:
             messages.error(request, 'Lütfen tüm gerekli alanları doğru şekilde doldurun.')
     else:
+        # Formun ilk yüklenmesinde verileri doldurma
         form = CheckoutForm(user=request.user)
         if cart and cart.billing_name:
             form.fields['billing_name'].initial = cart.billing_name
@@ -534,7 +550,6 @@ def checkout_view(request):
         'total': cart.get_total_cost() if cart else 0
     }
     return render(request, 'checkout.html', context)
-
 
 # -----------------------------------------------------------------------------
 # DÜZELTİLDİ: Bu view artık ödeme durumunu güncellemiyor.
@@ -581,6 +596,10 @@ def remove_item_view(request, item_id):
 
 @csrf_exempt
 def stripe_webhook_view(request):
+    """
+    Stripe'tan gelen olayları (event) işler.
+    Ödeme başarıyla tamamlandığında siparişin durumunu günceller.
+    """
     payload = request.body
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
     event = None
@@ -597,6 +616,7 @@ def stripe_webhook_view(request):
         logger.error(f"İmza Doğrulama Hatası: {e}")
         return HttpResponse(status=400)
 
+    # Ödeme başarılı olduğunda tetiklenen olay
     if event['type'] == 'checkout.session.completed':
         logger.info("checkout.session.completed olayı yakalandı.")
         session = event['data']['object']
@@ -606,8 +626,22 @@ def stripe_webhook_view(request):
             with transaction.atomic():
                 try:
                     order = Order.objects.get(id=client_reference_id)
+                    user = order.user
 
-                    if order.status == 'completed':
+                    # Kullanıcının Stripe Customer ID'sini profil modeline kaydet
+                    try:
+                        profile = user.profile
+                        if not profile.stripe_customer_id:
+                            customer_id = session.get('customer')
+                            if customer_id:
+                                profile.stripe_customer_id = customer_id
+                                profile.save()
+                                logger.info(f"Stripe Customer ID {customer_id} kullanıcıya kaydedildi.")
+                    except Profile.DoesNotExist:
+                        logger.warning(f"Kullanıcı {user.username} için profil bulunamadı.")
+
+                    # Sipariş durumunu güncelle
+                    if order.status in ['cart', 'pending']:
                         order.status = 'completed'
                         order.stripe_payment_id = session.id
                         order.payment_date = timezone.now()
@@ -615,7 +649,7 @@ def stripe_webhook_view(request):
 
                         logger.info(f"Sipariş {order.id} veritabanında tamamlandı olarak güncellendi.")
 
-                        # E-POSTA GÖNDERME İŞLEMİ
+                        # Fatura e-postasını gönder
                         context = {
                             'order': order,
                             'user': order.user,
