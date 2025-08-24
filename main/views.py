@@ -501,7 +501,7 @@ def checkout_view(request):
 
                     # E-posta gönderme (Havale/EFT bilgileri için)
                     context = {'order': order, 'user': order.user}
-                    html_message = render_to_string('emails/bank_transfer_info.html', context)
+                    html_message = render_to_string('emails/invoice.html', context)
                     send_email_wrapper(
                         subject=f"Siparişiniz Beklemede - #{order.id}",
                         recipient_list=[order.billing_email],
@@ -607,7 +607,7 @@ def stripe_webhook_view(request):
                 try:
                     order = Order.objects.get(id=client_reference_id)
 
-                    if order.status != 'completed':
+                    if order.status == 'completed':
                         order.status = 'completed'
                         order.stripe_payment_id = session.id
                         order.payment_date = timezone.now()
