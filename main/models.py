@@ -3,8 +3,61 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
+
+
+class DiscountCode(models.Model):
+    """Sitede kullanılabilecek indirim kodlarını temsil eder."""
+    code = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name=_("İndirim Kodu"),
+        help_text=_("Örn: ILK2025, YAZINDIRIMI")
+    )
+    discount_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        verbose_name=_("İndirim Yüzdesi (%)"),
+        help_text=_("Örn: %15 indirim için '15.00' girin.")
+    )
+    valid_from = models.DateTimeField(
+        verbose_name=_("Geçerlilik Başlangıç Tarihi")
+    )
+    valid_to = models.DateTimeField(
+        verbose_name=_("Geçerlilik Bitiş Tarihi")
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_("Aktif mi?")
+    )
+    max_uses = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("Maksimum Kullanım Sayısı"),
+        help_text=_("Sınırsız kullanım için '0' olarak bırakın.")
+    )
+    used_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("Kullanım Sayısı")
+    )
+
+    def __str__(self):
+        return f"{self.code} - %{self.discount_percentage} indirim"
+
+    def is_valid(self):
+        """Kupon kodunun şu an geçerli olup olmadığını kontrol eder."""
+        now = timezone.now()
+        is_active = self.is_active and (self.valid_from <= now <= self.valid_to)
+        has_uses_left = (self.max_uses == 0) or (self.used_count < self.max_uses)
+        return is_active and has_uses_left
+
+    class Meta:
+        verbose_name = _("İndirim Kodu")
+        verbose_name_plural = _("İndirim Kodları")
+        ordering = ['-valid_from']
+
 
 class BankAccount(models.Model):
     """Site sahibinin havale/EFT ödemeleri için banka hesap bilgilerini tutar."""
@@ -37,12 +90,14 @@ class BankAccount(models.Model):
         verbose_name = _("Banka Hesabı")
         verbose_name_plural = _("Banka Hesapları")
 
+
 class Service(models.Model):
     title = models.CharField(max_length=200, verbose_name=_("Başlık"))
     description = models.TextField(verbose_name=_("Açıklama"))
     icon_class = models.CharField(max_length=100, verbose_name=_("İkon Sınıfı (Bootstrap Icons)"))
     color_class = models.CharField(max_length=50, verbose_name=_("Renk Sınıfı (örn: item-cyan)"))
-    image = models.ImageField(upload_to='service_images/', verbose_name=_("Hizmet Detay Görseli"), blank=True, null=True)
+    image = models.ImageField(upload_to='service_images/', verbose_name=_("Hizmet Detay Görseli"), blank=True,
+                              null=True)
 
     def __str__(self):
         return self.title
@@ -84,7 +139,8 @@ class BlogPost(models.Model):
     meta_description = models.CharField(max_length=160, blank=True, verbose_name=_("Meta Açıklaması (SEO için)"))
     slug = models.SlugField(max_length=255, unique=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_posts', verbose_name=_("Yazar"))
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='blog_posts', verbose_name=_("Kategori"))
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='blog_posts',
+                                 verbose_name=_("Kategori"))
     tags = models.ManyToManyField(Tag, blank=True, related_name='blog_posts', verbose_name=_("Etiketler"))
     image = models.ImageField(upload_to='blog_images/', verbose_name=_("Görsel"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Oluşturulma Tarihi"))
@@ -284,10 +340,8 @@ class Comment(models.Model):
         ordering = ['created_at']
 
 
-
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name=_("Kullanıcı"))
-
     bio = models.TextField(blank=True, verbose_name=_("Hakkında"))
     phone_number = models.CharField(max_length=20, blank=True, verbose_name=_("Telefon Numarası"))
     country = models.CharField(max_length=50, blank=True, verbose_name=_("Ülke"))
@@ -295,6 +349,12 @@ class Profile(models.Model):
     address = models.CharField(max_length=255, blank=True, verbose_name=_("Adres"))
     birth_date = models.DateField(null=True, blank=True, verbose_name=_("Doğum Tarihi"))
     postal_code = models.CharField(max_length=10, blank=True, null=True, verbose_name=_("Posta Kodu"))
+    stripe_customer_id = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name=_("Stripe Müşteri ID")
+    )
 
     def __str__(self):
         return f"{self.user.username} Profili"
@@ -325,7 +385,8 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Güncellenme Tarihi"))
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='cart', verbose_name=_("Durum"))
 
-    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, null=True, blank=True, verbose_name=_("Ödeme Yöntemi"))
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, null=True, blank=True,
+                                      verbose_name=_("Ödeme Yöntemi"))
     payment_date = models.DateTimeField(null=True, blank=True, verbose_name=_("Ödeme Tarihi"))
     transaction_id = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("İşlem ID"))
 

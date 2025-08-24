@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
 from .models import (
     Service,
     Category,
@@ -14,15 +16,14 @@ from .models import (
     SiteSetting,
     Skill,
     Client,
-    AboutPage, OrderItem, Order, Profile
+    AboutPage,
+    OrderItem,
+    Order,
+    Profile,
+    # YENİ EKLENEN MODELLERİ IMPORT EDİN
+    DiscountCode,
+    BankAccount,
 )
-
-
-# users/admin.py veya projenizdeki ilgili admin.py dosyası
-
-from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.contrib.auth.models import User
 
 
 # Gelişmiş Kullanıcı Yönetimi için Inline sınıfı
@@ -30,8 +31,9 @@ class ProfileInline(admin.StackedInline):
     model = Profile
     can_delete = False
     verbose_name_plural = 'profile'
-    # Profil formu alanlarını burada özelleştirebilirsiniz
-    fields = ('bio', 'city', 'country', 'address', 'phone_number', 'birth_date')
+    # GÜNCELLENDİ: Stripe Customer ID alanı eklendi
+    fields = ('bio', 'city', 'country', 'address', 'phone_number', 'birth_date', 'stripe_customer_id')
+    readonly_fields = ('stripe_customer_id',) # Bu alanın değiştirilmemesi için
 
 # Django'nun varsayılan UserAdmin sınıfını miras alarak
 # yeni profil inline sınıfımızı ekliyoruz
@@ -56,9 +58,10 @@ admin.site.register(User, UserAdmin)
 # Eğer Profile modelini ayrı bir admin sayfasında da görmek isterseniz:
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'city', 'country', 'phone_number')
-    search_fields = ('user__username', 'city', 'country')
+    list_display = ('user', 'city', 'country', 'phone_number', 'stripe_customer_id')
+    search_fields = ('user__username', 'city', 'country', 'stripe_customer_id')
     list_filter = ('country',)
+    readonly_fields = ('stripe_customer_id',)
 
 # Service Modeli Admin Ayarları
 @admin.register(Service)
@@ -70,7 +73,6 @@ class ServiceAdmin(admin.ModelAdmin):
 # Blog Modelleri Admin Ayarları
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    # HATA DÜZELTİLDİ: 'name_tr' ve 'name_en' yerine 'name' kullanılıyor.
     list_display = ('name', 'slug')
     prepopulated_fields = {'slug': ('name',)}
 
@@ -100,7 +102,6 @@ class PortfolioImageInline(admin.TabularInline):
 
 @admin.register(PortfolioItem)
 class PortfolioItemAdmin(admin.ModelAdmin):
-    # Fiyat alanını listeye ekliyoruz
     list_display = ('title', 'category', 'client', 'project_date', 'price')
     list_filter = ('category', 'project_date')
     search_fields = ('title', 'client', 'long_description')
@@ -114,9 +115,9 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    # 'is_paid' yerine 'status' alanını gösteriyoruz
     list_display = ['id', 'user', 'created_at', 'status']
     list_filter = ['status', 'created_at']
+    search_fields = ['user__username', 'id']
     inlines = [OrderItemInline]
 
 # Diğer Modellerin Admin Ayarları
@@ -160,8 +161,18 @@ class ClientAdmin(admin.ModelAdmin):
 # YENİ EKLENEN HAKKIMIZDA SAYFASI ADMİN AYARI
 @admin.register(AboutPage)
 class AboutPageAdmin(admin.ModelAdmin):
-    # Bu modelden sadece 1 tane olmasını sağlamak için
-    # admin panelinde ekleme butonunu gizliyoruz.
     def has_add_permission(self, request):
-        # Eğer hiç AboutPage objesi yoksa eklemeye izin ver, varsa verme.
         return not AboutPage.objects.exists()
+
+# YENİ EKLENEN MODELLER İÇİN ADMIN AYARLARI
+@admin.register(DiscountCode)
+class DiscountCodeAdmin(admin.ModelAdmin):
+    list_display = ('code', 'discount_percentage', 'is_active', 'valid_from', 'valid_to', 'max_uses', 'used_count')
+    list_filter = ('is_active',)
+    search_fields = ('code',)
+
+@admin.register(BankAccount)
+class BankAccountAdmin(admin.ModelAdmin):
+    list_display = ('bank_name', 'account_holder', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('bank_name', 'account_holder')
