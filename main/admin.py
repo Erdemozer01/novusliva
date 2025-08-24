@@ -31,7 +31,7 @@ class ProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = 'profile'
     # Profil formu alanlarını burada özelleştirebilirsiniz
-    fields = ('image', 'bio', 'city', 'country', 'address', 'phone_number', 'birth_date')
+    fields = ('bio', 'city', 'country', 'address', 'phone_number', 'birth_date')
 
 # Django'nun varsayılan UserAdmin sınıfını miras alarak
 # yeni profil inline sınıfımızı ekliyoruz
