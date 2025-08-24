@@ -26,7 +26,7 @@ from .forms import (
 from .models import (
     Service, BlogPost, Tag, PortfolioItem, PortfolioCategory,
     TeamMember, Testimonial, Category, ContactMessage, Skill,
-    Client, AboutPage, Order, OrderItem, Profile
+    Client, AboutPage, Order, OrderItem, Profile, BankAccount
 )
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -551,11 +551,6 @@ def checkout_view(request):
     }
     return render(request, 'checkout.html', context)
 
-# -----------------------------------------------------------------------------
-# DÜZELTİLDİ: Bu view artık ödeme durumunu güncellemiyor.
-# Sadece bilgilendirme amaçlı kullanılıyor.
-# Sipariş onayı Stripe webhook ile yapılacaktır.
-# -----------------------------------------------------------------------------
 @login_required
 def payment_success_view(request):
     messages.success(request, 'Ödeme talebiniz işleniyor. Siparişinizin durumu en kısa sürede güncellenecektir.')
@@ -568,15 +563,9 @@ def payment_cancel_view(request):
     return redirect('cart_detail')
 
 
-# -----------------------------------------------------------------------------
-# DÜZELTİLDİ: Bu fonksiyonun ilk tanımı kaldırıldı ve ikinci tanım
-# miktar azaltma işini yapacak şekilde bırakıldı.
-# -----------------------------------------------------------------------------
 @login_required
 def remove_item_view(request, item_id):
-    """
-    Sepetteki bir ürünü, adedi ne olursa olsun tamamen siler.
-    """
+
     if request.method == 'POST':
         try:
             order_item = get_object_or_404(
