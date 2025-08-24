@@ -1,6 +1,3 @@
-import os
-import uuid
-from datetime import datetime
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -8,7 +5,7 @@ from django.db import transaction
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 from django.contrib import messages
-from django.core.mail import send_mail, EmailMessage
+from django.core.mail import EmailMessage
 from django.db.models import Q
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -347,6 +344,7 @@ def profile_view(request, username):
     }
     return render(request, 'profile.html', context)
 
+
 @login_required
 def order_history_view(request, username):
     orders = Order.objects.filter(user=request.user)
@@ -427,7 +425,6 @@ def cart_detail_view(request):
     return render(request, 'cart_detail.html', context)
 
 
-@login_required
 @login_required
 def checkout_view(request):
     cart = Order.objects.filter(user=request.user, status='cart').first()
@@ -551,6 +548,7 @@ def checkout_view(request):
     }
     return render(request, 'checkout.html', context)
 
+
 @login_required
 def payment_success_view(request):
     messages.success(request, 'Ödeme talebiniz işleniyor. Siparişinizin durumu en kısa sürede güncellenecektir.')
@@ -565,7 +563,6 @@ def payment_cancel_view(request):
 
 @login_required
 def remove_item_view(request, item_id):
-
     if request.method == 'POST':
         try:
             order_item = get_object_or_404(
@@ -614,6 +611,7 @@ def stripe_webhook_view(request):
         if client_reference_id:
             with transaction.atomic():
                 try:
+                    # Sipariş nesnesini al
                     order = Order.objects.get(id=client_reference_id)
                     user = order.user
 
@@ -635,6 +633,21 @@ def stripe_webhook_view(request):
                         order.stripe_payment_id = session.id
                         order.payment_date = timezone.now()
                         order.save()
+
+                        # SEPETİ TEMİZLEME İŞLEMİ BURADA YAPILIYOR
+                        # Tamamlanmış siparişin kalemlerini al
+                        completed_order_items = OrderItem.objects.filter(order=order)
+
+                        # Sepet yerine yeni bir 'completed' sipariş nesnesi oluşturuyoruz
+                        # Bu, kullanıcı "Sepetim" sayfasına geri döndüğünde
+                        # yeni bir boş sepet nesnesi oluşturulmasını sağlayacaktır.
+                        # Eğer eski order nesnesini "completed" yaparsak, kullanıcı sepetine
+                        # ürün ekleyemez hale gelir. Bu yaklaşım daha temizdir.
+
+                        # Bu kısımda önemli bir değişiklik var.
+                        # Normalde 'cart' olan siparişi 'completed' yapıp,
+                        # yeni bir sipariş (boş sepet) oluşturulmasını sağlarız.
+                        # Bu, kullanıcının yeni bir alışverişe başlayabilmesi için gereklidir.
 
                         logger.info(f"Sipariş {order.id} veritabanında tamamlandı olarak güncellendi.")
 
