@@ -112,7 +112,7 @@
                         <ul>
                             <li><a href="{% url 'profile' request.user.username %}"><i class="bi bi-person me-2"></i>{% trans "Profile" %}</a>
                             </li>
-                            <li><a href="{% url 'order_history' %}"><i
+                            <li><a href="{% url 'order_history' request.user.username %}"><i
                                     class="bi bi-box-seam me-2"></i>{% trans "Orders" %}</a></li>
                             {% if user.is_superuser %}
                                 <li>

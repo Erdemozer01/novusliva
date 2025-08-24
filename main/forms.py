@@ -112,9 +112,9 @@ class UserUpdateForm(forms.ModelForm):
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['image', 'bio', 'phone_number', 'country', 'city', 'address', 'birth_date']
+        fields = ['bio', 'phone_number', 'country', 'city', 'address', 'birth_date']
         labels = {
-            'image': _('Profile Picture'),
+
             'bio': _('About Me'),
             'phone_number': _('Phone Number'),
             'country': _('Country'),

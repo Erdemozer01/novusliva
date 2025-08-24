@@ -5,130 +5,135 @@
 {% block title %}{% trans "My Profile" %}{% endblock %}
 
 {% block content %}
-<div class="page-title accent-background">
-  <div class="container d-lg-flex justify-content-between align-items-center">
-    <h1 class="mb-2 mb-lg-0">{% trans "My Profile" %}</h1>
-    <nav class="breadcrumbs">
-      <ol>
-        <li><a href="{% url 'index' %}">{% trans "Home" %}</a></li>
-        <li class="current">{% trans "Profile" %}</li>
-      </ol>
-    </nav>
-  </div>
-</div>
+    <div class="page-title accent-background">
+        <div class="container d-lg-flex justify-content-between align-items-center">
+            <h1 class="mb-2 mb-lg-0">{% trans "My Profile" %}</h1>
+            <nav class="breadcrumbs">
+                <ol>
+                    <li><a href="{% url 'index' %}">{% trans "Home" %}</a></li>
+                    <li class="current">{% trans "Profile" %}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
 
-<section class="profile-section section">
-<div class="container" data-aos="fade-up">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
+    <section class="profile-section section">
+        <div class="container" data-aos="fade-up">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
 
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-success text-center" role="alert">
-                        {{ message }}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-success text-center" role="alert">
+                                {{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="card p-4 shadow-sm">
+                        <div class="card-body">
+                            <form method="POST">
+                                {% csrf_token %}
+
+                                {% if u_form.non_field_errors or p_form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        {% for error in u_form.non_field_errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                        {% for error in p_form.non_field_errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+
+                                <div class="row align-items-center mb-4">
+                                    <div class="col-md-3 text-center">
+                                        <img class="rounded-circle account-img"
+                                             src="{% static 'assets/img/default.png' %}"
+                                             style="width: 150px; height: 150px; object-fit: cover;">
+                                    </div>
+                                    <div class="col-md-9">
+                                        <h3>{{ user.first_name }} {{ user.last_name }}</h3>
+                                        <p class="text-secondary">@{{ user.username }}</p>
+                                        <p class="text-muted">{{ user.email }}</p>
+                                        <hr>
+                                        <p><strong>{% trans "About Me" %}:</strong> {{ user.profile.bio|default:"-" }}</p>
+                                        <p><strong>{% trans "Location" %}:</strong> {{ user.profile.city|default:"-" }}, {{ user.profile.country|default:"-" }}</p>
+                                        <p><strong>{% trans "Phone" %}:</strong> {{ user.profile.phone_number|default:"-" }}</p>
+                                        <a href="{% url 'order_history' request.user.username %}"
+                                           class="btn btn-outline-secondary btn-sm mt-3">{% trans "View Purchase History" %}</a>
+                                    </div>
+                                </div>
+
+                                <hr class="my-4">
+
+                                <fieldset>
+                                    <legend class="border-bottom mb-4">{% trans "Update Profile" %}</legend>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ u_form.username.id_for_label }}" class="form-label">{{ u_form.username.label }}</label>
+                                            {{ u_form.username }}
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ u_form.email.id_for_label }}" class="form-label">{{ u_form.email.label }}</label>
+                                            {{ u_form.email }}
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ u_form.first_name.id_for_label }}" class="form-label">{{ u_form.first_name.label }}</label>
+                                            {{ u_form.first_name }}
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ u_form.last_name.id_for_label }}" class="form-label">{{ u_form.last_name.label }}</label>
+                                            {{ u_form.last_name }}
+                                        </div>
+                                    </div>
+
+                                    <hr class="my-4">
+
+                                    <div class="mb-3">
+                                        <label for="{{ p_form.bio.id_for_label }}" class="form-label">{{ p_form.bio.label }}</label>
+                                        {{ p_form.bio }}
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ p_form.city.id_for_label }}" class="form-label">{{ p_form.city.label }}</label>
+                                            {{ p_form.city }}
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ p_form.country.id_for_label }}" class="form-label">{{ p_form.country.label }}</label>
+                                            {{ p_form.country }}
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="{{ p_form.address.id_for_label }}" class="form-label">{{ p_form.address.label }}</label>
+                                        {{ p_form.address }}
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ p_form.phone_number.id_for_label }}" class="form-label">{{ p_form.phone_number.label }}</label>
+                                            {{ p_form.phone_number }}
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ p_form.birth_date.id_for_label }}" class="form-label">{{ p_form.birth_date.label }}</label>
+                                            {{ p_form.birth_date }}
+                                        </div>
+                                    </div>
+
+                                </fieldset>
+
+                                <div class="mt-4">
+                                    <button class="btn btn-primary" type="submit">{% trans "Update" %}</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                {% endfor %}
-            {% endif %}
-
-            <!-- Profil Görüntüleme Kartı -->
-            <div class="card p-4 shadow-sm mb-5">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-3 text-center">
-                            <img class="rounded-circle account-img" src="{{ user.profile.image.url }}" style="width: 150px; height: 150px; object-fit: cover;">
-                        </div>
-                        <div class="col-md-9">
-                            <h3>{{ user.first_name }} {{ user.last_name }}</h3>
-                            <p class="text-secondary">@{{ user.username }}</p>
-                            <p class="text-muted">{{ user.email }}</p>
-                            <hr>
-                            <p><strong>{% trans "About Me" %}:</strong> {{ user.profile.bio|default:"-" }}</p>
-                            <p><strong>{% trans "Location" %}:</strong> {{ user.profile.city|default:"-" }}, {{ user.profile.country|default:"-" }}</p>
-                            <p><strong>{% trans "Phone" %}:</strong> {{ user.profile.phone_number|default:"-" }}</p>
-                            <a href="{% url 'order_history' %}" class="btn btn-outline-secondary btn-sm mt-3">{% trans "View Purchase History" %}</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Profil Düzenleme Formu -->
-            <div class="card p-4 shadow-sm">
-                <div class="card-body">
-                    <form method="POST" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <fieldset>
-                            <legend class="border-bottom mb-4">{% trans "Update Profile" %}</legend>
-                            
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ u_form.username.id_for_label }}" class="form-label">{{ u_form.username.label }}</label>
-                                    {{ u_form.username }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ u_form.email.id_for_label }}" class="form-label">{{ u_form.email.label }}</label>
-                                    {{ u_form.email }}
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ u_form.first_name.id_for_label }}" class="form-label">{{ u_form.first_name.label }}</label>
-                                    {{ u_form.first_name }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ u_form.last_name.id_for_label }}" class="form-label">{{ u_form.last_name.label }}</label>
-                                    {{ u_form.last_name }}
-                                </div>
-                            </div>
-                            
-                            <hr class="my-4">
-
-                            <div class="mb-3">
-                                <label for="{{ p_form.image.id_for_label }}" class="form-label">{{ p_form.image.label }}</label>
-                                {{ p_form.image }}
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="{{ p_form.bio.id_for_label }}" class="form-label">{{ p_form.bio.label }}</label>
-                                {{ p_form.bio }}
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ p_form.city.id_for_label }}" class="form-label">{{ p_form.city.label }}</label>
-                                    {{ p_form.city }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ p_form.country.id_for_label }}" class="form-label">{{ p_form.country.label }}</label>
-                                    {{ p_form.country }}
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="{{ p_form.address.id_for_label }}" class="form-label">{{ p_form.address.label }}</label>
-                                {{ p_form.address }}
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ p_form.phone_number.id_for_label }}" class="form-label">{{ p_form.phone_number.label }}</label>
-                                    {{ p_form.phone_number }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ p_form.birth_date.id_for_label }}" class="form-label">{{ p_form.birth_date.label }}</label>
-                                    {{ p_form.birth_date }}
-                                </div>
-                            </div>
-
-                        </fieldset>
-                        <div class="form-group mt-4">
-                            <button class="btn btn-primary" type="submit">{% trans "Update" %}</button>
-                        </div>
-                    </form>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-</section>
+    </section>
 {% endblock %}

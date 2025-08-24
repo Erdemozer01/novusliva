@@ -636,7 +636,12 @@ msgstr "Toplam"
 #: templates/cart_detail.html:41
 msgid "Proceed to Checkout"
 msgstr "Ödemeye Geç"
-
+#: templates/profile.html:43
+msgid "Remove current image"
+msgstr "Mevcut görseli kaldır"
+#: templates/profile.html:43
+msgid "Change Image"
+msgstr "Görseli Değiştir"
 #: templates/cart_detail.html:46
 msgid "Your shopping cart is empty."
 msgstr "Alışveriş sepetiniz boş."

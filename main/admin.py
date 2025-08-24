@@ -14,9 +14,51 @@ from .models import (
     SiteSetting,
     Skill,
     Client,
-    AboutPage, OrderItem, Order  # Yeni modeli import ediyoruz
+    AboutPage, OrderItem, Order, Profile
 )
 
+
+# users/admin.py veya projenizdeki ilgili admin.py dosyası
+
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
+
+
+# Gelişmiş Kullanıcı Yönetimi için Inline sınıfı
+class ProfileInline(admin.StackedInline):
+    model = Profile
+    can_delete = False
+    verbose_name_plural = 'profile'
+    # Profil formu alanlarını burada özelleştirebilirsiniz
+    fields = ('image', 'bio', 'city', 'country', 'address', 'phone_number', 'birth_date')
+
+# Django'nun varsayılan UserAdmin sınıfını miras alarak
+# yeni profil inline sınıfımızı ekliyoruz
+class UserAdmin(BaseUserAdmin):
+    inlines = (ProfileInline,)
+    list_display = BaseUserAdmin.list_display + ('get_profile_bio', 'get_profile_phone')
+
+    def get_profile_bio(self, obj):
+        return obj.profile.bio or "-"
+    get_profile_bio.short_description = "Bio"
+
+    def get_profile_phone(self, obj):
+        return obj.profile.phone_number or "-"
+    get_profile_phone.short_description = "Phone"
+
+
+# Django'nun varsayılan User model kaydını kaldır
+admin.site.unregister(User)
+# Kendi özelleştirdiğimiz UserAdmin ile User modelini yeniden kaydet
+admin.site.register(User, UserAdmin)
+
+# Eğer Profile modelini ayrı bir admin sayfasında da görmek isterseniz:
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'city', 'country', 'phone_number')
+    search_fields = ('user__username', 'city', 'country')
+    list_filter = ('country',)
 
 # Service Modeli Admin Ayarları
 @admin.register(Service)

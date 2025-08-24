@@ -37,8 +37,13 @@
                             <h6>Sipariş İçeriği:</h6>
                             {% for item in order.items.all %}
                                 <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
-                                    <span>{{ item.portfolio_item.title }}</span>
-                                    <span class="text-success">{{ item.price }} TL</span>
+                                    <span>
+                                        {{ item.portfolio_item.title }}
+                                        {% if item.quantity > 1 %}
+                                            <small class="text-muted">({{ item.quantity }} adet)</small>
+                                        {% endif %}
+                                    </span>
+                                    <span class="text-success">{{ item.get_cost }} TL</span>
                                 </div>
                             {% endfor %}
                         </div>
@@ -46,12 +51,17 @@
                             {% if order.payment_method %}
                                 <p><strong>Ödeme Yöntemi:</strong> {{ order.get_payment_method_display }}</p>
                             {% endif %}
+
                             {% if order.transaction_id %}
                                 <p><strong>İşlem ID:</strong> <code>{{ order.transaction_id }}</code></p>
+                            {% elif order.stripe_payment_id %}
+                                <p><strong>İşlem ID:</strong> <code>{{ order.stripe_payment_id }}</code></p>
                             {% endif %}
+
                             {% if order.payment_date %}
                                 <p><strong>Ödeme Tarihi:</strong> {{ order.payment_date|date:"d F Y, H:i" }}</p>
                             {% endif %}
+
                             <p><strong>Toplam Tutar:</strong> <span class="h5 text-success">{{ order.get_total_cost }} TL</span></p>
                         </div>
                     </div>

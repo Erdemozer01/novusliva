@@ -26,7 +26,7 @@ urlpatterns = [
     # Kullanıcı ve Profil Yönetimi
     path('register/', views.register_view, name='register'),
     path('profile/<str:username>/', views.profile_view, name='profile'),
-    path('profile/orders/', views.order_history_view, name='order_history'),
+    path('profile/orders/<str:username>/', views.order_history_view, name='order_history'),
 
     # Sepet ve Ödeme Sistemi
     path('add-to-cart/<int:item_id>/', views.add_to_cart_view, name='add_to_cart'),

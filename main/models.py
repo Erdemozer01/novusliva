@@ -258,10 +258,10 @@ class Comment(models.Model):
         ordering = ['created_at']
 
 
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name=_("Kullanıcı"))
-    image = models.ImageField(default='profile_pics/default.jpg', upload_to='profile_pics',
-                              verbose_name=_("Profil Fotoğrafı"))
+
     bio = models.TextField(blank=True, verbose_name=_("Hakkında"))
     phone_number = models.CharField(max_length=20, blank=True, verbose_name=_("Telefon Numarası"))
     country = models.CharField(max_length=50, blank=True, verbose_name=_("Ülke"))

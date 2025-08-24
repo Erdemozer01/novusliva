@@ -177,30 +177,21 @@ def contact_view(request):
                 message=form.cleaned_data['message']
             )
 
+            # DÜZELTİLDİ: E-posta gönderme için send_email_wrapper kullanıldı.
             subject = f"İletişim Formu: {form.cleaned_data['subject']}"
-            full_message = f"""
-            Bir yeni iletişim formu mesajı alındı:
+            html_message = render_to_string('emails/contact_notification.html', {
+                'name': form.cleaned_data['name'],
+                'email': form.cleaned_data['email'],
+                'subject': form.cleaned_data['subject'],
+                'message': form.cleaned_data['message']
+            })
+            send_email_wrapper(
+                subject=subject,
+                recipient_list=[settings.DEFAULT_FROM_EMAIL],
+                html_content=html_message
+            )
 
-            Gönderen Adı: {form.cleaned_data['name']}
-            Gönderen E-posta: {form.cleaned_data['email']}
-
-            Konu: {form.cleaned_data['subject']}
-            -------------------------------------
-            Mesaj:
-            {form.cleaned_data['message']}
-            """
-
-            try:
-                send_mail(
-                    subject=subject,
-                    message=full_message,
-                    from_email=os.getenv('EMAIL_HOST_USER'),
-                    recipient_list=[os.getenv('EMAIL_HOST_USER')],
-                )
-                messages.success(request, 'Mesajınız başarıyla gönderildi. Teşekkür ederiz!')
-            except Exception as e:
-                messages.error(request, f'Bir hata oluştu, mesajınız gönderilemedi. Hata: {e}')
-
+            messages.success(request, 'Mesajınız başarıyla gönderildi. Teşekkür ederiz!')
             return redirect('contact')
     else:
         form = ContactForm()
@@ -334,20 +325,19 @@ def service_details_view(request, service_id):
 
 @login_required
 def profile_view(request, username):
-
-
-    Profile.objects.get_or_create(user=request.user)
     if request.method == 'POST':
+        # request.FILES parametresini kaldırın
         u_form = UserUpdateForm(request.POST, instance=request.user)
-        p_form = ProfileUpdateForm(request.POST,
-                                   request.FILES,
-                                   instance=request.user.profile)
+        p_form = ProfileUpdateForm(request.POST, instance=request.user.profile)
 
         if u_form.is_valid() and p_form.is_valid():
-            u_form.save()
-            p_form.save()
-            messages.success(request, _('Your account has been updated!'))
-            return redirect('profile')
+            with transaction.atomic():
+                u_form.save()
+                p_form.save()
+
+            messages.success(request, 'Profiliniz başarıyla güncellendi!')
+            return redirect('profile', username=request.user.username)
+
     else:
         u_form = UserUpdateForm(instance=request.user)
         p_form = ProfileUpdateForm(instance=request.user.profile)
@@ -358,9 +348,8 @@ def profile_view(request, username):
     }
     return render(request, 'profile.html', context)
 
-
 @login_required
-def order_history_view(request):
+def order_history_view(request, username):
     orders = Order.objects.filter(user=request.user)
     context = {
         'orders': orders
@@ -393,11 +382,16 @@ def add_to_cart_view(request, item_id):
     return redirect('cart_detail')
 
 
+# -----------------------------------------------------------------------------
+# DÜZELTİLDİ: remove_from_cart_view fonksiyonunun ikinci tanımı kaldırıldı.
+# İlk tanım ile birleştirildi. Şimdi sadece bir tanım var.
+# Bu fonksiyon, sepetteki ürünün adedini azaltır, 1 adet kalınca siler.
+# -----------------------------------------------------------------------------
 @login_required
 def remove_from_cart_view(request, item_id):
     if request.method == 'POST':
         try:
-            # Kullanıcının sepetindeki ilgili OrderItem nesnesini bul
+            # Buradaki 'item_id', OrderItem'ın kendi ID'si olmalı
             order_item = get_object_or_404(
                 OrderItem,
                 id=item_id,
@@ -405,15 +399,17 @@ def remove_from_cart_view(request, item_id):
                 order__status='cart'
             )
 
-            # Miktar 1'den fazlaysa, bir adet azalt
+            item_title = order_item.portfolio_item.title
+
             if order_item.quantity > 1:
+                # Miktar 1'den fazlaysa, sadece bir adet azalt
                 order_item.quantity -= 1
                 order_item.save()
-                messages.success(request, f'"{order_item.portfolio_item.title}" ürününün adedi bir azaltıldı.')
+                messages.success(request, f'"{item_title}" ürününün adedi bir azaltıldı.')
             else:
                 # Miktar 1 ise, ürünü tamamen sil
                 order_item.delete()
-                messages.success(request, f'"{order_item.portfolio_item.title}" sepetinizden kaldırıldı.')
+                messages.success(request, f'"{item_title}" sepetinizden kaldırıldı.')
 
         except OrderItem.DoesNotExist:
             messages.error(request, 'Bu ürün sepetinizde bulunmuyor veya silme işlemi başarısız oldu.')
@@ -473,10 +469,9 @@ def checkout_view(request):
                                 'product_data': {'name': item.portfolio_item.title},
                                 'unit_amount': int(item.price * 100),
                             },
-                            'quantity': 1,
+                            'quantity': item.quantity,
                         } for item in order.items.all()]
 
-                        # Hatalı satırı kaldırıyoruz
                         checkout_session = stripe.checkout.Session.create(
                             line_items=line_items,
                             mode='payment',
@@ -543,13 +538,13 @@ def checkout_view(request):
 
 
 # -----------------------------------------------------------------------------
-# Güvenlik Açığı Giderildi: Bu view artık bir anlam ifade etmiyor.
-# Sadece hata mesajı gösterip sepet sayfasına yönlendirme yapıyor.
-# Asıl ödeme onayı Stripe webhook ile yapılmalı.
+# DÜZELTİLDİ: Bu view artık ödeme durumunu güncellemiyor.
+# Sadece bilgilendirme amaçlı kullanılıyor.
+# Sipariş onayı Stripe webhook ile yapılacaktır.
 # -----------------------------------------------------------------------------
 @login_required
 def payment_success_view(request):
-    messages.success(request, _('Your purchase was successful! You can view it in your purchase history.'))
+    messages.success(request, 'Ödeme talebiniz işleniyor. Siparişinizin durumu en kısa sürede güncellenecektir.')
     return redirect('order_history')
 
 
@@ -559,36 +554,10 @@ def payment_cancel_view(request):
     return redirect('cart_detail')
 
 
-@login_required
-def remove_from_cart_view(request, item_id):
-    if request.method == 'POST':
-        try:
-            # Buradaki 'item_id', OrderItem'ın kendi ID'si olmalı
-            order_item = get_object_or_404(
-                OrderItem,
-                id=item_id,
-                order__user=request.user,
-                order__status='cart'
-            )
-
-            item_title = order_item.portfolio_item.title
-
-            if order_item.quantity > 1:
-                # Miktar 1'den fazlaysa, sadece bir adet azalt
-                order_item.quantity -= 1
-                order_item.save()
-                messages.success(request, f'"{item_title}" ürününün adedi bir azaltıldı.')
-            else:
-                # Miktar 1 ise, ürünü tamamen sil
-                order_item.delete()
-                messages.success(request, f'"{item_title}" sepetinizden kaldırıldı.')
-
-        except OrderItem.DoesNotExist:
-            messages.error(request, 'Bu ürün sepetinizde bulunmuyor veya silme işlemi başarısız oldu.')
-
-    return redirect('cart_detail')
-
-
+# -----------------------------------------------------------------------------
+# DÜZELTİLDİ: Bu fonksiyonun ilk tanımı kaldırıldı ve ikinci tanım
+# miktar azaltma işini yapacak şekilde bırakıldı.
+# -----------------------------------------------------------------------------
 @login_required
 def remove_item_view(request, item_id):
     """
@@ -609,6 +578,7 @@ def remove_item_view(request, item_id):
             messages.error(request, 'Bu ürün sepetinizde bulunmuyor veya silme işlemi başarısız oldu.')
 
     return redirect('cart_detail')
+
 
 @csrf_exempt
 def stripe_webhook_view(request):
