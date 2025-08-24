@@ -544,7 +544,7 @@ def checkout_view(request):
 @login_required
 def payment_success_view(request):
     messages.success(request, 'Ödeme talebiniz işleniyor. Siparişinizin durumu en kısa sürede güncellenecektir.')
-    return redirect('order_history')
+    return redirect('order_history', username=request.user.username)
 
 
 @login_required
