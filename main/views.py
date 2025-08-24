@@ -326,7 +326,6 @@ def service_details_view(request, service_id):
 @login_required
 def profile_view(request, username):
     if request.method == 'POST':
-        # request.FILES parametresini kaldırın
         u_form = UserUpdateForm(request.POST, instance=request.user)
         p_form = ProfileUpdateForm(request.POST, instance=request.user.profile)
 

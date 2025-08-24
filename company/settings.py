@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sitemaps',
     'main.apps.MainConfig',
-    'widget_tweaks',
 ]
 
 MIDDLEWARE = [
