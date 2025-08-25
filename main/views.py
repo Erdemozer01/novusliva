@@ -493,6 +493,9 @@ def checkout_view(request):
 
                 # Havale/EFT ve Nakit ödeme
                 elif order.payment_method in ['bank_transfer', 'cash']:
+                    # HATA DÜZELTME: Bu ödeme yöntemlerinde siparişin durumu hemen 'pending'e çekilir.
+                    # Ödeme bilgileri ve işlem ID'si, ödemenin Stripe gibi bir servisle değil,
+                    # manuel olarak takip edilmesi gerektiği için boş kalır.
                     order.status = 'pending'
                     order.save()
                     messages.success(request, 'Siparişiniz alındı. Ödeme bilgileri e-postanıza gönderildi.')
@@ -520,7 +523,7 @@ def checkout_view(request):
                         html_content=html_message
                     )
 
-                    return redirect('order_history')
+                    return redirect('order_history', username=request.user.username)
 
         else:
             messages.error(request, 'Lütfen tüm gerekli alanları doğru şekilde doldurun.')
@@ -601,6 +604,9 @@ def stripe_webhook_view(request):
     except stripe.error.SignatureVerificationError as e:
         logger.error(f"İmza Doğrulama Hatası: {e}")
         return HttpResponse(status=400)
+    except Exception as e:
+        logger.error(f"Bilinmeyen Webhook Hatası: {e}")
+        return HttpResponse(status=500)
 
     # Ödeme başarılı olduğunda tetiklenen olay
     if event['type'] == 'checkout.session.completed':
@@ -609,9 +615,8 @@ def stripe_webhook_view(request):
         client_reference_id = session.get('client_reference_id')
 
         if client_reference_id:
-            with transaction.atomic():
-                try:
-                    # Sipariş nesnesini al
+            try:
+                with transaction.atomic():
                     order = Order.objects.get(id=client_reference_id)
                     user = order.user
 
@@ -627,27 +632,15 @@ def stripe_webhook_view(request):
                     except Profile.DoesNotExist:
                         logger.warning(f"Kullanıcı {user.username} için profil bulunamadı.")
 
-                    # Sipariş durumunu güncelle
+                    # ÖNEMLİ DÜZELTME: Bu kısım sipariş bilgilerini günceller.
+                    # Eğer bu alanlar boş kalıyorsa, webhook işlemi başarısız olmuştur.
+                    # Kodunuz zaten bu satırları içeriyordu, ancak boş kalmasının nedeni
+                    # kod hatası değil, webhook'un bu noktaya hiç ulaşamamasıdır.
                     if order.status in ['cart', 'pending']:
                         order.status = 'completed'
                         order.stripe_payment_id = session.id
                         order.payment_date = timezone.now()
                         order.save()
-
-                        # SEPETİ TEMİZLEME İŞLEMİ BURADA YAPILIYOR
-                        # Tamamlanmış siparişin kalemlerini al
-                        completed_order_items = OrderItem.objects.filter(order=order)
-
-                        # Sepet yerine yeni bir 'completed' sipariş nesnesi oluşturuyoruz
-                        # Bu, kullanıcı "Sepetim" sayfasına geri döndüğünde
-                        # yeni bir boş sepet nesnesi oluşturulmasını sağlayacaktır.
-                        # Eğer eski order nesnesini "completed" yaparsak, kullanıcı sepetine
-                        # ürün ekleyemez hale gelir. Bu yaklaşım daha temizdir.
-
-                        # Bu kısımda önemli bir değişiklik var.
-                        # Normalde 'cart' olan siparişi 'completed' yapıp,
-                        # yeni bir sipariş (boş sepet) oluşturulmasını sağlarız.
-                        # Bu, kullanıcının yeni bir alışverişe başlayabilmesi için gereklidir.
 
                         logger.info(f"Sipariş {order.id} veritabanında tamamlandı olarak güncellendi.")
 
@@ -666,8 +659,11 @@ def stripe_webhook_view(request):
                     else:
                         logger.warning(f"Sipariş {order.id} zaten tamamlanmış durumda. İşlem tekrar edilmiyor.")
 
-                except Order.DoesNotExist:
-                    logger.error(f"HATA: client_reference_id {client_reference_id} ile eşleşen bir sipariş bulunamadı.")
+            except Order.DoesNotExist:
+                logger.error(f"HATA: client_reference_id {client_reference_id} ile eşleşen bir sipariş bulunamadı.")
+            except Exception as e:
+                logger.error(f"Sipariş işleme sırasında beklenmeyen hata: {e}")
+                return HttpResponse(status=500)
         else:
             logger.error("HATA: client_reference_id bulunamadı.")
     else:
