@@ -368,14 +368,14 @@ class Order(models.Model):
     STATUS_CHOICES = (
         ('cart', _('Sepette')),
         ('pending', _('Ödeme Bekleniyor')),
-        ('pending_iyzico_approval', _('İyzico Onayı Bekleniyor')),
+        ('pending_paytr_approval', _('PayTR Onayı Bekleniyor')),
         ('completed', _('Tamamlandı')),
         ('payment_failed', _('Ödeme Başarısız')),
         ('cancelled', _('İptal Edildi')),
     )
 
     PAYMENT_METHOD_CHOICES = (
-        ('iyzico', _('İyzico (Kredi/Banka Kartı)')),
+        ('paytr', _('PayTR (Kredi/Banka Kartı)')),
         ('bank_transfer', _('Havale/EFT')),
         ('cash', _('Nakit Ödeme')),
     )
@@ -389,9 +389,8 @@ class Order(models.Model):
                                       verbose_name=_("Ödeme Yöntemi"))
     payment_date = models.DateTimeField(null=True, blank=True, verbose_name=_("Ödeme Tarihi"))
 
-    # İyzico ve Stripe için ödeme kimlikleri
-    iyzico_payment_id = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("İyzico Ödeme ID"))
-    stripe_payment_id = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Stripe Ödeme ID"))
+    # PayTR için ödeme kimliği
+    paytr_merchant_oid = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("PayTR İşlem ID"))
 
     billing_name = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("Fatura Adı"))
     billing_email = models.EmailField(null=True, blank=True, verbose_name=_("Fatura E-posta"))
