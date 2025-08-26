@@ -39,7 +39,6 @@ urlpatterns = [
     path('payment-cancel/', views.payment_cancel_view, name='payment_cancel'),
 
     # PayTR Entegrasyon URL'leri
-    path('paytr/checkout/', views.paytr_checkout_form, name='paytr_checkout_form'),
     path('paytr/callback/', views.paytr_callback_view, name='paytr_callback'),
     path('paytr/success/', views.paytr_success_view, name='paytr_success'),
     path('paytr/failed/', views.paytr_failed_view, name='paytr_failed'),
