@@ -11,14 +11,17 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
+import logging
 import stripe
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
-import logging
+from django.views.decorators.http import require_POST
+import hashlib
+import base64
 
 from .forms import (
     ContactForm, CommentForm, UserRegisterForm, SubscriberForm,
-    UserUpdateForm, ProfileUpdateForm, CheckoutForm
+    UserUpdateForm, ProfileUpdateForm, CheckoutForm as CustomCheckoutForm
 )
 from .models import (
     Service, BlogPost, Tag, PortfolioItem, PortfolioCategory,
@@ -174,7 +177,6 @@ def contact_view(request):
                 message=form.cleaned_data['message']
             )
 
-            # DÜZELTİLDİ: E-posta gönderme için send_email_wrapper kullanıldı.
             subject = f"İletişim Formu: {form.cleaned_data['subject']}"
             html_message = render_to_string('emails/contact_notification.html', {
                 'name': form.cleaned_data['name'],
@@ -354,16 +356,12 @@ def order_history_view(request, username):
     return render(request, 'order_history.html', context)
 
 
-# -----------------------------------------------------------------------------
-# Sepete Ürün Ekleme View'ı
-# -----------------------------------------------------------------------------
 @login_required
 def add_to_cart_view(request, item_id):
     item = get_object_or_404(PortfolioItem, id=item_id)
     with transaction.atomic():
         cart, created = Order.objects.get_or_create(user=request.user, status='cart')
 
-        # Ürün sepette zaten varsa miktarını artır
         order_item, item_created = OrderItem.objects.get_or_create(
             order=cart,
             portfolio_item=item,
@@ -371,7 +369,6 @@ def add_to_cart_view(request, item_id):
         )
 
         if not item_created:
-            # Ürün zaten sepetteydi, miktarını 1 artır
             order_item.quantity += 1
             order_item.save()
 
@@ -379,16 +376,10 @@ def add_to_cart_view(request, item_id):
     return redirect('cart_detail')
 
 
-# -----------------------------------------------------------------------------
-# DÜZELTİLDİ: remove_from_cart_view fonksiyonunun ikinci tanımı kaldırıldı.
-# İlk tanım ile birleştirildi. Şimdi sadece bir tanım var.
-# Bu fonksiyon, sepetteki ürünün adedini azaltır, 1 adet kalınca siler.
-# -----------------------------------------------------------------------------
 @login_required
 def remove_from_cart_view(request, item_id):
     if request.method == 'POST':
         try:
-            # Buradaki 'item_id', OrderItem'ın kendi ID'si olmalı
             order_item = get_object_or_404(
                 OrderItem,
                 id=item_id,
@@ -399,12 +390,10 @@ def remove_from_cart_view(request, item_id):
             item_title = order_item.portfolio_item.title
 
             if order_item.quantity > 1:
-                # Miktar 1'den fazlaysa, sadece bir adet azalt
                 order_item.quantity -= 1
                 order_item.save()
                 messages.success(request, f'"{item_title}" ürününün adedi bir azaltıldı.')
             else:
-                # Miktar 1 ise, ürünü tamamen sil
                 order_item.delete()
                 messages.success(request, f'"{item_title}" sepetinizden kaldırıldı.')
 
@@ -434,11 +423,10 @@ def checkout_view(request):
         return redirect('portfolio')
 
     if request.method == 'POST':
-        form = CheckoutForm(request.POST, user=request.user)
+        form = CustomCheckoutForm(request.POST, user=request.user)
         if form.is_valid():
             with transaction.atomic():
                 order = cart
-                # Formdan gelen verileri siparişe kaydet
                 order.payment_method = form.cleaned_data['payment_method']
                 order.billing_name = form.cleaned_data['billing_name']
                 order.billing_email = form.cleaned_data['billing_email']
@@ -447,60 +435,16 @@ def checkout_view(request):
                 order.billing_postal_code = form.cleaned_data['billing_postal_code']
                 order.save()
 
-                # Kredi Kartı/Banka Kartı ile ödeme
-                if order.payment_method in ['credit_card', 'debit_card']:
-                    try:
-                        MIN_STRIPE_AMOUNT_CENTS = 1700
-                        total_amount_cents = int(order.get_total_cost() * 100)
-
-                        if total_amount_cents < MIN_STRIPE_AMOUNT_CENTS:
-                            messages.error(
-                                request,
-                                f"Ödeme tutarı çok düşük. En az {MIN_STRIPE_AMOUNT_CENTS / 100} TL'lik bir sipariş vermelisiniz."
-                            )
-                            return redirect('cart_detail')
-
-                        line_items = [{
-                            'price_data': {
-                                'currency': 'try',
-                                'product_data': {'name': item.portfolio_item.title},
-                                'unit_amount': int(item.price * 100),
-                            },
-                            'quantity': item.quantity,
-                        } for item in order.items.all()]
-
-                        checkout_session = stripe.checkout.Session.create(
-                            line_items=line_items,
-                            mode='payment',
-                            success_url=request.build_absolute_uri(reverse('payment_success')),
-                            cancel_url=request.build_absolute_uri(reverse('payment_cancel')),
-                            client_reference_id=str(order.id),
-                            customer_email=order.billing_email,
-                            metadata={
-                                'billing_name': order.billing_name,
-                                'billing_email': order.billing_email,
-                                'billing_address': order.billing_address,
-                                'billing_city': order.billing_city,
-                                'billing_postal_code': order.billing_postal_code,
-                            }
-                        )
-                        return redirect(checkout_session.url, code=303)
-
-                    except Exception as e:
-                        logger.error(f"Ödeme oturumu oluşturulurken bir hata oluştu: {e}")
-                        messages.error(request, "Ödeme oturumu oluşturulurken bir hata oluştu.")
-                        return redirect('cart_detail')
+                # PayTR ödeme yönlendirmesi
+                if order.payment_method == 'paytr':
+                    return redirect('paytr_checkout_form')
 
                 # Havale/EFT ve Nakit ödeme
                 elif order.payment_method in ['bank_transfer', 'cash']:
-                    # HATA DÜZELTME: Bu ödeme yöntemlerinde siparişin durumu hemen 'pending'e çekilir.
-                    # Ödeme bilgileri ve işlem ID'si, ödemenin Stripe gibi bir servisle değil,
-                    # manuel olarak takip edilmesi gerektiği için boş kalır.
                     order.status = 'pending'
                     order.save()
                     messages.success(request, 'Siparişiniz alındı. Ödeme bilgileri e-postanıza gönderildi.')
 
-                    # Aktif banka hesabını veritabanından çekme
                     try:
                         active_bank_account = BankAccount.objects.get(is_active=True)
                     except BankAccount.DoesNotExist:
@@ -510,7 +454,6 @@ def checkout_view(request):
                         active_bank_account = BankAccount.objects.filter(is_active=True).first()
                         logger.warning("Birden fazla aktif banka hesabı bulundu. Sadece ilki kullanıldı.")
 
-                    # E-posta gönderme (Havale/EFT bilgileri için)
                     context = {
                         'order': order,
                         'user': order.user,
@@ -528,8 +471,7 @@ def checkout_view(request):
         else:
             messages.error(request, 'Lütfen tüm gerekli alanları doğru şekilde doldurun.')
     else:
-        # Formun ilk yüklenmesinde verileri doldurma
-        form = CheckoutForm(user=request.user)
+        form = CustomCheckoutForm(user=request.user)
         if cart and cart.billing_name:
             form.fields['billing_name'].initial = cart.billing_name
             form.fields['billing_email'].initial = cart.billing_email
@@ -554,13 +496,13 @@ def checkout_view(request):
 
 @login_required
 def payment_success_view(request):
-    messages.success(request, 'Ödeme talebiniz işleniyor. Siparişinizin durumu en kısa sürede güncellenecektir.')
+    messages.success(request, 'Ödeme işleminiz başarıyla tamamlandı. Siparişinizin durumu güncelleniyor.')
     return redirect('order_history', username=request.user.username)
 
 
 @login_required
 def payment_cancel_view(request):
-    messages.error(request, _('Your payment was canceled or failed. Please try again.'))
+    messages.error(request, 'Ödeme işleminiz iptal edildi. Lütfen tekrar deneyin.')
     return redirect('cart_detail')
 
 
@@ -583,93 +525,125 @@ def remove_item_view(request, item_id):
     return redirect('cart_detail')
 
 
-@csrf_exempt
-def stripe_webhook_view(request):
+# -----------------------------------------------------------------------------
+# PayTR Ödeme Akışı
+# -----------------------------------------------------------------------------
+@login_required
+@require_POST
+def paytr_checkout_form(request):
     """
-    Stripe'tan gelen olayları (event) işler.
-    Ödeme başarıyla tamamlandığında siparişin durumunu günceller.
+    PayTR ödeme formunu oluşturur ve yönlendirme için gerekli verileri sağlar.
     """
-    payload = request.body
-    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
-    event = None
-    logger.info("--- Webhook Olayı Alındı ---")
-
     try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
-        )
-    except ValueError as e:
-        logger.error(f"Payload Hatası: {e}")
-        return HttpResponse(status=400)
-    except stripe.error.SignatureVerificationError as e:
-        logger.error(f"İmza Doğrulama Hatası: {e}")
-        return HttpResponse(status=400)
+        order = get_object_or_404(Order, user=request.user, status='cart')
+
+        # PayTR'a gönderilecek verileri hazırlama
+        merchant_oid = f"ORDER-{order.id}-{int(timezone.now().timestamp())}"
+        email = order.user.email
+        payment_amount = int(order.get_total_cost() * 100)  # Kuruş cinsinden
+
+        # Callback ve başarı/hata URL'leri
+        test_mode = 1  # 0 = üretim, 1 = test
+        paytr_iframeless_success_url = request.build_absolute_uri(reverse('paytr_success'))
+        paytr_iframeless_failed_url = request.build_absolute_uri(reverse('paytr_failed'))
+
+        # PayTR token oluşturma
+        hash_str = f"{settings.PAYTR_MERCHANT_ID}{merchant_oid}{payment_amount}{email}{paytr_iframeless_success_url}{paytr_iframeless_failed_url}{test_mode}"
+        hash_value = base64.b64encode(hashlib.sha256((hash_str + settings.PAYTR_MERCHANT_SALT).encode('utf8')).digest())
+
+        # API verilerini hazırlama
+        paytr_data = {
+            'merchant_id': settings.PAYTR_MERCHANT_ID,
+            'user_ip': request.META.get('REMOTE_ADDR'),
+            'merchant_oid': merchant_oid,
+            'email': email,
+            'payment_amount': payment_amount,
+            'paytr_iframeless_success_url': paytr_iframeless_success_url,
+            'paytr_iframeless_failed_url': paytr_iframeless_failed_url,
+            'debug_on': test_mode,
+            'paytr_token': hash_value.decode('utf-8'),
+        }
+
+        # Eğer formda adres bilgileri varsa
+        if order.billing_name:
+            paytr_data['user_name'] = order.billing_name
+            paytr_data['user_address'] = order.billing_address
+            paytr_data['user_phone'] = request.user.profile.phone_number if hasattr(request.user,
+                                                                                    'profile') else '5555555555'
+
+        # Sipariş durumunu güncelle
+        order.status = 'pending_paytr_approval'
+        order.payment_method = 'paytr'
+        order.paytr_merchant_oid = merchant_oid  # PayTR'a özgü sipariş numarasını kaydedin
+        order.save()
+
+        # JSON yanıtı döndürme
+        return JsonResponse({'status': 'success', 'data': paytr_data})
+
     except Exception as e:
-        logger.error(f"Bilinmeyen Webhook Hatası: {e}")
-        return HttpResponse(status=500)
+        logger.error(f"PayTR ödeme akışında hata oluştu: {e}")
+        return JsonResponse({'status': 'error', 'message': str(e)})
 
-    # Ödeme başarılı olduğunda tetiklenen olay
-    if event['type'] == 'checkout.session.completed':
-        logger.info("checkout.session.completed olayı yakalandı.")
-        session = event['data']['object']
-        client_reference_id = session.get('client_reference_id')
 
-        if client_reference_id:
-            try:
+@csrf_exempt
+def paytr_callback_view(request):
+    """
+    PayTR'dan gelen POST verilerini işler ve sipariş durumunu günceller.
+    """
+    if request.method == 'POST':
+        try:
+            # Gelen veriler
+            merchant_oid = request.POST.get('merchant_oid')
+            status = request.POST.get('status')
+            hash_string = request.POST.get('hash')
+
+            # Güvenlik Hash kontrolü
+            hash_kontrol = hashlib.sha256(
+                (merchant_oid + settings.PAYTR_MERCHANT_SALT + status).encode('utf-8')).hexdigest()
+
+            if hash_kontrol == hash_string:
                 with transaction.atomic():
-                    order = Order.objects.get(id=client_reference_id)
-                    user = order.user
+                    order = get_object_or_404(Order, paytr_merchant_oid=merchant_oid)
 
-                    # Kullanıcının Stripe Customer ID'sini profil modeline kaydet
-                    try:
-                        profile = user.profile
-                        if not profile.stripe_customer_id:
-                            customer_id = session.get('customer')
-                            if customer_id:
-                                profile.stripe_customer_id = customer_id
-                                profile.save()
-                                logger.info(f"Stripe Customer ID {customer_id} kullanıcıya kaydedildi.")
-                    except Profile.DoesNotExist:
-                        logger.warning(f"Kullanıcı {user.username} için profil bulunamadı.")
-
-                    # ÖNEMLİ DÜZELTME: Bu kısım sipariş bilgilerini günceller.
-                    # Eğer bu alanlar boş kalıyorsa, webhook işlemi başarısız olmuştur.
-                    # Kodunuz zaten bu satırları içeriyordu, ancak boş kalmasının nedeni
-                    # kod hatası değil, webhook'un bu noktaya hiç ulaşamamasıdır.
-                    if order.status in ['cart', 'pending']:
+                    if status == 'success':
                         order.status = 'completed'
-                        order.stripe_payment_id = session.id
                         order.payment_date = timezone.now()
                         order.save()
+                        # PayTR'a başarılı yanıt ver
+                        return HttpResponse("OK")
+                    else:  # failed
+                        order.status = 'payment_failed'
+                        order.save()
+                        # PayTR'a başarısız yanıt ver
+                        return HttpResponse("OK")
+            else:
+                logger.error("PayTR callback hash doğrulama hatası.")
+                return HttpResponse("Hash Error")
 
-                        logger.info(f"Sipariş {order.id} veritabanında tamamlandı olarak güncellendi.")
+        except Exception as e:
+            logger.error(f"PayTR callback işlenirken hata oluştu: {e}")
+            return HttpResponse("Error")
 
-                        # Fatura e-postasını gönder
-                        context = {
-                            'order': order,
-                            'user': order.user,
-                            'items': order.items.all(),
-                        }
-                        html_message = render_to_string('emails/invoice.html', context)
-                        send_email_wrapper(
-                            subject=f"Sipariş Faturanız - #{order.id}",
-                            recipient_list=[order.billing_email],
-                            html_content=html_message
-                        )
-                    else:
-                        logger.warning(f"Sipariş {order.id} zaten tamamlanmış durumda. İşlem tekrar edilmiyor.")
+    return HttpResponse("Invalid Request")
 
-            except Order.DoesNotExist:
-                logger.error(f"HATA: client_reference_id {client_reference_id} ile eşleşen bir sipariş bulunamadı.")
-            except Exception as e:
-                logger.error(f"Sipariş işleme sırasında beklenmeyen hata: {e}")
-                return HttpResponse(status=500)
-        else:
-            logger.error("HATA: client_reference_id bulunamadı.")
-    else:
-        logger.info(f"İşlem yapılmayan olay tipi: {event['type']}")
 
-    return HttpResponse(status=200)
+@login_required
+def paytr_success_view(request):
+    """
+    Ödeme başarılı olduğunda yönlendirilecek sayfa.
+    """
+    messages.success(request, 'Ödemeniz başarıyla alındı. Siparişiniz onaylandı.')
+    # Siparişin son durumunu kontrol etmek için yönlendirme
+    return redirect('order_history', username=request.user.username)
+
+
+@login_required
+def paytr_failed_view(request):
+    """
+    Ödeme başarısız olduğunda yönlendirilecek sayfa.
+    """
+    messages.error(request, 'Ödeme işlemi başarısız oldu. Lütfen tekrar deneyin.')
+    return redirect('checkout')
 
 
 @login_required

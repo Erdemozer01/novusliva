@@ -38,7 +38,11 @@ urlpatterns = [
     path('payment-success/', views.payment_success_view, name='payment_success'),
     path('payment-cancel/', views.payment_cancel_view, name='payment_cancel'),
 
-    path('stripe-webhook/', views.stripe_webhook_view, name='stripe_webhook'),
+    # PayTR Entegrasyon URL'leri
+    path('paytr/checkout/', views.paytr_checkout_form, name='paytr_checkout_form'),
+    path('paytr/callback/', views.paytr_callback_view, name='paytr_callback'),
+    path('paytr/success/', views.paytr_success_view, name='paytr_success'),
+    path('paytr/failed/', views.paytr_failed_view, name='paytr_failed'),
 
     path('invoice/<int:order_id>/', views.invoice_view, name='invoice_view'),
 

@@ -1,4 +1,3 @@
-# main/models.py
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
@@ -369,13 +368,14 @@ class Order(models.Model):
     STATUS_CHOICES = (
         ('cart', _('Sepette')),
         ('pending', _('Ödeme Bekleniyor')),
+        ('pending_iyzico_approval', _('İyzico Onayı Bekleniyor')),
         ('completed', _('Tamamlandı')),
+        ('payment_failed', _('Ödeme Başarısız')),
         ('cancelled', _('İptal Edildi')),
     )
 
     PAYMENT_METHOD_CHOICES = (
-        ('credit_card', _('Kredi Kartı')),
-        ('debit_card', _('Banka Kartı')),
+        ('iyzico', _('İyzico (Kredi/Banka Kartı)')),
         ('bank_transfer', _('Havale/EFT')),
         ('cash', _('Nakit Ödeme')),
     )
@@ -383,20 +383,21 @@ class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=_("Kullanıcı"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Oluşturulma Tarihi"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Güncellenme Tarihi"))
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='cart', verbose_name=_("Durum"))
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='cart', verbose_name=_("Durum"))
 
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, null=True, blank=True,
                                       verbose_name=_("Ödeme Yöntemi"))
     payment_date = models.DateTimeField(null=True, blank=True, verbose_name=_("Ödeme Tarihi"))
-    transaction_id = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("İşlem ID"))
+
+    # İyzico ve Stripe için ödeme kimlikleri
+    iyzico_payment_id = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("İyzico Ödeme ID"))
+    stripe_payment_id = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Stripe Ödeme ID"))
 
     billing_name = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("Fatura Adı"))
     billing_email = models.EmailField(null=True, blank=True, verbose_name=_("Fatura E-posta"))
     billing_address = models.TextField(null=True, blank=True, verbose_name=_("Fatura Adresi"))
     billing_city = models.CharField(max_length=50, null=True, blank=True, verbose_name=_("Şehir"))
     billing_postal_code = models.CharField(max_length=10, null=True, blank=True, verbose_name=_("Posta Kodu"))
-
-    stripe_payment_id = models.CharField(max_length=255, blank=True, null=True)
 
     def get_total_cost(self):
         return sum(item.get_cost() for item in self.items.all())
