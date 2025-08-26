@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load i18n %}
+
 {% block title %}Ödeme{% endblock %}
 
 {% block content %}
@@ -34,7 +35,7 @@
                             </div>
                             <span class="badge bg-primary rounded-pill">
                                 {% if item.quantity > 1 %}
-                                    {{ item.quantity }} adet - {{ item.get_subtotal }} TL
+                                    {{ item.quantity }} adet - {{ item.get_cost }} TL
                                 {% else %}
                                     {{ item.price }} TL
                                 {% endif %}
@@ -53,7 +54,7 @@
                 <div class="card p-4 shadow-sm">
                     <h4 class="mb-4">Ödeme Bilgileri</h4>
 
-                    <form method="post">
+                    <form id="checkout-form" method="post">
                         {% csrf_token %}
 
                         <h5 class="mb-3">Fatura Bilgileri</h5>
@@ -122,13 +123,49 @@
     </div>
 </section>
 
+<div class="modal fade" id="paytr-modal" tabindex="-1" aria-labelledby="paytr-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paytr-modal-label">PayTR Ödeme Formu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="paytr-iframe-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.paytr.com/js/paytr.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('checkout-form');
         const paymentRadios = document.querySelectorAll('input[name="payment_method"]');
         const checkoutButton = document.getElementById('checkout-button');
         const totalAmount = "{{ total }}";
 
-        // Sayfa yüklendiğinde varsayılan butonu ayarla
+        // PayTR iframe oluşturma fonksiyonu
+        function createPaytrIframe(token) {
+            Paytr.iframeless.init({
+                token: token,
+                container: 'paytr-iframe-container',
+                type: 'popup'
+            });
+            const paytrModal = new bootstrap.Modal(document.getElementById('paytr-modal'));
+            paytrModal.show();
+        }
+
+        // Buton metnini güncelle
+        function updateButtonText(paymentMethod) {
+            if (paymentMethod === 'paytr') {
+                checkoutButton.innerHTML = `<i class="bi bi-credit-card me-2"></i> Ödemeye Git (${totalAmount} TL)`;
+            } else {
+                checkoutButton.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i> Siparişi Tamamla`;
+            }
+        }
+
         const defaultPaymentMethod = document.querySelector('input[name="payment_method"]:checked');
         if (defaultPaymentMethod) {
             updateButtonText(defaultPaymentMethod.value);
@@ -140,13 +177,42 @@
             });
         });
 
-        function updateButtonText(paymentMethod) {
-            if (paymentMethod === 'credit_card' || paymentMethod === 'debit_card') {
-                checkoutButton.innerHTML = `<i class="bi bi-credit-card me-2"></i> Ödemeye Git (${totalAmount} TL)`;
+        // Form gönderimi
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const selectedPaymentMethod = formData.get('payment_method');
+
+            // Eğer seçilen ödeme yöntemi PayTR ise AJAX isteği gönder
+            if (selectedPaymentMethod === 'paytr') {
+                fetch('{% url "checkout" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && data.data.paytr_token) {
+                        createPaytrIframe(data.data.paytr_token);
+                    } else if (data.status === 'success') {
+                         window.location.href = '{% url "order_history" user.username %}';
+                    } else {
+                        alert('Hata: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Hata:', error);
+                    alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+                });
             } else {
-                checkoutButton.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i> Siparişi Tamamla`;
+                // Diğer ödeme yöntemleri için standart form gönderimini sürdür
+                form.submit();
             }
-        }
+        });
     });
 </script>
 
