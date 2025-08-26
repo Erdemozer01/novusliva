@@ -437,7 +437,50 @@ def checkout_view(request):
 
                 # PayTR ödeme yönlendirmesi
                 if order.payment_method == 'paytr':
-                    return redirect('paytr_checkout_form')
+                    # PayTR'a yönlendirme için gerekli bilgileri hazırlama
+                    merchant_oid = f"ORDER-{order.id}-{int(timezone.now().timestamp())}"
+                    email = order.user.email
+                    payment_amount = int(order.get_total_cost() * 100)  # Kuruş cinsinden
+
+                    # Callback ve başarı/hata URL'leri
+                    test_mode = 1  # 0 = üretim, 1 = test
+                    paytr_iframeless_success_url = request.build_absolute_uri(reverse('paytr_success'))
+                    paytr_iframeless_failed_url = request.build_absolute_uri(reverse('paytr_failed'))
+
+                    # PayTR token oluşturma
+                    hash_str = f"{settings.PAYTR_MERCHANT_ID}{merchant_oid}{payment_amount}{email}{paytr_iframeless_success_url}{paytr_iframeless_failed_url}{test_mode}"
+                    hash_value = base64.b64encode(
+                        hashlib.sha256((hash_str + settings.PAYTR_MERCHANT_SALT).encode('utf8')).digest())
+
+                    # API verilerini hazırlama
+                    paytr_data = {
+                        'merchant_id': settings.PAYTR_MERCHANT_ID,
+                        'user_ip': request.META.get('REMOTE_ADDR'),
+                        'merchant_oid': merchant_oid,
+                        'email': email,
+                        'payment_amount': payment_amount,
+                        'paytr_iframeless_success_url': paytr_iframeless_success_url,
+                        'paytr_iframeless_failed_url': paytr_iframeless_failed_url,
+                        'debug_on': test_mode,
+                        'paytr_token': hash_value.decode('utf-8'),
+                    }
+
+                    # Eğer formda adres bilgileri varsa
+                    if order.billing_name:
+                        paytr_data['user_name'] = order.billing_name
+                        paytr_data['user_address'] = order.billing_address
+                        paytr_data['user_phone'] = request.user.profile.phone_number if hasattr(request.user,
+                                                                                                'profile') else '5555555555'
+
+                    # Sipariş durumunu güncelle
+                    order.status = 'pending_paytr_approval'
+                    order.payment_method = 'paytr'
+                    order.paytr_merchant_oid = merchant_oid  # PayTR'a özgü sipariş numarasını kaydedin
+                    order.save()
+
+                    # Ödeme formu için verileri JSON olarak döndürme
+                    return JsonResponse({'status': 'success', 'data': paytr_data})
+
 
                 # Havale/EFT ve Nakit ödeme
                 elif order.payment_method in ['bank_transfer', 'cash']:
