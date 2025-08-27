@@ -402,6 +402,8 @@ class Order(models.Model):
     billing_address = models.TextField(null=True, blank=True, verbose_name=_("Fatura Adresi"))
     billing_city = models.CharField(max_length=50, null=True, blank=True, verbose_name=_("Şehir"))
     billing_postal_code = models.CharField(max_length=10, null=True, blank=True, verbose_name=_("Posta Kodu"))
+    billing_phone_number = models.CharField(max_length=20, null=True, blank=True, verbose_name=_("Fatura Telefon Numarası"))
+
 
     # YENİ ALANLAR
     discount_code = models.ForeignKey(
@@ -427,7 +429,9 @@ class Order(models.Model):
     def get_total_cost(self):
         """İndirim sonrası ödenecek nihai tutarı döndürür."""
         subtotal = self.get_subtotal_cost()
-        return subtotal - self.discount_amount
+        # İndirimin ara toplamdan fazla olmasını engelle
+        total = subtotal - self.discount_amount
+        return max(total, 0)
 
     def __str__(self):
         return f'{self.user.username} - Sipariş #{self.id} ({self.get_status_display()})'
