@@ -25,7 +25,7 @@ from .forms import (
 from .models import (
     Service, BlogPost, Tag, PortfolioItem, PortfolioCategory,
     TeamMember, Testimonial, Category, ContactMessage, Skill,
-    Client, AboutPage, Order, OrderItem, BankAccount, DiscountCode
+    Client, AboutPage, Order, OrderItem, DiscountCode
 )
 
 logger = logging.getLogger(__name__)
@@ -421,7 +421,6 @@ def checkout_view(request):
         messages.error(request, 'Sepetiniz boş. Lütfen önce ürün ekleyin.')
         return redirect('portfolio')
 
-    # POST isteği geldiğinde formu işle
     if request.method == 'POST':
         form = CustomCheckoutForm(request.POST, user=request.user)
         if form.is_valid():
@@ -433,6 +432,10 @@ def checkout_view(request):
                 order.billing_address = form.cleaned_data['billing_address']
                 order.billing_city = form.cleaned_data['billing_city']
                 order.billing_postal_code = form.cleaned_data['billing_postal_code']
+
+                # Yeni: Formdan telefon numarasını al
+                phone_number = form.cleaned_data.get('phone_number')
+
                 order.save()
 
                 # Iyzico ödeme yönlendirmesi
@@ -443,7 +446,6 @@ def checkout_view(request):
                         'base_url': settings.IYZICO_BASE_URL
                     }
 
-                    # İndirimli ve indirimsiz tutarları al
                     subtotal = cart.get_subtotal_cost()
                     total = cart.get_total_cost()
                     conversation_id = f'ORDER-{order.id}-{random.randint(1000, 9999)}'
@@ -451,8 +453,8 @@ def checkout_view(request):
                     iyzico_request = {
                         'locale': 'tr',
                         'conversationId': conversation_id,
-                        'price': str(subtotal),    # Sepetin indirimsiz ara toplamı
-                        'paidPrice': str(total),   # Müşterinin ödeyeceği nihai indirimli tutar
+                        'price': str(subtotal),
+                        'paidPrice': str(total),
                         'currency': 'TRY',
                         'basketId': str(order.id),
                         'paymentGroup': 'PRODUCT',
@@ -460,15 +462,18 @@ def checkout_view(request):
                         'enabledInstallments': ['2', '3', '6', '9'],
                     }
 
-                    # Alıcı (Buyer) bilgileri
+                    # Alıcı (Buyer) bilgileri - Güncellendi
                     buyer = {
                         'id': str(request.user.id),
                         'name': request.user.first_name or 'N/A',
                         'surname': request.user.last_name or 'N/A',
-                        'gsmNumber': request.user.profile.phone_number if hasattr(request.user, 'profile') and request.user.profile.phone_number else '+905555555555',
+                        # Yeni: Kullanıcıdan alınan numarayı kullan
+                        'gsmNumber': phone_number or '+905555555555',
                         'email': order.billing_email,
-                        'identityNumber': '11111111111', # Gerekliyse kullanıcıdan alınmalıdır
-                        'lastLoginDate': request.user.last_login.strftime('%Y-%m-%d %H:%M:%S') if request.user.last_login else timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'identityNumber': '11111111111',
+                        'lastLoginDate': request.user.last_login.strftime(
+                            '%Y-%m-%d %H:%M:%S') if request.user.last_login else timezone.now().strftime(
+                            '%Y-%m-%d %H:%M:%S'),
                         'registrationDate': request.user.date_joined.strftime('%Y-%m-%d %H:%M:%S'),
                         'registrationAddress': order.billing_address,
                         'ip': request.META.get('REMOTE_ADDR'),
@@ -478,7 +483,6 @@ def checkout_view(request):
                     }
                     iyzico_request['buyer'] = buyer
 
-                    # Fatura (Billing) ve Kargo (Shipping) adres bilgileri
                     billing_address = {
                         'contactName': order.billing_name,
                         'city': order.billing_city,
@@ -489,7 +493,6 @@ def checkout_view(request):
                     iyzico_request['billingAddress'] = billing_address
                     iyzico_request['shippingAddress'] = billing_address
 
-                    # Sepet ürünleri
                     basket_items = []
                     for item in cart.items.all():
                         basket_items.append({
@@ -497,11 +500,10 @@ def checkout_view(request):
                             'name': item.portfolio_item.title,
                             'category1': item.portfolio_item.category.name if item.portfolio_item.category else 'General',
                             'itemType': 'VIRTUAL',
-                            'price': str(item.get_cost()) # Her ürünün kendi indirimsiz fiyatı
+                            'price': str(item.get_cost())
                         })
                     iyzico_request['basketItems'] = basket_items
 
-                    # API'ye istek gönder ve Iyzico sayfasına yönlendir
                     try:
                         checkout_form_initialize = iyzipay.CheckoutFormInitialize().create(iyzico_request, options)
                         response = checkout_form_initialize.json()
@@ -518,22 +520,20 @@ def checkout_view(request):
                             return redirect('checkout')
 
                     except Exception as e:
-                        messages.error(request, 'Ödeme işlemi sırasında bir sunucu hatası oluştu. Lütfen tekrar deneyin.')
+                        messages.error(request,
+                                       'Ödeme işlemi sırasında bir sunucu hatası oluştu. Lütfen tekrar deneyin.')
                         logger.error(f"Iyzico API isteği sırasında genel hata: {e}")
                         return redirect('checkout')
 
-                # Havale/EFT ve Nakit ödeme
                 elif order.payment_method in ['bank_transfer', 'cash']:
                     order.status = 'pending'
                     order.save()
                     messages.success(request, 'Siparişiniz alındı. Ödeme bilgileri e-postanıza gönderildi.')
-                    # Burada e-posta gönderme fonksiyonunuzu çağırabilirsiniz
                     return redirect('order_history', username=request.user.username)
 
         else:
             messages.error(request, 'Lütfen tüm gerekli alanları doğru şekilde doldurun.')
 
-    # GET isteği için formu başlangıç değerleriyle doldur
     else:
         form = CustomCheckoutForm(user=request.user)
         if request.user.is_authenticated:
@@ -544,6 +544,8 @@ def checkout_view(request):
                 form.fields['billing_address'].initial = profile.address
                 form.fields['billing_city'].initial = profile.city
                 form.fields['billing_postal_code'].initial = profile.postal_code
+                # Yeni: Telefon numarasını form alanına ekle
+                form.fields['phone_number'].initial = profile.phone_number
 
     context = {
         'cart': cart,
