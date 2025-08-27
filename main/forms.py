@@ -144,6 +144,17 @@ class ProfileUpdateForm(forms.ModelForm):
 
 # YENİ EKLENEN CHECKOUT FORM
 class CheckoutForm(forms.ModelForm):
+    # Yeni eklenecek alan: Telefon Numarası
+    phone_number = forms.CharField(
+        max_length=20,
+        required=True,
+        label="Telefon Numarası",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Telefon numaranızı girin',
+        })
+    )
+
     class Meta:
         model = Order
         fields = [
@@ -154,8 +165,8 @@ class CheckoutForm(forms.ModelForm):
             'billing_city',
             'billing_postal_code'
         ]
+        # Mevcut widget'lar ve etiketler aynı kalacak
         widgets = {
-            # payment_method için RadioSelect widget'ını kullanın
             'payment_method': forms.RadioSelect(attrs={'class': 'form-check-input'}),
             'billing_name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -197,11 +208,12 @@ class CheckoutForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        # Eğer user varsa, form alanlarını doldur
         if user:
-            # Kullanıcının tam adını birleştirerek initial değerini ayarla
             full_name = f"{user.first_name} {user.last_name}".strip()
             self.fields['billing_name'].initial = full_name or user.username
             self.fields['billing_email'].initial = user.email
+            # Eğer kullanıcı profili varsa, telefon numarasını initial olarak ayarla
+            if hasattr(user, 'profile'):
+                self.fields['phone_number'].initial = user.profile.phone_number
 
 
