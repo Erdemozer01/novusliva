@@ -5,207 +5,229 @@
 
 {% block content %}
 
-<div class="page-title accent-background">
-  <div class="container d-lg-flex justify-content-between align-items-center">
-    <h1 class="mb-2 mb-lg-0">{% trans "Ödeme" %}</h1>
-  </div>
-</div>
+    <div class="page-title accent-background">
+        <div class="container d-lg-flex justify-content-between align-items-center">
+            <h1 class="mb-2 mb-lg-0">{% trans "Ödeme" %}</h1>
+        </div>
+    </div>
 
-<section class="checkout-section section">
-    <div class="container" data-aos="fade-up">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
+    <section class="checkout-section section">
+        <div class="container" data-aos="fade-up">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
 
-        <div class="row g-5">
-            <div class="col-lg-4 order-2 order-lg-1">
-                <div class="card p-4 shadow-sm">
-                    <h4 class="mb-3">Sipariş Özeti</h4>
-                    <ul class="list-group list-group-flush">
-                        {% for item in cart.items.all %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                            <div>
-                                <div class="fw-bold">{{ item.portfolio_item.title }}</div>
-                                <small class="text-muted">{{ item.quantity }} x {{ item.price|floatformat:2 }} TL</small>
-                            </div>
-                            <span class="text-nowrap">{{ item.get_cost|floatformat:2 }} TL</span>
-                        </li>
-                        {% endfor %}
-
-                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 mt-3 pt-3 border-top">
-                            <span>Ara Toplam</span>
-                            <strong id="subtotal-amount">{{ subtotal|floatformat:2 }} TL</strong>
-                        </li>
-
-                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 text-success" id="discount-row" {% if not cart.discount_code %}style="display: none;"{% endif %}>
-                            <div>
-                                <h6 class="my-0">İndirim Kodu</h6>
-                                <small id="applied-code-text">{{ cart.discount_code.code|upper }}</small>
-                            </div>
-                            <span id="discount-amount-text">-{{ cart.discount_amount|floatformat:2 }} TL</span>
-                        </li>
-
-                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 h5 mt-2">
-                            <strong>Toplam</strong>
-                            <strong id="total-amount">{{ total|floatformat:2 }} TL</strong>
-                        </li>
-                    </ul>
-
-                    <form id="discount-form" action="{% url 'apply_discount' %}" method="post" class="mt-4">
-                        {% csrf_token %}
-                        <div class="input-group">
-                            {{ discount_form.code }}
-                            <button type="submit" class="btn btn-outline-secondary">{% trans "Uygula" %}</button>
-                        </div>
-                        <div id="discount-message" class="mt-2"></div>
-                    </form>
-                </div>
-            </div>
-
-            <div class="col-lg-8 order-1 order-lg-2">
-                <div class="card p-4 shadow-sm">
-                    <h4 class="mb-4">Fatura ve Ödeme Bilgileri</h4>
-
-                    <form id="checkout-form" method="post" action="{% url 'checkout' %}">
-                        {% csrf_token %}
-
-                        <h5 class="mb-3">Fatura Bilgileri</h5>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="{{ form.billing_name.id_for_label }}" class="form-label">{{ form.billing_name.label }} *</label>
-                                {{ form.billing_name }}
-                                {% if form.billing_name.errors %}<div class="text-danger small mt-1">{{ form.billing_name.errors }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.billing_email.id_for_label }}" class="form-label">{{ form.billing_email.label }} *</label>
-                                {{ form.billing_email }}
-                                {% if form.billing_email.errors %}<div class="text-danger small mt-1">{{ form.billing_email.errors }}</div>{% endif %}
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.billing_address.id_for_label }}" class="form-label">{{ form.billing_address.label }} *</label>
-                            {{ form.billing_address }}
-                            {% if form.billing_address.errors %}<div class="text-danger small mt-1">{{ form.billing_address.errors }}</div>{% endif %}
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-8">
-                                <label for="{{ form.billing_city.id_for_label }}" class="form-label">{{ form.billing_city.label }} *</label>
-                                {{ form.billing_city }}
-                                {% if form.billing_city.errors %}<div class="text-danger small mt-1">{{ form.billing_city.errors }}</div>{% endif %}
-                            </div>
-                            <div class="col-md-4">
-                                <label for="{{ form.billing_postal_code.id_for_label }}" class="form-label">{{ form.billing_postal_code.label }} *</label>
-                                {{ form.billing_postal_code }}
-                                {% if form.billing_postal_code.errors %}<div class="text-danger small mt-1">{{ form.billing_postal_code.errors }}</div>{% endif %}
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-
-                        <h5 class="mb-3">Ödeme Yöntemi</h5>
-                        <div class="mb-3">
-                            {% for radio in form.payment_method %}
-                                <div class="form-check">
-                                    {{ radio.tag }}
-                                    <label class="form-check-label" for="{{ radio.id_for_label }}">
-                                        {{ radio.choice_label }}
-                                    </label>
-                                </div>
+            <div class="row g-5">
+                <div class="col-lg-4 order-2 order-lg-1">
+                    <div class="card p-4 shadow-sm">
+                        <h4 class="mb-3">Sipariş Özeti</h4>
+                        <ul class="list-group list-group-flush">
+                            {% for item in cart.items.all %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <div>
+                                        <div class="fw-bold">{{ item.portfolio_item.title }}</div>
+                                        <small class="text-muted">{{ item.quantity }} x {{ item.price|floatformat:2 }}
+                                            TL</small>
+                                    </div>
+                                    <span class="text-nowrap">{{ item.get_cost|floatformat:2 }} TL</span>
+                                </li>
                             {% endfor %}
-                            {% if form.payment_method.errors %}<div class="text-danger small mt-1">{{ form.payment_method.errors }}</div>{% endif %}
-                        </div>
 
-                        <div class="d-grid gap-2">
-                            <button id="checkout-button" type="submit" class="btn btn-success btn-lg">
-                                <span id="checkout-button-text">Siparişi Tamamla</span> (<span id="checkout-button-total">{{ total|floatformat:2 }} TL</span>)
-                            </button>
-                            <a href="{% url 'cart_detail' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-2"></i>
-                                {% trans "Sepete Geri Dön" %}
-                            </a>
-                        </div>
-                    </form>
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 mt-3 pt-3 border-top">
+                                <span>Ara Toplam</span>
+                                <strong id="subtotal-amount">{{ subtotal|floatformat:2 }} TL</strong>
+                            </li>
+
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 text-success"
+                                id="discount-row" {% if not cart.discount_code %}style="display: none;"{% endif %}>
+                                <div>
+                                    <h6 class="my-0">İndirim Kodu</h6>
+                                    <small id="applied-code-text">{{ cart.discount_code.code|upper }}</small>
+                                </div>
+                                <span id="discount-amount-text">-{{ cart.discount_amount|floatformat:2 }} TL</span>
+                            </li>
+
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 h5 mt-2">
+                                <strong>Toplam</strong>
+                                <strong id="total-amount">{{ total|floatformat:2 }} TL</strong>
+                            </li>
+                        </ul>
+
+                        <form id="discount-form" action="{% url 'apply_discount' %}" method="post" class="mt-4">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                {{ discount_form.code }}
+                                <button type="submit" class="btn btn-outline-secondary">{% trans "Uygula" %}</button>
+                            </div>
+                            <div id="discount-message" class="mt-2"></div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-lg-8 order-1 order-lg-2">
+                    <div class="card p-4 shadow-sm">
+                        <h4 class="mb-4">Fatura ve Ödeme Bilgileri</h4>
+
+                        <form id="checkout-form" method="post" action="{% url 'checkout' %}">
+                            {% csrf_token %}
+
+                            <h5 class="mb-3">Fatura Bilgileri</h5>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="{{ form.billing_name.id_for_label }}"
+                                           class="form-label">{{ form.billing_name.label }} *</label>
+                                    {{ form.billing_name }}
+                                    {% if form.billing_name.errors %}
+                                        <div class="text-danger small mt-1">{{ form.billing_name.errors }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.billing_email.id_for_label }}"
+                                           class="form-label">{{ form.billing_email.label }} *</label>
+                                    {{ form.billing_email }}
+                                    {% if form.billing_email.errors %}
+                                        <div class="text-danger small mt-1">{{ form.billing_email.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.phone_number.id_for_label }}"
+                                       class="form-label">{{ form.phone_number.label }} *</label>
+                                {{ form.phone_number }}
+                                {% if form.phone_number.errors %}
+                                    <div class="text-danger small mt-1">{{ form.phone_number.errors }}</div>{% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.billing_address.id_for_label }}"
+                                       class="form-label">{{ form.billing_address.label }} *</label>
+                                {{ form.billing_address }}
+                                {% if form.billing_address.errors %}
+                                    <div class="text-danger small mt-1">{{ form.billing_address.errors }}</div>{% endif %}
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label for="{{ form.billing_city.id_for_label }}"
+                                           class="form-label">{{ form.billing_city.label }} *</label>
+                                    {{ form.billing_city }}
+                                    {% if form.billing_city.errors %}
+                                        <div class="text-danger small mt-1">{{ form.billing_city.errors }}</div>{% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.billing_postal_code.id_for_label }}"
+                                           class="form-label">{{ form.billing_postal_code.label }} *</label>
+                                    {{ form.billing_postal_code }}
+                                    {% if form.billing_postal_code.errors %}
+                                        <div class="text-danger small mt-1">{{ form.billing_postal_code.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <h5 class="mb-3">Ödeme Yöntemi</h5>
+                            <div class="mb-3">
+                                {% for radio in form.payment_method %}
+                                    <div class="form-check">
+                                        {{ radio.tag }}
+                                        <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                            {{ radio.choice_label }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                                {% if form.payment_method.errors %}
+                                    <div class="text-danger small mt-1">{{ form.payment_method.errors }}</div>{% endif %}
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button id="checkout-button" type="submit" class="btn btn-success btn-lg">
+                                    <span id="checkout-button-text">Siparişi Tamamla</span> (<span
+                                        id="checkout-button-total">{{ total|floatformat:2 }} TL</span>)
+                                </button>
+                                <a href="{% url 'cart_detail' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>
+                                    {% trans "Sepete Geri Dön" %}
+                                </a>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const discountForm = document.getElementById('discount-form');
-    const discountMessage = document.getElementById('discount-message');
-    const mainForm = document.getElementById('checkout-form');
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const discountForm = document.getElementById('discount-form');
+            const discountMessage = document.getElementById('discount-message');
+            const mainForm = document.getElementById('checkout-form');
 
-    // Ödeme yöntemi değiştikçe buton metnini güncelle
-    mainForm.addEventListener('change', function(e) {
-        if (e.target.name === 'payment_method') {
-            const buttonText = document.getElementById('checkout-button-text');
-            if (e.target.value === 'iyzico') {
-                buttonText.innerText = '{% trans "Güvenli Ödemeye Git" %}';
-            } else {
-                buttonText.innerText = '{% trans "Siparişi Tamamla" %}';
-            }
-        }
-    });
+            // Ödeme yöntemi değiştikçe buton metnini güncelle
+            mainForm.addEventListener('change', function (e) {
+                if (e.target.name === 'payment_method') {
+                    const buttonText = document.getElementById('checkout-button-text');
+                    if (e.target.value === 'iyzico') {
+                        buttonText.innerText = '{% trans "Güvenli Ödemeye Git" %}';
+                    } else {
+                        buttonText.innerText = '{% trans "Siparişi Tamamla" %}';
+                    }
+                }
+            });
 
-    // İndirim formu gönderimini ele al
-    discountForm.addEventListener('submit', function(e) {
-        e.preventDefault();
+            // İndirim formu gönderimini ele al
+            discountForm.addEventListener('submit', function (e) {
+                e.preventDefault();
 
-        const formData = new FormData(discountForm);
-        const url = discountForm.getAttribute('action');
-        const codeInput = discountForm.querySelector('input[name="code"]');
-        const submitButton = discountForm.querySelector('button');
+                const formData = new FormData(discountForm);
+                const url = discountForm.getAttribute('action');
+                const codeInput = discountForm.querySelector('input[name="code"]');
+                const submitButton = discountForm.querySelector('button');
 
-        // Butonu pasif yap ve mesajı temizle
-        submitButton.disabled = true;
-        discountMessage.innerHTML = '';
+                // Butonu pasif yap ve mesajı temizle
+                submitButton.disabled = true;
+                discountMessage.innerHTML = '';
 
-        fetch(url, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                discountMessage.innerHTML = `<div class="alert alert-success p-2 small">${data.message}</div>`;
+                fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            discountMessage.innerHTML = `<div class="alert alert-success p-2 small">${data.message}</div>`;
 
-                // Sipariş özeti ve ana buton tutarlarını güncelle
-                document.getElementById('subtotal-amount').innerText = `${data.subtotal} TL`;
-                document.getElementById('discount-amount-text').innerText = `-${data.discount_amount} TL`;
-                document.getElementById('total-amount').innerText = `${data.total} TL`;
-                document.getElementById('checkout-button-total').innerText = `${data.total} TL`;
+                            // Sipariş özeti ve ana buton tutarlarını güncelle
+                            document.getElementById('subtotal-amount').innerText = `${data.subtotal} TL`;
+                            document.getElementById('discount-amount-text').innerText = `-${data.discount_amount} TL`;
+                            document.getElementById('total-amount').innerText = `${data.total} TL`;
+                            document.getElementById('checkout-button-total').innerText = `${data.total} TL`;
 
-                document.getElementById('applied-code-text').innerText = codeInput.value.toUpperCase();
-                document.getElementById('discount-row').style.display = 'flex';
+                            document.getElementById('applied-code-text').innerText = codeInput.value.toUpperCase();
+                            document.getElementById('discount-row').style.display = 'flex';
 
-                codeInput.disabled = true;
-                submitButton.innerText = '{% trans "Uygulandı" %}';
-            } else {
-                discountMessage.innerHTML = `<div class="alert alert-danger p-2 small">${data.message}</div>`;
-                submitButton.disabled = false; // Hata durumunda butonu tekrar aktif et
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            discountMessage.innerHTML = `<div class="alert alert-danger p-2 small">{% trans "Bir hata oluştu. Lütfen tekrar deneyin." %}</div>`;
-            submitButton.disabled = false;
+                            codeInput.disabled = true;
+                            submitButton.innerText = '{% trans "Uygulandı" %}';
+                        } else {
+                            discountMessage.innerHTML = `<div class="alert alert-danger p-2 small">${data.message}</div>`;
+                            submitButton.disabled = false; // Hata durumunda butonu tekrar aktif et
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        discountMessage.innerHTML = `<div class="alert alert-danger p-2 small">{% trans "Bir hata oluştu. Lütfen tekrar deneyin." %}</div>`;
+                        submitButton.disabled = false;
+                    });
+            });
         });
-    });
-});
-</script>
+    </script>
 
 {% endblock %}
