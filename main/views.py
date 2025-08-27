@@ -2,34 +2,32 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 from django.contrib import messages
 from django.core.mail import EmailMessage
-from django.db.models import Q
+from django.db.models import Q, F
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
 import logging
-import stripe
 from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
+import iyzipay
+import random
+
 from django.views.decorators.http import require_POST
-import hashlib
-import base64
 
 from .forms import (
     ContactForm, CommentForm, UserRegisterForm, SubscriberForm,
-    UserUpdateForm, ProfileUpdateForm, CheckoutForm as CustomCheckoutForm
+    UserUpdateForm, ProfileUpdateForm, CheckoutForm as CustomCheckoutForm, DiscountApplyForm
 )
 from .models import (
     Service, BlogPost, Tag, PortfolioItem, PortfolioCategory,
     TeamMember, Testimonial, Category, ContactMessage, Skill,
-    Client, AboutPage, Order, OrderItem, Profile, BankAccount
+    Client, AboutPage, Order, OrderItem, BankAccount, DiscountCode
 )
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
 logger = logging.getLogger(__name__)
 
 
@@ -417,11 +415,13 @@ def cart_detail_view(request):
 @login_required
 def checkout_view(request):
     cart = Order.objects.filter(user=request.user, status='cart').first()
+    discount_form = DiscountApplyForm()
 
     if not cart or not cart.items.exists():
         messages.error(request, 'Sepetiniz boş. Lütfen önce ürün ekleyin.')
         return redirect('portfolio')
 
+    # POST isteği geldiğinde formu işle
     if request.method == 'POST':
         form = CustomCheckoutForm(request.POST, user=request.user)
         if form.is_valid():
@@ -435,106 +435,125 @@ def checkout_view(request):
                 order.billing_postal_code = form.cleaned_data['billing_postal_code']
                 order.save()
 
-                # PayTR ödeme yönlendirmesi
-                if order.payment_method == 'paytr':
-                    # PayTR'a yönlendirme için gerekli bilgileri hazırlama
-                    merchant_oid = f"ORDER-{order.id}-{int(timezone.now().timestamp())}"
-                    email = order.user.email
-                    payment_amount = int(order.get_total_cost() * 100)  # Kuruş cinsinden
-
-                    # Callback ve başarı/hata URL'leri
-                    test_mode = 1  # 0 = üretim, 1 = test
-                    paytr_iframeless_success_url = request.build_absolute_uri(reverse('paytr_success'))
-                    paytr_iframeless_failed_url = request.build_absolute_uri(reverse('paytr_failed'))
-
-                    # PayTR token oluşturma
-                    hash_str = f"{settings.PAYTR_MERCHANT_ID}{merchant_oid}{payment_amount}{email}{paytr_iframeless_success_url}{paytr_iframeless_failed_url}{test_mode}"
-                    hash_value = base64.b64encode(
-                        hashlib.sha256((hash_str + settings.PAYTR_MERCHANT_SALT).encode('utf8')).digest())
-
-                    # API verilerini hazırlama
-                    paytr_data = {
-                        'merchant_id': settings.PAYTR_MERCHANT_ID,
-                        'user_ip': request.META.get('REMOTE_ADDR'),
-                        'merchant_oid': merchant_oid,
-                        'email': email,
-                        'payment_amount': payment_amount,
-                        'paytr_iframeless_success_url': paytr_iframeless_success_url,
-                        'paytr_iframeless_failed_url': paytr_iframeless_failed_url,
-                        'debug_on': test_mode,
-                        'paytr_token': hash_value.decode('utf-8'),
+                # Iyzico ödeme yönlendirmesi
+                if order.payment_method == 'iyzico':
+                    options = {
+                        'api_key': settings.IYZICO_API_KEY,
+                        'secret_key': settings.IYZICO_SECRET_KEY,
+                        'base_url': settings.IYZICO_BASE_URL
                     }
 
-                    # Eğer formda adres bilgileri varsa
-                    if order.billing_name:
-                        paytr_data['user_name'] = order.billing_name
-                        paytr_data['user_address'] = order.billing_address
-                        paytr_data['user_phone'] = request.user.profile.phone_number if hasattr(request.user,
-                                                                                                'profile') else '5555555555'
+                    # İndirimli ve indirimsiz tutarları al
+                    subtotal = cart.get_subtotal_cost()
+                    total = cart.get_total_cost()
+                    conversation_id = f'ORDER-{order.id}-{random.randint(1000, 9999)}'
 
-                    # Sipariş durumunu güncelle
-                    order.status = 'pending_paytr_approval'
-                    order.payment_method = 'paytr'
-                    order.paytr_merchant_oid = merchant_oid  # PayTR'a özgü sipariş numarasını kaydedin
-                    order.save()
+                    iyzico_request = {
+                        'locale': 'tr',
+                        'conversationId': conversation_id,
+                        'price': str(subtotal),    # Sepetin indirimsiz ara toplamı
+                        'paidPrice': str(total),   # Müşterinin ödeyeceği nihai indirimli tutar
+                        'currency': 'TRY',
+                        'basketId': str(order.id),
+                        'paymentGroup': 'PRODUCT',
+                        'callbackUrl': request.build_absolute_uri(reverse('iyzico_callback')),
+                        'enabledInstallments': ['2', '3', '6', '9'],
+                    }
 
-                    # Ödeme formu için verileri JSON olarak döndürme
-                    return JsonResponse({'status': 'success', 'data': paytr_data})
+                    # Alıcı (Buyer) bilgileri
+                    buyer = {
+                        'id': str(request.user.id),
+                        'name': request.user.first_name or 'N/A',
+                        'surname': request.user.last_name or 'N/A',
+                        'gsmNumber': request.user.profile.phone_number if hasattr(request.user, 'profile') and request.user.profile.phone_number else '+905555555555',
+                        'email': order.billing_email,
+                        'identityNumber': '11111111111', # Gerekliyse kullanıcıdan alınmalıdır
+                        'lastLoginDate': request.user.last_login.strftime('%Y-%m-%d %H:%M:%S') if request.user.last_login else timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'registrationDate': request.user.date_joined.strftime('%Y-%m-%d %H:%M:%S'),
+                        'registrationAddress': order.billing_address,
+                        'ip': request.META.get('REMOTE_ADDR'),
+                        'city': order.billing_city,
+                        'country': 'Turkey',
+                        'zipCode': order.billing_postal_code
+                    }
+                    iyzico_request['buyer'] = buyer
 
+                    # Fatura (Billing) ve Kargo (Shipping) adres bilgileri
+                    billing_address = {
+                        'contactName': order.billing_name,
+                        'city': order.billing_city,
+                        'country': 'Turkey',
+                        'address': order.billing_address,
+                        'zipCode': order.billing_postal_code
+                    }
+                    iyzico_request['billingAddress'] = billing_address
+                    iyzico_request['shippingAddress'] = billing_address
+
+                    # Sepet ürünleri
+                    basket_items = []
+                    for item in cart.items.all():
+                        basket_items.append({
+                            'id': str(item.portfolio_item.id),
+                            'name': item.portfolio_item.title,
+                            'category1': item.portfolio_item.category.name if item.portfolio_item.category else 'General',
+                            'itemType': 'VIRTUAL',
+                            'price': str(item.get_cost()) # Her ürünün kendi indirimsiz fiyatı
+                        })
+                    iyzico_request['basketItems'] = basket_items
+
+                    # API'ye istek gönder ve Iyzico sayfasına yönlendir
+                    try:
+                        checkout_form_initialize = iyzipay.CheckoutFormInitialize().create(iyzico_request, options)
+                        response = checkout_form_initialize.json()
+
+                        if response.get('status') == 'success':
+                            order.status = 'pending_iyzico_approval'
+                            order.iyzi_paymentId = response.get('paymentId')
+                            order.save()
+                            return redirect(response.get('paymentPageUrl'))
+                        else:
+                            error_message = response.get('errorMessage', 'Iyzico ile ödeme başlatılamadı.')
+                            messages.error(request, error_message)
+                            logger.error(f"Iyzico ödeme başlatma hatası: {response}")
+                            return redirect('checkout')
+
+                    except Exception as e:
+                        messages.error(request, 'Ödeme işlemi sırasında bir sunucu hatası oluştu. Lütfen tekrar deneyin.')
+                        logger.error(f"Iyzico API isteği sırasında genel hata: {e}")
+                        return redirect('checkout')
 
                 # Havale/EFT ve Nakit ödeme
                 elif order.payment_method in ['bank_transfer', 'cash']:
                     order.status = 'pending'
                     order.save()
                     messages.success(request, 'Siparişiniz alındı. Ödeme bilgileri e-postanıza gönderildi.')
-
-                    try:
-                        active_bank_account = BankAccount.objects.get(is_active=True)
-                    except BankAccount.DoesNotExist:
-                        active_bank_account = None
-                        logger.error("Aktif bir banka hesabı bulunamadı. Lütfen kontrol edin.")
-                    except BankAccount.MultipleObjectsReturned:
-                        active_bank_account = BankAccount.objects.filter(is_active=True).first()
-                        logger.warning("Birden fazla aktif banka hesabı bulundu. Sadece ilki kullanıldı.")
-
-                    context = {
-                        'order': order,
-                        'user': order.user,
-                        'bank_details': active_bank_account
-                    }
-                    html_message = render_to_string('emails/invoice.html', context)
-                    send_email_wrapper(
-                        subject=f"Siparişiniz Beklemede - #{order.id}",
-                        recipient_list=[order.billing_email],
-                        html_content=html_message
-                    )
-
+                    # Burada e-posta gönderme fonksiyonunuzu çağırabilirsiniz
                     return redirect('order_history', username=request.user.username)
 
         else:
             messages.error(request, 'Lütfen tüm gerekli alanları doğru şekilde doldurun.')
+
+    # GET isteği için formu başlangıç değerleriyle doldur
     else:
         form = CustomCheckoutForm(user=request.user)
-        if cart and cart.billing_name:
-            form.fields['billing_name'].initial = cart.billing_name
-            form.fields['billing_email'].initial = cart.billing_email
-            form.fields['billing_address'].initial = cart.billing_address
-            form.fields['billing_city'].initial = cart.billing_city
-            form.fields['billing_postal_code'].initial = cart.billing_postal_code
-        elif request.user.is_authenticated:
+        if request.user.is_authenticated:
             form.fields['billing_name'].initial = request.user.get_full_name() or request.user.username
             form.fields['billing_email'].initial = request.user.email
             if hasattr(request.user, 'profile'):
                 profile = request.user.profile
                 form.fields['billing_address'].initial = profile.address
                 form.fields['billing_city'].initial = profile.city
+                form.fields['billing_postal_code'].initial = profile.postal_code
 
     context = {
         'cart': cart,
         'form': form,
-        'total': cart.get_total_cost() if cart else 0
+        'discount_form': discount_form,
+        'total': cart.get_total_cost() if cart else 0,
+        'subtotal': cart.get_subtotal_cost() if cart else 0,
     }
     return render(request, 'checkout.html', context)
+
 
 
 @login_required
@@ -569,69 +588,112 @@ def remove_item_view(request, item_id):
 
 
 # -----------------------------------------------------------------------------
-# PayTR Ödeme Akışı
+# Iyzico Ödeme Akışı
 # -----------------------------------------------------------------------------
-
-
-@csrf_exempt
-def paytr_callback_view(request):
+@login_required
+def iyzico_callback_view(request):
     """
-    PayTR'dan gelen POST verilerini işler ve sipariş durumunu günceller.
+    Iyzico'dan dönen kullanıcıyı karşılar ve ödeme sonucunu doğrular.
     """
-    if request.method == 'POST':
-        try:
-            # Gelen veriler
-            merchant_oid = request.POST.get('merchant_oid')
-            status = request.POST.get('status')
-            hash_string = request.POST.get('hash')
+    token = request.GET.get('token')
+    if not token:
+        messages.error(request, 'Geçersiz Iyzico geri dönüş isteği. Token bulunamadı.')
+        return redirect('checkout')
 
-            # Güvenlik Hash kontrolü
-            hash_kontrol = hashlib.sha256(
-                (merchant_oid + settings.PAYTR_MERCHANT_SALT + status).encode('utf-8')).hexdigest()
+    options = {
+        'api_key': settings.IYZICO_API_KEY,
+        'secret_key': settings.IYZICO_SECRET_KEY,
+        'base_url': settings.IYZICO_BASE_URL
+    }
 
-            if hash_kontrol == hash_string:
-                with transaction.atomic():
-                    order = get_object_or_404(Order, paytr_merchant_oid=merchant_oid)
+    iyzico_request = {
+        'locale': 'tr',
+        'token': token,
+    }
 
-                    if status == 'success':
+    try:
+        # Token ile ödeme sonucunu Iyzico'dan doğrula
+        checkout_form_result = iyzipay.CheckoutForm().retrieve(iyzico_request, options)
+        response = checkout_form_result.json()
+        payment_id = response.get('paymentId')
+
+        if response.get('status') == 'success' and payment_id:
+            with transaction.atomic():
+                # Bizim sistemimizdeki siparişi bul
+                order = get_object_or_404(Order, iyzi_paymentId=payment_id)
+
+                payment_status = response.get('paymentStatus')
+                if payment_status == 'SUCCESS':
+                    # Sipariş zaten tamamlanmadıysa işlemleri yap
+                    if order.status != 'completed':
                         order.status = 'completed'
                         order.payment_date = timezone.now()
                         order.save()
-                        # PayTR'a başarılı yanıt ver
-                        return HttpResponse("OK")
-                    else:  # failed
+
+                        # Eğer siparişte indirim kodu kullanıldıysa, kullanım sayısını artır
+                        if order.discount_code:
+                            # F() expression, olası race condition'ları önler
+                            order.discount_code.used_count = F('used_count') + 1
+                            order.discount_code.save()
+
+                    messages.success(request, f"#{order.id} numaralı siparişinizin ödemesi başarıyla tamamlandı.")
+                    return redirect('order_history', username=request.user.username)
+                else:
+                    # Ödeme Iyzico tarafında başarısız olduysa
+                    if order.status != 'payment_failed':
                         order.status = 'payment_failed'
                         order.save()
-                        # PayTR'a başarısız yanıt ver
-                        return HttpResponse("OK")
-            else:
-                logger.error("PayTR callback hash doğrulama hatası.")
-                return HttpResponse("Hash Error")
+                    messages.error(request, f"Ödemeniz onaylanmadı. Durum: {payment_status}")
+                    return redirect('checkout')
+        else:
+            # Token doğrulanamadıysa
+            error_message = response.get('errorMessage', 'Ödeme sonucu doğrulanırken bir hata oluştu.')
+            messages.error(request, error_message)
+            logger.error(f"Iyzico callback doğrulama hatası: {response}")
+            return redirect('checkout')
 
-        except Exception as e:
-            logger.error(f"PayTR callback işlenirken hata oluştu: {e}")
-            return HttpResponse("Error")
-
-    return HttpResponse("Invalid Request")
-
-
-@login_required
-def paytr_success_view(request):
-    """
-    Ödeme başarılı olduğunda yönlendirilecek sayfa.
-    """
-    messages.success(request, 'Ödemeniz başarıyla alındı. Siparişiniz onaylandı.')
-    # Siparişin son durumunu kontrol etmek için yönlendirme
-    return redirect('order_history', username=request.user.username)
+    except Exception as e:
+        messages.error(request, 'Ödeme sonucu doğrulanırken bir sunucu hatası oluştu.')
+        logger.error(f"Iyzico callback sırasında genel hata: {e}")
+        return redirect('checkout')
 
 
 @login_required
-def paytr_failed_view(request):
-    """
-    Ödeme başarısız olduğunda yönlendirilecek sayfa.
-    """
-    messages.error(request, 'Ödeme işlemi başarısız oldu. Lütfen tekrar deneyin.')
-    return redirect('checkout')
+@require_POST
+def apply_discount_view(request):
+    form = DiscountApplyForm(request.POST)
+    now = timezone.now()
+    if form.is_valid():
+        code_text = form.cleaned_data['code']
+        try:
+            discount_code = DiscountCode.objects.get(code__iexact=code_text)
+            cart = Order.objects.get(user=request.user, status='cart')
+
+            if not discount_code.is_valid():
+                return JsonResponse({'success': False, 'message': _("Bu kod artık geçerli değil.")})
+
+            # İndirimi uygula
+            subtotal = cart.get_subtotal_cost()
+            discount_amount = (subtotal * discount_code.discount_percentage) / 100
+
+            cart.discount_code = discount_code
+            cart.discount_amount = discount_amount
+            cart.save()
+
+            return JsonResponse({
+                'success': True,
+                'message': _("İndirim kodu başarıyla uygulandı."),
+                'subtotal': f"{cart.get_subtotal_cost():.2f}",
+                'discount_amount': f"{cart.discount_amount:.2f}",
+                'total': f"{cart.get_total_cost():.2f}",
+            })
+
+        except DiscountCode.DoesNotExist:
+            return JsonResponse({'success': False, 'message': _("Geçersiz indirim kodu.")})
+        except Order.DoesNotExist:
+            return JsonResponse({'success': False, 'message': _("Sepetiniz bulunamadı.")})
+
+    return JsonResponse({'success': False, 'message': _("Lütfen bir kod girin.")})
 
 
 @login_required

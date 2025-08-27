@@ -108,6 +108,15 @@ class UserUpdateForm(forms.ModelForm):
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
         }
 
+class DiscountApplyForm(forms.Form):
+    code = forms.CharField(
+        label=_("İndirim Kodu"),
+        widget=forms.TextInput(attrs={
+            'placeholder': _('İndirim kodunuzu girin'),
+            'class': 'form-control'
+        })
+    )
+
 
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:

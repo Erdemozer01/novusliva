@@ -363,19 +363,23 @@ class Profile(models.Model):
         verbose_name_plural = _("Profiller")
 
 
+# models.py dosyanızda Order modelini bulun ve aşağıdaki gibi güncelleyin
+
 class Order(models.Model):
     """Kullanıcının verdiği siparişleri ve sepetini temsil eder."""
     STATUS_CHOICES = (
         ('cart', _('Sepette')),
         ('pending', _('Ödeme Bekleniyor')),
-        ('pending_paytr_approval', _('PayTR Onayı Bekleniyor')),
+        # PayTR kaldırıldığı için bu satır da temizlenebilir
+        ('pending_iyzico_approval', _('Iyzico Onayı Bekleniyor')),
         ('completed', _('Tamamlandı')),
         ('payment_failed', _('Ödeme Başarısız')),
         ('cancelled', _('İptal Edildi')),
     )
 
+    # PayTR kaldırıldığı için bu choices da temizlenebilir
     PAYMENT_METHOD_CHOICES = (
-        ('paytr', _('PayTR (Kredi/Banka Kartı)')),
+        ('iyzico', _('Iyzico (Kredi/Banka Kartı)')),
         ('bank_transfer', _('Havale/EFT')),
         ('cash', _('Nakit Ödeme')),
     )
@@ -389,8 +393,9 @@ class Order(models.Model):
                                       verbose_name=_("Ödeme Yöntemi"))
     payment_date = models.DateTimeField(null=True, blank=True, verbose_name=_("Ödeme Tarihi"))
 
-    # PayTR için ödeme kimliği
-    paytr_merchant_oid = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("PayTR İşlem ID"))
+    # Iyzico için ödeme kimliği (önceki adımdan)
+    iyzi_paymentId = models.CharField(max_length=255, blank=True, null=True, unique=True)
+    # paytr_merchant_oid alanı artık kaldırılabilir
 
     billing_name = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("Fatura Adı"))
     billing_email = models.EmailField(null=True, blank=True, verbose_name=_("Fatura E-posta"))
@@ -398,8 +403,31 @@ class Order(models.Model):
     billing_city = models.CharField(max_length=50, null=True, blank=True, verbose_name=_("Şehir"))
     billing_postal_code = models.CharField(max_length=10, null=True, blank=True, verbose_name=_("Posta Kodu"))
 
-    def get_total_cost(self):
+    # YENİ ALANLAR
+    discount_code = models.ForeignKey(
+        'DiscountCode',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='orders',
+        verbose_name=_("İndirim Kodu")
+    )
+    discount_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name=_("İndirim Tutarı")
+    )
+    # --- YENİ ALANLAR BİTTİ ---
+
+    def get_subtotal_cost(self):
+        """İndirim uygulanmamış ara toplamı döndürür."""
         return sum(item.get_cost() for item in self.items.all())
+
+    def get_total_cost(self):
+        """İndirim sonrası ödenecek nihai tutarı döndürür."""
+        subtotal = self.get_subtotal_cost()
+        return subtotal - self.discount_amount
 
     def __str__(self):
         return f'{self.user.username} - Sipariş #{self.id} ({self.get_status_display()})'
@@ -408,7 +436,6 @@ class Order(models.Model):
         verbose_name = _("Sipariş/Sepet")
         verbose_name_plural = _("Siparişler/Sepetler")
         ordering = ['-created_at']
-
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE, verbose_name=_("Sipariş"))

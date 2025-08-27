@@ -158,5 +158,6 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # .env dosyasından okur
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # .env dosyasından okur
 
-STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
-STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+IYZICO_API_KEY = os.getenv('IYZICO_API_KEY')
+IYZICO_SECRET_KEY = os.getenv('IYZICO_SECRET_KEY')
+IYZICO_BASE_URL = 'https://sandbox.iyzico.com/'

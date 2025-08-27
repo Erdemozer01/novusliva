@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}Ödeme{% endblock %}
+{% block title %}{% trans "Ödeme" %}{% endblock %}
 
 {% block content %}
 
 <div class="page-title accent-background">
   <div class="container d-lg-flex justify-content-between align-items-center">
-    <h1 class="mb-2 mb-lg-0">Ödeme</h1>
+    <h1 class="mb-2 mb-lg-0">{% trans "Ödeme" %}</h1>
   </div>
 </div>
 
@@ -22,39 +22,56 @@
             {% endfor %}
         {% endif %}
 
-        <div class="row">
+        <div class="row g-5">
             <div class="col-lg-4 order-2 order-lg-1">
                 <div class="card p-4 shadow-sm">
                     <h4 class="mb-3">Sipariş Özeti</h4>
                     <ul class="list-group list-group-flush">
                         {% for item in cart.items.all %}
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                            <div class="me-auto">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
                                 <div class="fw-bold">{{ item.portfolio_item.title }}</div>
-                                <small class="text-muted">{{ item.portfolio_item.short_description|truncatechars:50 }}</small>
+                                <small class="text-muted">{{ item.quantity }} x {{ item.price|floatformat:2 }} TL</small>
                             </div>
-                            <span class="badge bg-primary rounded-pill">
-                                {% if item.quantity > 1 %}
-                                    {{ item.quantity }} adet - {{ item.get_cost }} TL
-                                {% else %}
-                                    {{ item.price }} TL
-                                {% endif %}
-                            </span>
+                            <span class="text-nowrap">{{ item.get_cost|floatformat:2 }} TL</span>
                         </li>
                         {% endfor %}
+
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 mt-3 pt-3 border-top">
+                            <span>Ara Toplam</span>
+                            <strong id="subtotal-amount">{{ subtotal|floatformat:2 }} TL</strong>
+                        </li>
+
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 text-success" id="discount-row" {% if not cart.discount_code %}style="display: none;"{% endif %}>
+                            <div>
+                                <h6 class="my-0">İndirim Kodu</h6>
+                                <small id="applied-code-text">{{ cart.discount_code.code|upper }}</small>
+                            </div>
+                            <span id="discount-amount-text">-{{ cart.discount_amount|floatformat:2 }} TL</span>
+                        </li>
+
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 h5 mt-2">
+                            <strong>Toplam</strong>
+                            <strong id="total-amount">{{ total|floatformat:2 }} TL</strong>
+                        </li>
                     </ul>
-                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                        <span class="h5">Toplam</span>
-                        <span class="h5 text-success">{{ total }} TL</span>
-                    </div>
+
+                    <form id="discount-form" action="{% url 'apply_discount' %}" method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            {{ discount_form.code }}
+                            <button type="submit" class="btn btn-outline-secondary">{% trans "Uygula" %}</button>
+                        </div>
+                        <div id="discount-message" class="mt-2"></div>
+                    </form>
                 </div>
             </div>
 
             <div class="col-lg-8 order-1 order-lg-2">
                 <div class="card p-4 shadow-sm">
-                    <h4 class="mb-4">Ödeme Bilgileri</h4>
+                    <h4 class="mb-4">Fatura ve Ödeme Bilgileri</h4>
 
-                    <form id="checkout-form" method="post">
+                    <form id="checkout-form" method="post" action="{% url 'checkout' %}">
                         {% csrf_token %}
 
                         <h5 class="mb-3">Fatura Bilgileri</h5>
@@ -108,12 +125,11 @@
 
                         <div class="d-grid gap-2">
                             <button id="checkout-button" type="submit" class="btn btn-success btn-lg">
-                                <i class="bi bi-credit-card me-2"></i>
-                                Ödemeye Git ({{ total }} TL)
+                                <span id="checkout-button-text">Siparişi Tamamla</span> (<span id="checkout-button-total">{{ total|floatformat:2 }} TL</span>)
                             </button>
                             <a href="{% url 'cart_detail' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-2"></i>
-                                Sepete Geri Dön
+                                {% trans "Sepete Geri Dön" %}
                             </a>
                         </div>
                     </form>
@@ -123,97 +139,73 @@
     </div>
 </section>
 
-<div class="modal fade" id="paytr-modal" tabindex="-1" aria-labelledby="paytr-modal-label" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="paytr-modal-label">PayTR Ödeme Formu</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="paytr-iframe-container"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://www.paytr.com/js/paytr.js"></script>
-
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('checkout-form');
-        const paymentRadios = document.querySelectorAll('input[name="payment_method"]');
-        const checkoutButton = document.getElementById('checkout-button');
-        const totalAmount = "{{ total }}";
+document.addEventListener('DOMContentLoaded', function() {
+    const discountForm = document.getElementById('discount-form');
+    const discountMessage = document.getElementById('discount-message');
+    const mainForm = document.getElementById('checkout-form');
 
-        // PayTR iframe oluşturma fonksiyonu
-        function createPaytrIframe(token) {
-            Paytr.iframeless.init({
-                token: token,
-                container: 'paytr-iframe-container',
-                type: 'popup'
-            });
-            const paytrModal = new bootstrap.Modal(document.getElementById('paytr-modal'));
-            paytrModal.show();
-        }
-
-        // Buton metnini güncelle
-        function updateButtonText(paymentMethod) {
-            if (paymentMethod === 'paytr') {
-                checkoutButton.innerHTML = `<i class="bi bi-credit-card me-2"></i> Ödemeye Git (${totalAmount} TL)`;
+    // Ödeme yöntemi değiştikçe buton metnini güncelle
+    mainForm.addEventListener('change', function(e) {
+        if (e.target.name === 'payment_method') {
+            const buttonText = document.getElementById('checkout-button-text');
+            if (e.target.value === 'iyzico') {
+                buttonText.innerText = '{% trans "Güvenli Ödemeye Git" %}';
             } else {
-                checkoutButton.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i> Siparişi Tamamla`;
+                buttonText.innerText = '{% trans "Siparişi Tamamla" %}';
             }
         }
+    });
 
-        const defaultPaymentMethod = document.querySelector('input[name="payment_method"]:checked');
-        if (defaultPaymentMethod) {
-            updateButtonText(defaultPaymentMethod.value);
-        }
+    // İndirim formu gönderimini ele al
+    discountForm.addEventListener('submit', function(e) {
+        e.preventDefault();
 
-        paymentRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                updateButtonText(this.value);
-            });
-        });
+        const formData = new FormData(discountForm);
+        const url = discountForm.getAttribute('action');
+        const codeInput = discountForm.querySelector('input[name="code"]');
+        const submitButton = discountForm.querySelector('button');
 
-        // Form gönderimi
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
+        // Butonu pasif yap ve mesajı temizle
+        submitButton.disabled = true;
+        discountMessage.innerHTML = '';
 
-            const formData = new FormData(this);
-            const selectedPaymentMethod = formData.get('payment_method');
-
-            // Eğer seçilen ödeme yöntemi PayTR ise AJAX isteği gönder
-            if (selectedPaymentMethod === 'paytr') {
-                fetch('{% url "checkout" %}', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success' && data.data.paytr_token) {
-                        createPaytrIframe(data.data.paytr_token);
-                    } else if (data.status === 'success') {
-                         window.location.href = '{% url "order_history" user.username %}';
-                    } else {
-                        alert('Hata: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Hata:', error);
-                    alert('Bir hata oluştu. Lütfen tekrar deneyin.');
-                });
-            } else {
-                // Diğer ödeme yöntemleri için standart form gönderimini sürdür
-                form.submit();
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                'X-Requested-With': 'XMLHttpRequest'
             }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                discountMessage.innerHTML = `<div class="alert alert-success p-2 small">${data.message}</div>`;
+
+                // Sipariş özeti ve ana buton tutarlarını güncelle
+                document.getElementById('subtotal-amount').innerText = `${data.subtotal} TL`;
+                document.getElementById('discount-amount-text').innerText = `-${data.discount_amount} TL`;
+                document.getElementById('total-amount').innerText = `${data.total} TL`;
+                document.getElementById('checkout-button-total').innerText = `${data.total} TL`;
+
+                document.getElementById('applied-code-text').innerText = codeInput.value.toUpperCase();
+                document.getElementById('discount-row').style.display = 'flex';
+
+                codeInput.disabled = true;
+                submitButton.innerText = '{% trans "Uygulandı" %}';
+            } else {
+                discountMessage.innerHTML = `<div class="alert alert-danger p-2 small">${data.message}</div>`;
+                submitButton.disabled = false; // Hata durumunda butonu tekrar aktif et
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            discountMessage.innerHTML = `<div class="alert alert-danger p-2 small">{% trans "Bir hata oluştu. Lütfen tekrar deneyin." %}</div>`;
+            submitButton.disabled = false;
         });
     });
+});
 </script>
 
 {% endblock %}
