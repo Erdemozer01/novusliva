@@ -163,7 +163,8 @@ class CheckoutForm(forms.ModelForm):
             'billing_email',
             'billing_address',
             'billing_city',
-            'billing_postal_code'
+            'billing_postal_code',
+            'phone_number',
         ]
         # Mevcut widget'lar ve etiketler aynı kalacak
         widgets = {
