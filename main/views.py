@@ -443,7 +443,7 @@ def checkout_view(request):
                     options = {
                         'api_key': settings.IYZICO_API_KEY,
                         'secret_key': settings.IYZICO_SECRET_KEY,
-                        'base_url': settings.IYZICO_BASE_URL
+                        'base_url': settings.IYZICO_BASE_URL,
                     }
 
                     subtotal = cart.get_subtotal_cost()
