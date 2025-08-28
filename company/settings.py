@@ -160,4 +160,4 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # .env dosyasından okur
 
 IYZICO_API_KEY = os.getenv('IYZICO_API_KEY')
 IYZICO_SECRET_KEY = os.getenv('IYZICO_SECRET_KEY')
-IYZICO_BASE_URL = 'https://sandbox.iyzico.com'
+IYZICO_BASE_URL = os.getenv('IYZICO_BASE_URL')
