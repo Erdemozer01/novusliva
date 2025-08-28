@@ -23,7 +23,7 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-kv+v%f*t*_&5@^z3$1qdq1uewc&ez7dnv90k@=!k2psl)+r77f'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -160,4 +160,4 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # .env dosyasından okur
 
 IYZICO_API_KEY = os.getenv('IYZICO_API_KEY')
 IYZICO_SECRET_KEY = os.getenv('IYZICO_SECRET_KEY')
-IYZICO_BASE_URL = 'sandbox-api.iyzipay.com'
+IYZICO_BASE_URL = os.getenv('IYZICO_BASE_URL')
