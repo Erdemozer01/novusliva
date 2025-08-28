@@ -33,15 +33,17 @@ urlpatterns = [
     path('cart/', views.cart_detail_view, name='cart_detail'),
     path('cart/remove/<int:item_id>/', views.remove_from_cart_view, name='remove_from_cart'),
     path('cart/delete/<int:item_id>/', views.remove_item_view, name='remove_item'),
-    path('cart/apply-discount/', views.apply_discount_view, name='apply_discount'), # YENİ: İndirim kodu URL'si
+    path('cart/apply-discount/', views.apply_discount_view, name='apply_discount'),  # YENİ: İndirim kodu URL'si
     path('checkout/', views.checkout_view, name='checkout'),
 
     # Ödeme Sonrası Yönlendirme Sayfaları
     path('payment-success/', views.payment_success_view, name='payment_success'),
     path('payment-cancel/', views.payment_cancel_view, name='payment_cancel'),
 
+    path('order/success/<int:order_id>/', views.order_success_view, name='order_success'),
+
     # Iyzico Entegrasyon URL'si
-    path('iyzico/callback/', views.iyzico_callback_view, name='iyzico_callback'), # YENİ: Iyzico callback URL'si
+    path('iyzico/callback/', views.iyzico_callback_view, name='iyzico_callback'),
 
     # Fatura
     path('invoice/<int:order_id>/', views.invoice_view, name='invoice_view'),

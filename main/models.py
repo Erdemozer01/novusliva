@@ -6,6 +6,8 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+from django.db.models import JSONField
+
 
 class DiscountCode(models.Model):
     """Sitede kullanılabilecek indirim kodlarını temsil eder."""
@@ -393,8 +395,53 @@ class Order(models.Model):
                                       verbose_name=_("Ödeme Yöntemi"))
     payment_date = models.DateTimeField(null=True, blank=True, verbose_name=_("Ödeme Tarihi"))
 
-    # Iyzico için ödeme kimliği (önceki adımdan)
-    iyzi_paymentId = models.CharField(max_length=255, blank=True, null=True, unique=True)
+    # Iyzico alanları
+    iyzi_conversation_id = models.CharField(
+        max_length=64, blank=True, null=True, unique=True,
+        help_text="CF-Initialize sırasında üretilen conversationId"
+    )
+    iyzi_token_last = models.CharField(
+        max_length=64, blank=True, null=True,
+        help_text="CF-Initialize sonrası callback'e gelecek son token (opsiyonel)"
+    )
+    iyzi_paymentId = models.CharField(
+        max_length=255, blank=True, null=True, unique=True,
+        help_text="CF-Retrieve ile dönen nihai paymentId (unique)"
+    )
+    iyzi_payment_status = models.CharField(
+        max_length=32, blank=True, null=True,
+        help_text="CF-Retrieve paymentStatus: SUCCESS/FAILURE/INIT_THREEDS/..."
+    )
+    iyzi_price = models.DecimalField(
+        max_digits=12, decimal_places=2, blank=True, null=True,
+        help_text="CF-Initialize 'price' (kalemlerin toplamı)"
+    )
+    iyzi_paid_price = models.DecimalField(
+        max_digits=12, decimal_places=2, blank=True, null=True,
+        help_text="CF-Retrieve 'paidPrice' (taksit komisyonu dahil son tahsilat)"
+    )
+    iyzi_currency = models.CharField(
+        max_length=3, blank=True, null=True, default="TRY",
+        help_text="TRY / USD / EUR / GBP (yurtdışı satışta önemli)"
+    )
+    iyzi_installment = models.PositiveSmallIntegerField(
+        blank=True, null=True, help_text="Gerçekleşen taksit sayısı (1,2,3,6,9,12)"
+    )
+    iyzi_fraud_status = models.SmallIntegerField(
+        blank=True, null=True,
+        help_text="CF-Retrieve fraudStatus: -2/-1/0/1/2"
+    )
+    iyzi_bin_number = models.CharField(
+        max_length=6, blank=True, null=True, help_text="kartın ilk 6 hanesi (BIN)"
+    )
+    iyzi_card_family = models.CharField(
+        max_length=32, blank=True, null=True, help_text="Bonus/Axess/World/Maximum/Paraf/..."
+    )
+    iyzi_raw_response = JSONField(
+        blank=True, null=True,
+        help_text="Son CF-Retrieve (veya webhook) JSON yanıtı (debug/raporlama)"
+    )
+
     # paytr_merchant_oid alanı artık kaldırılabilir
 
     billing_name = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("Fatura Adı"))
@@ -414,12 +461,12 @@ class Order(models.Model):
         related_name='orders',
         verbose_name=_("İndirim Kodu")
     )
+
     discount_amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0,
-        verbose_name=_("İndirim Tutarı")
+        max_digits=10, decimal_places=2, default=0,
+        validators=[MinValueValidator(0)]
     )
+
     # --- YENİ ALANLAR BİTTİ ---
 
     def get_subtotal_cost(self):
@@ -432,6 +479,24 @@ class Order(models.Model):
         # İndirimin ara toplamdan fazla olmasını engelle
         total = subtotal - self.discount_amount
         return max(total, 0)
+
+    def apply_iyzico_result(self, result: dict):
+        """CF-Retrieve (veya webhook) sonucunu modele uygular."""
+        self.iyzi_payment_status = result.get("paymentStatus")
+        self.iyzi_paymentId = result.get("paymentId") or self.iyzi_paymentId
+        self.iyzi_paid_price = result.get("paidPrice") or self.iyzi_paid_price
+        self.iyzi_currency = result.get("currency") or self.iyzi_currency
+        self.iyzi_installment = result.get("installment") or self.iyzi_installment
+        self.iyzi_fraud_status = result.get("fraudStatus") or self.iyzi_fraud_status
+        self.iyzi_bin_number = result.get("binNumber") or self.iyzi_bin_number
+        self.iyzi_card_family = result.get("cardFamily") or self.iyzi_card_family
+        self.iyzi_raw_response = result
+        # Durum güncelle
+        if self.iyzi_payment_status == "SUCCESS":
+            self.status = "completed"
+            self.payment_date = timezone.now()
+        elif self.iyzi_payment_status == "FAILURE":
+            self.status = "payment_failed"
 
     def __str__(self):
         return f'{self.user.username} - Sipariş #{self.id} ({self.get_status_display()})'

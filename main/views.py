@@ -1,8 +1,10 @@
+import json
+
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 from django.contrib import messages
 from django.core.mail import EmailMessage
@@ -16,6 +18,7 @@ from django.conf import settings
 import iyzipay
 import random
 
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from .forms import (
@@ -29,6 +32,97 @@ from .models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def prepare_iyzico_request(order, user, phone_number, request):
+    subtotal = order.get_subtotal_cost()
+    total = order.get_total_cost()
+    conversation_id = f'ORDER-{order.id}-{random.randint(1000, 9999)}'
+
+    iyzico_request = {
+        'locale': 'tr',
+        'conversationId': conversation_id,
+        'price': str(subtotal),
+        'paidPrice': str(total),
+        'currency': 'TRY',
+        'basketId': str(order.id),
+        'paymentGroup': 'PRODUCT',
+        'callbackUrl': request.build_absolute_uri(reverse('iyzico_callback')),
+        'enabledInstallments': ['2', '3', '6', '9'],
+        'buyer': {
+            'id': str(user.id),
+            'name': user.first_name or 'N/A',
+            'surname': user.last_name or 'N/A',
+            'gsmNumber': phone_number or '+905555555555',
+            'email': order.billing_email,
+            'identityNumber': '11111111111',
+            'lastLoginDate': user.last_login.strftime(
+                '%Y-%m-%d %H:%M:%S') if user.last_login else timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'registrationDate': user.date_joined.strftime('%Y-%m-%d %H:%M:%S'),
+            'registrationAddress': order.billing_address,
+            'ip': request.META.get('REMOTE_ADDR'),
+            'city': order.billing_city,
+            'country': 'Turkey',
+            'zipCode': order.billing_postal_code
+        },
+        'billingAddress': {
+            'contactName': order.billing_name,
+            'city': order.billing_city,
+            'country': 'Turkey',
+            'address': order.billing_address,
+            'zipCode': order.billing_postal_code
+        },
+        'shippingAddress': {
+            'contactName': order.billing_name,
+            'city': order.billing_city,
+            'country': 'Turkey',
+            'address': order.billing_address,
+            'zipCode': order.billing_postal_code
+        },
+        'basketItems': [
+            {
+                'id': str(item.portfolio_item.id),
+                'name': item.portfolio_item.title,
+                'category1': item.portfolio_item.category.name if item.portfolio_item.category else 'General',
+                'itemType': 'VIRTUAL',
+                'price': str(item.get_cost())
+            } for item in order.items.all()
+        ]
+    }
+
+    return iyzico_request, conversation_id
+
+
+def initialize_iyzico_payment(iyzico_request, options):
+    checkout_form_initialize = iyzipay.CheckoutFormInitialize().create(iyzico_request, options)
+    return json.loads(checkout_form_initialize.read().decode("utf-8"))
+
+
+def verify_iyzico_signature(response, secret_key):
+    try:
+        signature = response.get('signature')
+        if not signature:
+            return False
+
+        cf = iyzipay.CheckoutForm()
+        paidPrice = cf.strip_zero(str(response.get('paidPrice') or '0'))
+        price = cf.strip_zero(str(response.get('price') or '0'))
+        fields = [
+            str(response.get('paymentStatus') or ''),
+            str(response.get('paymentId') or ''),
+            str(response.get('currency') or ''),
+            str(response.get('basketId') or ''),
+            str(response.get('conversationId') or ''),
+            paidPrice,
+            price,
+            str(response.get('token') or ''),
+        ]
+        cf.verify_signature(fields, secret_key, signature)
+        return True
+    except Exception as sig_err:
+        logger.warning(f"Iyzico signature verify failed: {sig_err}")
+        return False
+
 
 
 # -----------------------------------------------------------------------------
@@ -426,19 +520,12 @@ def checkout_view(request):
         if form.is_valid():
             with transaction.atomic():
                 order = cart
-                order.payment_method = form.cleaned_data['payment_method']
-                order.billing_name = form.cleaned_data['billing_name']
-                order.billing_email = form.cleaned_data['billing_email']
-                order.billing_address = form.cleaned_data['billing_address']
-                order.billing_city = form.cleaned_data['billing_city']
-                order.billing_postal_code = form.cleaned_data['billing_postal_code']
-
-                # Yeni: Formdan telefon numarasını al
+                for field in ['payment_method', 'billing_name', 'billing_email', 'billing_address', 'billing_city',
+                              'billing_postal_code']:
+                    setattr(order, field, form.cleaned_data[field])
                 phone_number = form.cleaned_data.get('phone_number')
-
                 order.save()
 
-                # Iyzico ödeme yönlendirmesi
                 if order.payment_method == 'iyzico':
                     options = {
                         'api_key': settings.IYZICO_API_KEY,
@@ -446,83 +533,32 @@ def checkout_view(request):
                         'base_url': settings.IYZICO_BASE_URL,
                     }
 
-                    subtotal = cart.get_subtotal_cost()
-                    total = cart.get_total_cost()
-                    conversation_id = f'ORDER-{order.id}-{random.randint(1000, 9999)}'
-
-                    iyzico_request = {
-                        'locale': 'tr',
-                        'conversationId': conversation_id,
-                        'price': str(subtotal),
-                        'paidPrice': str(total),
-                        'currency': 'TRY',
-                        'basketId': str(order.id),
-                        'paymentGroup': 'PRODUCT',
-                        'callbackUrl': request.build_absolute_uri(reverse('iyzico_callback')),
-                        'enabledInstallments': ['2', '3', '6', '9'],
-                    }
-
-                    # Alıcı (Buyer) bilgileri - Güncellendi
-                    buyer = {
-                        'id': str(request.user.id),
-                        'name': request.user.first_name or 'N/A',
-                        'surname': request.user.last_name or 'N/A',
-                        # Yeni: Kullanıcıdan alınan numarayı kullan
-                        'gsmNumber': phone_number or '+905555555555',
-                        'email': order.billing_email,
-                        'identityNumber': '11111111111',
-                        'lastLoginDate': request.user.last_login.strftime(
-                            '%Y-%m-%d %H:%M:%S') if request.user.last_login else timezone.now().strftime(
-                            '%Y-%m-%d %H:%M:%S'),
-                        'registrationDate': request.user.date_joined.strftime('%Y-%m-%d %H:%M:%S'),
-                        'registrationAddress': order.billing_address,
-                        'ip': request.META.get('REMOTE_ADDR'),
-                        'city': order.billing_city,
-                        'country': 'Turkey',
-                        'zipCode': order.billing_postal_code
-                    }
-                    iyzico_request['buyer'] = buyer
-
-                    billing_address = {
-                        'contactName': order.billing_name,
-                        'city': order.billing_city,
-                        'country': 'Turkey',
-                        'address': order.billing_address,
-                        'zipCode': order.billing_postal_code
-                    }
-                    iyzico_request['billingAddress'] = billing_address
-                    iyzico_request['shippingAddress'] = billing_address
-
-                    basket_items = []
-                    for item in cart.items.all():
-                        basket_items.append({
-                            'id': str(item.portfolio_item.id),
-                            'name': item.portfolio_item.title,
-                            'category1': item.portfolio_item.category.name if item.portfolio_item.category else 'General',
-                            'itemType': 'VIRTUAL',
-                            'price': str(item.get_cost())
-                        })
-                    iyzico_request['basketItems'] = basket_items
+                    iyzico_request, conversation_id = prepare_iyzico_request(order, request.user, phone_number, request)
 
                     try:
-                        checkout_form_initialize = iyzipay.CheckoutFormInitialize().create(iyzico_request, options)
-                        response = checkout_form_initialize.json()
+                        init_data = initialize_iyzico_payment(iyzico_request, options)
 
-                        if response.get('status') == 'success':
+                        if init_data.get('status') == 'success':
                             order.status = 'pending_iyzico_approval'
-                            order.iyzi_paymentId = response.get('paymentId')
+                            order.iyzi_conversation_id = conversation_id
+                            order.billing_phone_number = phone_number
                             order.save()
-                            return redirect(response.get('paymentPageUrl'))
+
+                            payment_url = init_data.get('paymentPageUrl')
+                            if payment_url:
+                                return redirect(payment_url)
+                            else:
+                                request.session['iyzico_checkout_html'] = init_data.get('checkoutFormContent')
+                                return redirect('iyzico_checkout_embed')
                         else:
-                            error_message = response.get('errorMessage', 'Iyzico ile ödeme başlatılamadı.')
-                            messages.error(request, error_message)
-                            logger.error(f"Iyzico ödeme başlatma hatası: {response}")
+                            messages.error(request, init_data.get('errorMessage', 'Iyzico ile ödeme başlatılamadı.'))
+                            logger.error(f"Iyzico ödeme başlatma hatası: {init_data}")
                             return redirect('checkout')
 
                     except Exception as e:
                         messages.error(request,
                                        'Ödeme işlemi sırasında bir sunucu hatası oluştu. Lütfen tekrar deneyin.')
-                        logger.error(f"Iyzico API isteği sırasında genel hata: {e}")
+                        logger.exception("Iyzico API isteği sırasında genel hata")
                         return redirect('checkout')
 
                 elif order.payment_method in ['bank_transfer', 'cash']:
@@ -544,7 +580,6 @@ def checkout_view(request):
                 form.fields['billing_address'].initial = profile.address
                 form.fields['billing_city'].initial = profile.city
                 form.fields['billing_postal_code'].initial = profile.postal_code
-                # Yeni: Telefon numarasını form alanına ekle
                 form.fields['phone_number'].initial = profile.phone_number
 
     context = {
@@ -555,7 +590,6 @@ def checkout_view(request):
         'subtotal': cart.get_subtotal_cost() if cart else 0,
     }
     return render(request, 'checkout.html', context)
-
 
 
 @login_required
@@ -592,12 +626,13 @@ def remove_item_view(request, item_id):
 # -----------------------------------------------------------------------------
 # Iyzico Ödeme Akışı
 # -----------------------------------------------------------------------------
-@login_required
+
+@csrf_exempt
 def iyzico_callback_view(request):
-    """
-    Iyzico'dan dönen kullanıcıyı karşılar ve ödeme sonucunu doğrular.
-    """
-    token = request.GET.get('token')
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+
+    token = request.POST.get('token')
     if not token:
         messages.error(request, 'Geçersiz Iyzico geri dönüş isteği. Token bulunamadı.')
         return redirect('checkout')
@@ -605,7 +640,7 @@ def iyzico_callback_view(request):
     options = {
         'api_key': settings.IYZICO_API_KEY,
         'secret_key': settings.IYZICO_SECRET_KEY,
-        'base_url': settings.IYZICO_BASE_URL
+        'base_url': settings.IYZICO_BASE_URL,
     }
 
     iyzico_request = {
@@ -614,51 +649,61 @@ def iyzico_callback_view(request):
     }
 
     try:
-        # Token ile ödeme sonucunu Iyzico'dan doğrula
         checkout_form_result = iyzipay.CheckoutForm().retrieve(iyzico_request, options)
-        response = checkout_form_result.json()
+        response = json.loads(checkout_form_result.read().decode('utf-8'))
+
+        status_ok = response.get('status') == 'success'
+        payment_status = response.get('paymentStatus')
         payment_id = response.get('paymentId')
+        basket_id = response.get('basketId')
+        conversation_id = response.get('conversationId')
 
-        if response.get('status') == 'success' and payment_id:
-            with transaction.atomic():
-                # Bizim sistemimizdeki siparişi bul
-                order = get_object_or_404(Order, iyzi_paymentId=payment_id)
+        # Siparişi bul
+        order = None
+        if basket_id:
+            order = get_object_or_404(Order, id=basket_id)
+        elif conversation_id:
+            order = get_object_or_404(Order, iyzi_conversation_id=conversation_id)
 
-                payment_status = response.get('paymentStatus')
-                if payment_status == 'SUCCESS':
-                    # Sipariş zaten tamamlanmadıysa işlemleri yap
-                    if order.status != 'completed':
-                        order.status = 'completed'
-                        order.payment_date = timezone.now()
-                        order.save()
-
-                        # Eğer siparişte indirim kodu kullanıldıysa, kullanım sayısını artır
-                        if order.discount_code:
-                            # F() expression, olası race condition'ları önler
-                            order.discount_code.used_count = F('used_count') + 1
-                            order.discount_code.save()
-
-                    messages.success(request, f"#{order.id} numaralı siparişinizin ödemesi başarıyla tamamlandı.")
-                    return redirect('order_history', username=request.user.username)
-                else:
-                    # Ödeme Iyzico tarafında başarısız olduysa
-                    if order.status != 'payment_failed':
-                        order.status = 'payment_failed'
-                        order.save()
-                    messages.error(request, f"Ödemeniz onaylanmadı. Durum: {payment_status}")
-                    return redirect('checkout')
-        else:
-            # Token doğrulanamadıysa
+        if not status_ok:
             error_message = response.get('errorMessage', 'Ödeme sonucu doğrulanırken bir hata oluştu.')
             messages.error(request, error_message)
             logger.error(f"Iyzico callback doğrulama hatası: {response}")
             return redirect('checkout')
 
+        # İmza doğrulama
+        if not verify_iyzico_signature(response, options['secret_key']):
+            logger.warning(f"İmza doğrulaması başarısız: Order #{order.id if order else 'Unknown'}")
+
+        with transaction.atomic():
+            order.apply_iyzico_result(response)
+            order.iyzi_token_last = token
+            order.save()
+
+            if order.status == 'completed' and order.discount_code_id:
+                order.discount_code.used_count = F('used_count') + 1
+                order.discount_code.save(update_fields=['used_count'])
+
+            if order.status == 'completed':
+                messages.success(request, f"#{order.id} numaralı siparişinizin ödemesi başarıyla tamamlandı.")
+                if request.user.is_authenticated:
+                    return redirect('order_history', username=request.user.username)
+                return redirect('order_success', order_id=order.id)
+            else:
+                messages.error(request, f"Ödemeniz onaylanmadı. Durum: {payment_status}")
+                return redirect('checkout')
+
     except Exception as e:
         messages.error(request, 'Ödeme sonucu doğrulanırken bir sunucu hatası oluştu.')
-        logger.error(f"Iyzico callback sırasında genel hata: {e}")
+        logger.exception("Iyzico callback sırasında genel hata")
         return redirect('checkout')
 
+
+
+@login_required
+def order_success_view(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    return render(request, 'order_success.html', {'order': order})
 
 @login_required
 @require_POST
