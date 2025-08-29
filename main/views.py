@@ -2,7 +2,7 @@ import base64
 import hashlib
 import hmac
 import json
-import requests  # requests kütüphanesini import edin
+import requests
 
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -21,6 +21,7 @@ import logging
 from django.conf import settings
 import iyzipay
 import random
+from django.db import IntegrityError
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -32,7 +33,7 @@ from .forms import (
 from .models import (
     Service, BlogPost, Tag, PortfolioItem, PortfolioCategory,
     TeamMember, Testimonial, Category, ContactMessage, Skill,
-    Client, AboutPage, Order, OrderItem, DiscountCode
+    Client, AboutPage, Order, OrderItem, DiscountCode, Subscriber
 )
 
 logger = logging.getLogger(__name__)
@@ -392,19 +393,22 @@ def register_view(request):
     return render(request, 'registration/register.html', context)
 
 
+@require_POST
 def subscribe_view(request):
-    if request.method == 'POST':
-        form = SubscriberForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return JsonResponse({
-                'success': True,
-                'message': _('Thank you for subscribing!')
-            })
-        else:
-            message = form.errors.get('email', [_('Invalid email address.')])[0]
-            return JsonResponse({'success': False, 'message': message})
-    return JsonResponse({'success': False, 'message': _('Invalid request.')})
+    """E-bülten aboneliği için POST isteğini AJAX ile işler."""
+    email = request.POST.get('email')
+    if email:
+        try:
+            # E-posta adresi veritabanına eklenir. `unique=True` hatası yakalanır.
+            Subscriber.objects.create(email=email)
+            return JsonResponse({'success': True, 'message': _("E-bültenimize başarıyla abone oldunuz!")})
+        except IntegrityError:
+            # unique kısıtlaması hatası (e-posta zaten kayıtlı)
+            return JsonResponse({'success': False, 'message': _("Bu e-posta adresi zaten kayıtlı.")})
+        except Exception:
+            # Diğer olası hatalar
+            return JsonResponse({'success': False, 'message': _("Bir hata oluştu. Lütfen tekrar deneyin.")})
+    return JsonResponse({'success': False, 'message': _("Lütfen geçerli bir e-posta adresi girin.")})
 
 
 def service_details_view(request, service_id):

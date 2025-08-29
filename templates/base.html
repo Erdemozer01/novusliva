@@ -50,18 +50,56 @@
             color: #007bff !important; /* Temanızın ana rengi */
         }
 
-        /* Sepet ikonunu büyüt */
+        / /* Sepet ikonu için temel stil ve büyüklük */
         .cart-icon {
-            font-size: 20px !important; /* İkon boyutunu artır */
+            font-size: 28px !important; /* İkon boyutunu biraz küçülttük */
+            color: var(--default-color) !important;
             position: relative;
-            display: inline-block;
+            display: flex; /* İçindeki elemanları hizalamak için flexbox kullanın */
+            align-items: center; /* Dikeyde ortala */
+            transition: color 0.3s ease;
+            text-decoration: none !important; /* Link alt çizgisi olmaması için */
         }
 
-        /* Opsiyonel: Hover efekti ekle */
+        /* Sepet içindeki ürün sayısı için sayaç (badge) stil ve konumlandırma */
+        .cart-count {
+            position: absolute; /* .cart-icon'a göre mutlak konumlandırma */
+            top: 5px; /* Üstten konum */
+            right: -18px; /* Sağdan konum */
+
+            background-color: var(--accent-color, #ff5722) !important;
+            color: #fff !important;
+
+            font-size: 7px; /* Sayaç yazısının boyutu */
+            font-weight: 700;
+            line-height: 1;
+
+            padding: 3px 6px; /* İç boşluk */
+            border: 2px solid #fff; /* Beyaz kenarlık */
+            border-radius: 50%; /* Dairesel görünüm */
+
+            min-width: 20px; /* Minimum genişlik */
+            height: 20px; /* Yükseklik */
+
+            display: flex; /* İçeriği ortalamak için flex kullan */
+            align-items: center; /* Dikeyde ortala */
+            justify-content: center; /* Yatayda ortala */
+
+            white-space: nowrap; /* Sayı iki haneli olduğunda satır atlamasını önler */
+
+            transform: scale(1); /* Başlangıç boyutu */
+            transition: transform 0.3s ease, background-color 0.3s ease; /* Animasyon */
+            z-index: 10;
+        }
+
+        /* Sepet ikonu üzerine gelindiğinde sayacın büyümesi */
         .cart-icon:hover {
-            color: #007bff !important;
+            color: var(--accent-color, #007bff) !important; /* İkon rengini değiştir */
+        }
+
+        .cart-icon:hover .cart-count {
             transform: scale(1.1);
-            transition: all 0.3s ease;
+            background-color: var(--accent-color, #007bff) !important;
         }
 
         .dropdown-menu .dropdown-item {
@@ -81,7 +119,7 @@
     <div class="container position-relative d-flex align-items-center">
 
         <a href="{% url 'index' %}" class="logo d-flex align-items-center me-auto">
-            <h1 class="sitename">Company</h1><span>.</span>
+            <h1 class="sitename">NovusLiva</h1><span>.</span>
         </a>
 
         <nav id="navmenu" class="navmenu">
@@ -99,7 +137,6 @@
                 <li><a href="{% url 'blog' %}">{% trans "Blog" %}</a></li>
                 <li><a href="{% url 'contact' %}">{% trans "Contact" %}</a></li>
 
-                <li><a href="{% url 'cart_detail' %}" class="cart-icon"><i class="bi bi-cart"></i></a></li>
 
                 {% if user.is_authenticated %}
                     <li class="dropdown">
@@ -110,7 +147,8 @@
                             <i class="bi bi-chevron-down toggle-dropdown"></i>
                         </a>
                         <ul>
-                            <li><a href="{% url 'profile' request.user.username %}"><i class="bi bi-person me-2"></i>{% trans "Profile" %}</a>
+                            <li><a href="{% url 'profile' request.user.username %}"><i
+                                    class="bi bi-person me-2"></i>{% trans "Profile" %}</a>
                             </li>
                             <li><a href="{% url 'order_history' request.user.username %}"><i
                                     class="bi bi-box-seam me-2"></i>{% trans "Orders" %}</a></li>
@@ -151,6 +189,7 @@
 
                 {% get_current_language as LANGUAGE_CODE %}
                 {% get_language_info_list for LANGUAGES as languages %}
+
                 <li class="dropdown">
                     <a href="#">
                         <span><small class="bi bi-translate"></small> {{ LANGUAGE_CODE|upper }}</span>
@@ -171,6 +210,16 @@
                         {% endfor %}
                     </ul>
                 </li>
+
+                <li>
+                    <a href="{% url 'cart_detail' %}" class="cart-icon position-relative">
+                        <i class="bi bi-cart">
+                            <span class="badge bg-primary rounded-pill cart-count"
+                                  id="cart-item-count">{{ cart_item_count }}</span>
+                        </i>
+                    </a>
+                </li>
+
             </ul>
             <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
         </nav>
@@ -187,7 +236,7 @@
         <div class="row gy-4">
             <div class="col-lg-4 col-md-6 footer-about">
                 <a href="{% url 'index' %}" class="logo d-flex align-items-center">
-                    <span class="sitename">Company</span>
+                    <span class="sitename">NovusLiva</span>
                 </a>
                 {% if site_settings %}
                     <div class="footer-contact pt-3">
@@ -247,7 +296,7 @@
     </div>
 
     <div class="container copyright text-center mt-4">
-        <p>© <span>Copyright</span> <strong class="px-1 sitename">Company</strong>
+        <p>© <span>Copyright</span> <strong class="px-1 sitename">NovusLiva</strong>
             <span>{% trans "All Rights Reserved" %}</span></p>
         <div class="credits">
             Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
@@ -282,27 +331,43 @@
 
                     const formData = new FormData(newsletterForm);
 
+                    // CSRF token'ı FormData'ya manuel olarak eklemek daha güvenli olabilir.
+                    // Django'nun `{{ csrf_token }}` etiketini zaten kullandığınız için bu isteğe bağlıdır.
+                    // formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                    // Mesaj alanını temizle ve yükleme durumunu göster.
+                    newsletterMessage.textContent = 'İşleniyor...';
+                    newsletterMessage.className = 'text-info'; // Veya sadece bir spinner ekleyebilirsiniz.
+
                     fetch(newsletterForm.action, {
                         method: 'POST',
                         body: formData,
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
+                            // CSRF token'ı header'da göndermek daha sağlamdır.
+                            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
                         }
                     })
-                        .then(response => response.json())
+                        .then(response => {
+                            if (!response.ok) {
+                                // Sunucu 200 olmayan bir HTTP yanıtı döndürdüğünde hata fırlat
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
                         .then(data => {
                             newsletterMessage.style.display = 'block';
                             if (data.success) {
-                                newsletterMessage.className = 'alert alert-success';
+                                newsletterMessage.className = 'alert alert-success mt-2';
                                 newsletterForm.reset();
                             } else {
-                                newsletterMessage.className = 'alert alert-danger';
+                                newsletterMessage.className = 'alert alert-danger mt-2';
                             }
                             newsletterMessage.textContent = data.message;
                         })
                         .catch(error => {
                             console.error('Subscription error:', error);
-                            newsletterMessage.className = 'alert alert-danger';
+                            newsletterMessage.className = 'alert alert-danger mt-2';
                             newsletterMessage.textContent = '{% trans "An error occurred. Please try again." %}';
                         });
                 });
