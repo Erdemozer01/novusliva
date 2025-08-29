@@ -32,7 +32,7 @@
                             <div class="row g-3 text-start">
                                 <div class="col-md-6">
                                     <strong>{% trans "Sipariş Numarası" %}:</strong>
-                                    <span class="d-block">{{ order.order_number }}</span>
+                                    <span class="d-block">{{ order.id }}</span>
                                 </div>
                                 <div class="col-md-6">
                                     <strong>{% trans "Sipariş Tarihi" %}:</strong>
@@ -40,7 +40,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <strong>{% trans "Toplam Tutar" %}:</strong>
-                                    <span class="d-block">{{ order.total_price|floatformat:2 }} TL</span>
+                                    <span class="d-block">{{ order.get_total_cost|floatformat:2 }} TL</span>
                                 </div>
                                 <div class="col-md-6">
                                     <strong>{% trans "Ödeme Yöntemi" %}:</strong>
@@ -80,7 +80,7 @@
                                     <tfoot>
                                         <tr class="table-light">
                                             <td colspan="2" class="text-end fw-bold">{% trans "Ara Toplam" %}</td>
-                                            <td class="text-end">{{ order.get_subtotal|floatformat:2 }} TL</td>
+                                            <td class="text-end">{{ order.get_subtotal_cost|floatformat:2 }} TL</td>
                                         </tr>
                                         {% if order.discount_amount > 0 %}
                                             <tr class="table-light text-success">
@@ -90,7 +90,7 @@
                                         {% endif %}
                                         <tr class="table-light">
                                             <td colspan="2" class="text-end fw-bold h5">{% trans "Genel Toplam" %}</td>
-                                            <td class="text-end fw-bold h5">{{ order.total_price|floatformat:2 }} TL</td>
+                                            <td class="text-end fw-bold h5">{{ order.get_total_cost|floatformat:2 }} TL</td>
                                         </tr>
                                     </tfoot>
                                 </table>

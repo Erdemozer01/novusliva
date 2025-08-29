@@ -1,0 +1,55 @@
+{% load i18n %}
+<div style="font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6;">
+    <h2 style="color: #007bff;">{% trans "Sipariş Onayınız" %}</h2>
+    <p>{% blocktrans %}Merhaba,{% endblocktrans %}</p>
+    <p>{% blocktrans %}Siparişiniz başarıyla alınmıştır. Sipariş detaylarınız aşağıdadır:{% endblocktrans %}</p>
+
+    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+        <h4 style="margin-top: 0;">{% trans "Sipariş Bilgileri" %}</h4>
+        <p><strong>{% trans "Sipariş Numarası" %}:</strong> {{ order.id }}</p>
+        <p><strong>{% trans "Sipariş Tarihi" %}:</strong> {{ order.created_at|date:"d M Y H:i" }}</p>
+        <p><strong>{% trans "Toplam Tutar" %}:</strong> {{ order.get_total_cost|floatformat:2 }} TL</p>
+        <p><strong>{% trans "Ödeme Yöntemi" %}:</strong> {{ order.get_payment_method_display }}</p>
+    </div>
+
+    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+        <h4 style="margin-top: 0;">{% trans "Sipariş Özeti" %}</h4>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f8f9fa;">
+                    <th style="padding: 8px; text-align: left; border-bottom: 1px solid #ddd;">{% trans "Ürün" %}</th>
+                    <th style="padding: 8px; text-align: center; border-bottom: 1px solid #ddd;">{% trans "Adet" %}</th>
+                    <th style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">{% trans "Tutar" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ item.portfolio_item.title }}</td>
+                        <td style="padding: 8px; text-align: center; border-bottom: 1px solid #ddd;">{{ item.quantity }}</td>
+                        <td style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">{{ item.price|floatformat:2 }} TL</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr style="background-color: #f8f9fa;">
+                    <td colspan="2" style="padding: 8px; text-align: right; font-weight: bold;">{% trans "Ara Toplam" %}</td>
+                    <td style="padding: 8px; text-align: right;">{{ order.get_subtotal_cost|floatformat:2 }} TL</td>
+                </tr>
+                {% if order.discount_amount > 0 %}
+                <tr style="background-color: #f8f9fa;">
+                    <td colspan="2" style="padding: 8px; text-align: right; font-weight: bold; color: #28a745;">{% trans "İndirim" %}</td>
+                    <td style="padding: 8px; text-align: right; color: #28a745;">-{{ order.discount_amount|floatformat:2 }} TL</td>
+                </tr>
+                {% endif %}
+                <tr style="background-color: #f8f9fa;">
+                    <td colspan="2" style="padding: 8px; text-align: right; font-weight: bold;">{% trans "Genel Toplam" %}</td>
+                    <td style="padding: 8px; text-align: right; font-weight: bold;">{{ order.get_total_cost|floatformat:2 }} TL</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    
+    <p>{% blocktrans %}Destek için lütfen bizimle iletişime geçin.{% endblocktrans %}</p>
+    <p>{% blocktrans %}İyi günler dileriz!{% endblocktrans %}</p>
+</div>

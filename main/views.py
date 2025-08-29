@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import hmac
 import json
 import requests  # requests kütüphanesini import edin
 
@@ -7,10 +8,10 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.http import JsonResponse, HttpResponseNotAllowed, HttpResponse
+from django.http import JsonResponse, HttpResponseNotAllowed, HttpResponse, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 from django.contrib import messages
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, send_mail
 from django.db.models import Q, F
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -582,51 +583,67 @@ def checkout_view(request):
 
                         payment_amount = int(order.get_total_cost() * 100)  # Kuruş cinsinden
 
-                        # Sepet içeriğini PayTR formatına dönüştürün
+                        # DİKKAT: Sepet içeriğini PayTR formatına dönüştürün
+                        # Ürün fiyatları da kuruş cinsinden (integer) olmalıdır.
                         basket_items = []
                         for item in order.items.all():
                             basket_items.append([
                                 item.portfolio_item.title,
-                                str(item.get_cost()),
+                                str(int(item.get_cost() * 100)),  # Fiyatı kuruşa çevir ve string yap
                                 item.quantity
                             ])
 
-                        # Verileri hash'lemek için bir araya getirin
+                        # DİKKAT: Sepet içeriği JSON formatına çevrilip Base64 ile kodlanmalı
+                        user_basket_str = json.dumps(basket_items)
+                        user_basket_base64 = base64.b64encode(user_basket_str.encode()).decode()
+
+                        # Sabit değerler
+                        no_installment = "1"  # Taksit istemiyorsanız 1, istiyorsanız 0
+                        max_installment = "0"  # Maksimum taksit sayısı, 0 ise sınırsız
+                        test_mode = "1" if settings.DEBUG else "0"
+
+                        # DİKKAT: PayTR token'ı için hash'lenecek metin (hash_str) dokümantasyona göre oluşturulmalı
                         hash_str = (
                                 settings.PAYTR_API_KEY +
                                 user_ip +
-                                str(merchant_oid) +
-                                str(email) +
+                                merchant_oid +
+                                email +
                                 str(payment_amount) +
-                                json.dumps(basket_items) +
+                                user_basket_base64 +
+                                no_installment +
+                                max_installment +
+                                order.currency +
+                                test_mode +
                                 settings.PAYTR_MERCHANT_SALT
                         )
 
-                        # PayTR token'ını oluşturun (SHA256 ve Base64)
+                        # DİKKAT: PayTR token'ını oluşturun (SHA256 ve Base64)
                         paytr_token = base64.b64encode(hashlib.sha256(hash_str.encode('utf-8')).digest()).decode(
                             'utf-8')
 
                         post_data = {
                             'merchant_id': settings.PAYTR_API_KEY,
+                            # Ayarlardaki PAYTR_API_KEY aslında Merchant ID olmalı
                             'user_ip': user_ip,
                             'merchant_oid': merchant_oid,
                             'email': email,
                             'payment_amount': payment_amount,
                             'paytr_token': paytr_token,
-                            'user_basket': json.dumps(basket_items),
+                            'user_basket': user_basket_base64,  # Base64 ile kodlanmış sepet
                             'currency': order.currency,
-                            'test_mode': settings.DEBUG,
-                            'no_installment': 0,
-                            'callback_url': request.build_absolute_uri(reverse('paytr_callback')),
+                            'no_installment': int(no_installment),
+                            'max_installment': int(max_installment),
+                            'test_mode': int(test_mode),
+                            'user_name': order.billing_name,
+                            'user_address': order.billing_address,
+                            'user_phone': order.billing_phone_number,
                             'merchant_ok_url': request.build_absolute_uri(reverse('payment_success')),
                             'merchant_fail_url': request.build_absolute_uri(reverse('payment_cancel')),
+                            'timeout_limit': 30,  # Ödeme sayfası zaman aşımı (dakika)
+                            'lang': 'tr',
                         }
 
-                        # Kimlik numarası PayTR için zorunlu değil ama eklenebilir
-                        if order.billing_identity_number:
-                            post_data['user_id'] = order.billing_identity_number
-
-                        # requests.post(settings.PAYTR_BASE_URL, data=post_data) kısmı daha önce yoktu, bu satırı ekledim
+                        # settings.py dosyanızdaki PAYTR_BASE_URL'nin "https://www.paytr.com/odeme/api/get-token" olduğundan emin olun
                         paytr_response = requests.post(settings.PAYTR_BASE_URL, data=post_data)
                         paytr_response_json = paytr_response.json()
 
@@ -634,16 +651,21 @@ def checkout_view(request):
                             token = paytr_response_json.get('token')
                             request.session['paytr_token'] = token
                             order.status = 'pending_paytr_approval'
+                            order.paytr_merchant_oid = merchant_oid  # Geri dönüşlerde siparişi bulmak için merchant_oid'i kaydedin
                             order.save()
-                            return redirect('paytr_checkout_embed')
+                            return redirect('paytr_checkout_embed')  # Bu isimde bir URL'niz olmalı
                         else:
-                            messages.error(request,
-                                           paytr_response_json.get('err_msg', 'PayTR ile ödeme başlatılamadı.'))
-                            logger.error(f"PayTR hata: {paytr_response_json}")
+                            error_message = paytr_response_json.get('err_msg', 'PayTR ile ödeme başlatılamadı.')
+                            messages.error(request, error_message)
+                            logger.error(f"PayTR API hatası: {paytr_response_json}")
                             return redirect('checkout')
 
+                    except requests.exceptions.RequestException as req_err:
+                        messages.error(request, 'PayTR sunucusuna bağlanırken bir hata oluştu. Lütfen tekrar deneyin.')
+                        logger.exception(f"PayTR bağlantı hatası: {req_err}")
+                        return redirect('checkout')
                     except Exception as e:
-                        messages.error(request, 'PayTR ödeme işlemi sırasında bir hata oluştu. Lütfen tekrar deneyin.')
+                        messages.error(request, 'PayTR ödeme işlemi sırasında beklenmedik bir hata oluştu.')
                         logger.exception("PayTR API isteği sırasında genel hata")
                         return redirect('checkout')
 
@@ -781,7 +803,34 @@ def iyzico_callback_view(request):
 
 @login_required
 def order_success_view(request, order_id):
-    order = get_object_or_404(Order, id=order_id, user=request.user)
+    """
+    Siparişin başarıyla tamamlandığını gösterir ve sipariş onay e-postası gönderir.
+    E-posta gönderme işlemi, siparişin veritabanına kaydedildiği anda yapılmalıdır.
+    Bu örnekte, sipariş ID'sini alarak işlem yapıyoruz.
+    """
+    try:
+        order = get_object_or_404(Order, id=order_id)
+    except Exception as e:
+        return HttpResponse("Sipariş bulunamadı.", status=404)
+
+    # E-posta içeriği için HTML şablonunu render et
+    email_body = render_to_string('emails/order_confirmation_email.html', {'order': order})
+
+    # E-posta gönderme işlemi
+    try:
+        send_mail(
+            "Sipariş Onayınız - " + str(order.id),  # E-posta başlığı
+            '',  # E-posta gövdesi (HTML formatında olduğu için burası boş)
+            settings.DEFAULT_FROM_EMAIL,  # Gönderen e-posta adresi
+            [order.billing_email],  # Alıcı e-posta adresi
+            html_message=email_body,  # HTML e-posta içeriği
+            fail_silently=False,  # Hata durumunda hata fırlat
+        )
+    except Exception as e:
+        # E-posta gönderme hatasını loglayabilirsiniz
+        print(f"E-posta gönderilirken bir hata oluştu: {e}")
+
+    # Sipariş başarı sayfasını render et
     return render(request, 'order_success.html', {'order': order})
 
 
@@ -796,8 +845,22 @@ def apply_discount_view(request):
             discount_code = DiscountCode.objects.get(code__iexact=code_text)
             cart = Order.objects.get(user=request.user, status='cart')
 
-            if not discount_code.is_valid():
-                return JsonResponse({'success': False, 'message': _("Bu kod artık geçerli değil.")})
+            # Yeni ve daha spesifik hata kontrolleri
+            if not discount_code.is_active:
+                return JsonResponse({'success': False, 'message': _("Bu kod aktif değil.")})
+
+            if discount_code.valid_from and now < discount_code.valid_from:
+                return JsonResponse({'success': False, 'message': _("Bu kodun kullanım tarihi henüz başlamadı.")})
+
+            if discount_code.valid_to and now > discount_code.valid_to:
+                return JsonResponse({'success': False, 'message': _("Bu kodun kullanım süresi dolmuştur.")})
+
+            if discount_code.max_uses and discount_code.used_count >= discount_code.max_uses:
+                return JsonResponse({'success': False, 'message': _("Bu kodun kullanım limiti dolmuştur.")})
+
+            # Eğer zaten bir indirim kodu uygulanmışsa
+            if cart.discount_code:
+                return JsonResponse({'success': False, 'message': _("Sepette zaten bir indirim kodu uygulanmış.")})
 
             # İndirimi uygula
             subtotal = cart.get_subtotal_cost()
@@ -839,72 +902,120 @@ def invoice_view(request, order_id):
 @csrf_exempt
 @require_POST
 def paytr_callback_view(request):
+    if request.method != 'POST':
+        # PayTR sadece POST metodu ile bildirim gönderir.
+        return HttpResponseForbidden("Invalid request method.")
+
+    post_data = request.POST
+
+    # Mağaza bilgilerinizi settings.py dosyasından alın
+    merchant_key = settings.PAYTR_SECRET_KEY.encode('utf-8')
+    merchant_salt = settings.PAYTR_MERCHANT_SALT
+
+    # PayTR'dan gelen hash değeri
+    paytr_hash = post_data.get('hash')
+
+    # İmza doğrulaması için kendi hash'imizi oluşturalım
+    hash_str = (
+            post_data.get('merchant_oid') +
+            merchant_salt +
+            post_data.get('status') +
+            post_data.get('total_amount')
+    )
+
+    # HMAC-SHA256 ile hash oluşturma ve Base64'e çevirme
+    calculated_hash_bytes = hmac.new(merchant_key, hash_str.encode('utf-8'), hashlib.sha256).digest()
+    calculated_hash = base64.b64encode(calculated_hash_bytes)
+
+    # Hash doğrulaması: PayTR'dan gelen hash ile bizim hesapladığımız hash eşleşmiyorsa,
+    # istek geçersizdir ve maddi kayıpları önlemek için işlem yapılmamalıdır.
+    if calculated_hash.decode('utf-8') != paytr_hash:
+        logger.warning(f"PayTR callback hash mismatch for merchant_oid: {post_data.get('merchant_oid')}")
+        # PayTR'a hatalı bildirim olduğunu belirtmek için bir metin dönebilirsiniz ama 'OK' dışında
+        # dönen her şey PayTR'ın bildirimi tekrar göndermesine neden olabilir. Genellikle loglamak yeterlidir.
+        return HttpResponse("PAYTR notification failed: bad hash", status=400)
+
+    # --- Hash doğrulandı, şimdi siparişi güncelleyebiliriz ---
+
+    merchant_oid = post_data.get('merchant_oid')
+
     try:
-        data = request.POST
+        # 1. ADIM: merchant_oid ile ilgili siparişi veritabanından bul.
+        # Bir önceki adımda bu değeri Order modeline kaydetmiştik.
+        # Eğer kaydetmediyseniz, merchant_oid'den sipariş ID'sini parse etmeniz gerekir.
+        order = get_object_or_404(Order, paytr_merchant_oid=merchant_oid)
 
-        # PayTR'nin gönderdiği verileri doğrulayın
-        hash_str = (
-                data.get('merchant_oid') +
-                settings.PAYTR_MERCHANT_SALT +
-                data.get('status') +
-                data.get('total_amount')
-        )
-
-        paytr_token = base64.b64encode(hashlib.sha256(hash_str.encode('utf-8')).digest()).decode('utf-8')
-
-        if data.get('hash') != paytr_token:
-            logger.warning("PayTR callback hash doğrulama başarısız.")
-            return HttpResponse("FAIL")
-
-        merchant_oid = data.get('merchant_oid')
-        status = data.get('status')
-        total_amount = data.get('total_amount')
+        # 2. ADIM: Siparişin durumunu kontrol et.
+        # Eğer sipariş zaten 'completed' veya 'failed' ise, aynı bildirimin tekrar gelmesi ihtimaline
+        # karşı tekrar işlem yapma. Bu, mükerrer işlemleri önler.
+        if order.status in ['completed', 'failed']:
+            logger.info(
+                f"PayTR callback received for an already processed order: {merchant_oid}, Status: {order.status}")
+            return HttpResponse("OK")
 
         with transaction.atomic():
-            try:
-                # PayTR merchant_oid ile siparişi bulun
-                order = Order.objects.get(paytr_merchant_oid=merchant_oid)
-            except Order.DoesNotExist:
-                logger.error(f"PayTR callback: Sipariş bulunamadı. merchant_oid: {merchant_oid}")
-                return HttpResponse("FAIL")
-
-            # Sipariş zaten tamamlandıysa, tekrar işlem yapmayın
-            if order.status == 'completed':
-                return HttpResponse("OK")
-
-            if status == 'success':
-                # Başarılı ödeme durumunu ele alın
+            if post_data.get('status') == 'success':
+                # ÖDEME BAŞARILI
                 order.status = 'completed'
-                order.payment_date = timezone.now()
-                order.save()
+                order.payment_id = post_data.get('payment_id', '')  # PayTR ödeme ID'si (varsa)
 
-                # İndirim kodu varsa kullanım sayısını artırın
+                # Müşterinin ödediği toplam tutarı kaydet (taksit komisyonu dahil)
+                # total_amount kuruş cinsindendir, 100'e bölerek TL'ye çevir.
+                final_amount = float(post_data.get('total_amount')) / 100.0
+                order.total_paid = final_amount
+
+                logger.info(f"Order {order.id} payment successful via PayTR. Amount: {final_amount}")
+
+                # İndirim kodu kullanıldıysa kullanım sayısını artır
                 if order.discount_code:
                     order.discount_code.used_count = F('used_count') + 1
                     order.discount_code.save(update_fields=['used_count'])
 
-                logger.info(f"PayTR callback: Ödeme başarılı. Sipariş #{order.id}")
-                return HttpResponse("OK")
-            else:
-                # Başarısız veya diğer durumları ele alın
-                order.status = 'payment_failed'
-                order.save()
-                logger.warning(f"PayTR callback: Ödeme başarısız. Sipariş #{order.id}, Durum: {status}")
-                return HttpResponse("OK")
+                # Müşteriye sipariş onayı e-postası gönder
+                # order_success_view içindeki e-posta gönderme mantığını buraya taşıyabilir
+                # veya bir sinyal (signal) kullanarak bu işlemi tetikleyebilirsiniz.
+                # Örnek:
+                # send_order_confirmation_email(order)
 
+            else:
+                # ÖDEME BAŞARISIZ
+                order.status = 'failed'
+                error_code = post_data.get('failed_reason_code')
+                error_message = post_data.get('failed_reason_msg')
+                order.payment_error_message = f"Code: {error_code}, Msg: {error_message}"
+                logger.error(f"Order {order.id} payment failed via PayTR. Reason: {error_message}")
+
+            order.save()
+
+    except Order.DoesNotExist:
+        # Eğer merchant_oid ile bir sipariş bulunamazsa, bu durumu logla.
+        logger.error(f"PayTR callback received for a non-existent merchant_oid: {merchant_oid}")
+        # Yine de PayTR'a 'OK' dönerek bildirimi sonlandırması istenir.
+        return HttpResponse("OK")
     except Exception as e:
-        logger.exception("PayTR callback işleme hatası.")
-        return HttpResponse("FAIL")
+        # Beklenmedik bir hata oluşursa logla
+        logger.exception(
+            f"An unexpected error occurred during PayTR callback processing for merchant_oid: {merchant_oid}")
+        # Hata durumunda 500 dönebilirsiniz, bu PayTR'ın bildirimi tekrar denemesini sağlar.
+        return HttpResponse("An internal error occurred.", status=500)
+
+    # 3. ADIM: PayTR sistemine işlemin başarıyla alındığını bildir.
+    # Bu 'OK' yanıtı gönderilmezse, PayTR aynı bildirimi belirli aralıklarla tekrar gönderir.
+    return HttpResponse("OK")
 
 
 @login_required
 def paytr_checkout_embed_view(request):
-    token = request.session.get('paytr_token')
-    if not token:
-        messages.error(request, 'Ödeme işlemi başlatılamadı veya oturum süreniz doldu.')
+    paytr_token = request.session.get('paytr_token')
+    if not paytr_token:
+        messages.error(request, 'Ödeme oturumu bulunamadı veya süresi doldu.')
         return redirect('checkout')
 
-    return render(request, 'paytr_checkout_embed.html', {'token': token})
+    # Token'ı template'e gönder
+    context = {
+        'paytr_token': paytr_token
+    }
+    return render(request, 'paytr_checkout_embed.html', context)
 
 
 @login_required
