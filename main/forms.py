@@ -50,7 +50,7 @@ class CommentForm(forms.ModelForm):
 class SubscriberForm(forms.ModelForm):
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={
-            'class': 'form-control',  # 'form-control' sınıfı eklendi
+            'class': 'form-control',
             'placeholder': _('Enter your email'),
             'required': True
         }),
@@ -63,7 +63,6 @@ class SubscriberForm(forms.ModelForm):
 
 
 class UserRegisterForm(UserCreationForm):
-    # Tüm alanlar için 'form-control' widget'ları eklendi.
     username = forms.CharField(
         max_length=150,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Enter your username')})
@@ -89,7 +88,6 @@ class UserRegisterForm(UserCreationForm):
             'last_name': _('Last Name'),
             'email': _('Email Address'),
         }
-        # Şifre alanlarına da 'form-control' widget'ı eklendi.
         widgets = {
             'password1': forms.PasswordInput(attrs={'class': 'form-control'}),
             'password2': forms.PasswordInput(attrs={'class': 'form-control'}),
@@ -100,13 +98,13 @@ class UserUpdateForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['username', 'first_name', 'last_name', 'email']
-        # 'form-control' widget'ları eklendi.
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
         }
+
 
 class DiscountApplyForm(forms.Form):
     code = forms.CharField(
@@ -123,7 +121,6 @@ class ProfileUpdateForm(forms.ModelForm):
         model = Profile
         fields = ['bio', 'phone_number', 'country', 'city', 'address', 'birth_date']
         labels = {
-
             'bio': _('About Me'),
             'phone_number': _('Phone Number'),
             'country': _('Country'),
@@ -142,9 +139,7 @@ class ProfileUpdateForm(forms.ModelForm):
         }
 
 
-# YENİ EKLENEN CHECKOUT FORM
 class CheckoutForm(forms.ModelForm):
-    # Yeni eklenecek alan: Telefon Numarası
     phone_number = forms.CharField(
         max_length=20,
         required=True,
@@ -155,20 +150,44 @@ class CheckoutForm(forms.ModelForm):
         })
     )
 
+    identity_number = forms.CharField(
+        max_length=11,
+        required=True,
+        label="Kimlik Numarası",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Kimlik numaranızı girin'
+        })
+    )
+
+    payment_method = forms.ChoiceField(
+        choices=Order.PAYMENT_METHOD_CHOICES,
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        initial='iyzico',
+        label="Ödeme Yöntemi"
+    )
+
+    currency = forms.ChoiceField(
+        choices=Order.CURRENCY_CHOICES,
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        initial='TRY',
+        label="Para Birimi"
+    )
+
     class Meta:
         model = Order
         fields = [
-            'payment_method',
             'billing_name',
             'billing_email',
+            'phone_number',
+            'identity_number',
             'billing_address',
             'billing_city',
             'billing_postal_code',
-            'phone_number',
+            'payment_method',
+            'currency',
         ]
-        # Mevcut widget'lar ve etiketler aynı kalacak
         widgets = {
-            'payment_method': forms.RadioSelect(attrs={'class': 'form-check-input'}),
             'billing_name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'required': True,
@@ -197,7 +216,6 @@ class CheckoutForm(forms.ModelForm):
             }),
         }
         labels = {
-            'payment_method': 'Ödeme Yöntemi',
             'billing_name': 'Ad Soyad',
             'billing_email': 'E-posta Adresi',
             'billing_address': 'Adres',
@@ -209,12 +227,22 @@ class CheckoutForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
+        # Alanları sırasını belirleyelim
+        self.order_fields([
+            'payment_method',
+            'currency',
+            'billing_name',
+            'billing_email',
+            'phone_number',
+            'identity_number',
+            'billing_address',
+            'billing_city',
+            'billing_postal_code',
+        ])
+
         if user:
             full_name = f"{user.first_name} {user.last_name}".strip()
             self.fields['billing_name'].initial = full_name or user.username
             self.fields['billing_email'].initial = user.email
-            # Eğer kullanıcı profili varsa, telefon numarasını initial olarak ayarla
             if hasattr(user, 'profile'):
                 self.fields['phone_number'].initial = user.profile.phone_number
-
-

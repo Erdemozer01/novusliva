@@ -161,3 +161,8 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # .env dosyasından okur
 IYZICO_API_KEY = os.getenv('IYZICO_API_KEY')
 IYZICO_SECRET_KEY = os.getenv('IYZICO_SECRET_KEY')
 IYZICO_BASE_URL = os.getenv('IYZICO_BASE_URL')
+
+PAYTR_API_KEY = "SizinMağazaNo"
+PAYTR_API_SECRET = "SizinMağazaParolası"
+PAYTR_MERCHANT_SALT = "SizinMağazaGizliAnahtarı"
+PAYTR_BASE_URL = "https://www.paytr.com/odeme/api/v2" # veya uygun endpoint

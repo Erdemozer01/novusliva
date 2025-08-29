@@ -22,7 +22,6 @@
         {% endif %}
 
         <div class="row g-5">
-            <!-- Sipariş Özeti -->
             <div class="col-lg-4 order-2 order-lg-1">
                 <div class="card p-4 shadow-sm">
                     <h4 class="mb-3">Sipariş Özeti</h4>
@@ -68,7 +67,6 @@
                 </div>
             </div>
 
-            <!-- Fatura ve Ödeme Formu -->
             <div class="col-lg-8 order-1 order-lg-2">
                 <div class="card p-4 shadow-sm">
                     <h4 class="mb-4">Fatura ve Ödeme Bilgileri</h4>
@@ -100,6 +98,15 @@
                             {{ form.phone_number }}
                             {% if form.phone_number.errors %}
                                 <div class="text-danger small mt-1">{{ form.phone_number.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Yeni eklenen: Kimlik Numarası alanı -->
+                        <div class="mb-3">
+                            <label for="{{ form.identity_number.id_for_label }}" class="form-label">{{ form.identity_number.label }} *</label>
+                            {{ form.identity_number }}
+                            {% if form.identity_number.errors %}
+                                <div class="text-danger small mt-1">{{ form.identity_number.errors }}</div>
                             {% endif %}
                         </div>
 
@@ -145,6 +152,22 @@
                             {% endif %}
                         </div>
 
+                        <!-- Yeni eklenen: Para Birimi alanı -->
+                        <h5 class="mb-3">Para Birimi</h5>
+                        <div class="mb-3">
+                            {% for radio in form.currency %}
+                                <div class="form-check">
+                                    {{ radio.tag }}
+                                    <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                        {{ radio.choice_label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                            {% if form.currency.errors %}
+                                <div class="text-danger small mt-1">{{ form.currency.errors }}</div>
+                            {% endif %}
+                        </div>
+
                         <div class="d-grid gap-2">
                             <button id="checkout-button" type="submit" class="btn btn-success btn-lg">
                                 <span id="checkout-button-text">Siparişi Tamamla</span>
@@ -167,17 +190,30 @@
         const discountForm = document.getElementById('discount-form');
         const discountMessage = document.getElementById('discount-message');
         const mainForm = document.getElementById('checkout-form');
+        const checkoutButtonText = document.getElementById('checkout-button-text');
 
+        // Sayfa yüklendiğinde varsayılan metni ayarla
+        const initialPaymentMethod = document.querySelector('input[name="payment_method"]:checked');
+        if (initialPaymentMethod) {
+            updateButtonText(initialPaymentMethod.value);
+        }
+
+        // Ödeme yöntemi değiştiğinde buton metnini güncelle
         mainForm.addEventListener('change', function (e) {
             if (e.target.name === 'payment_method') {
-                const buttonText = document.getElementById('checkout-button-text');
-                if (e.target.value === 'iyzico') {
-                    buttonText.innerText = '{% trans "Güvenli Ödemeye Git" %}';
-                } else {
-                    buttonText.innerText = '{% trans "Siparişi Tamamla" %}';
-                }
+                updateButtonText(e.target.value);
             }
         });
+
+        function updateButtonText(paymentMethod) {
+            if (paymentMethod === 'iyzico') {
+                checkoutButtonText.innerText = '{% trans "İyzico ile Ödemeye Git" %}';
+            } else if (paymentMethod === 'paytr') {
+                checkoutButtonText.innerText = '{% trans "PayTR ile Ödemeye Git" %}';
+            } else {
+                checkoutButtonText.innerText = '{% trans "Siparişi Tamamla" %}';
+            }
+        }
 
         discountForm.addEventListener('submit', function (e) {
             e.preventDefault();

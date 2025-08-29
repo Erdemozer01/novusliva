@@ -115,9 +115,11 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'created_at', 'status']
-    list_filter = ['status', 'created_at']
-    search_fields = ['user__username', 'id']
+    # GÜNCELLENDİ: list_display'e yeni alanlar eklendi
+    list_display = ['id', 'user', 'created_at', 'status', 'identity_number', 'currency']
+    list_filter = ['status', 'created_at', 'currency'] # GÜNCELLENDİ: currency filtresi eklendi
+    # GÜNCELLENDİ: search_fields'e yeni alanlar eklendi
+    search_fields = ['user__username', 'id', 'identity_number']
     inlines = [OrderItemInline]
 
 # Diğer Modellerin Admin Ayarları

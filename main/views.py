@@ -1,10 +1,13 @@
+import base64
+import hashlib
 import json
+import requests  # requests kütüphanesini import edin
 
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.http import JsonResponse, HttpResponseNotAllowed
+from django.http import JsonResponse, HttpResponseNotAllowed, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 from django.contrib import messages
 from django.core.mail import EmailMessage
@@ -44,7 +47,7 @@ def prepare_iyzico_request(order, user, phone_number, request):
         'conversationId': conversation_id,
         'price': str(subtotal),
         'paidPrice': str(total),
-        'currency': 'TRY',
+        'currency': order.currency,  # Dinamik olarak ayarla
         'basketId': str(order.id),
         'paymentGroup': 'PRODUCT',
         'callbackUrl': request.build_absolute_uri(reverse('iyzico_callback')),
@@ -55,7 +58,7 @@ def prepare_iyzico_request(order, user, phone_number, request):
             'surname': user.last_name or 'N/A',
             'gsmNumber': phone_number or '+905555555555',
             'email': order.billing_email,
-            'identityNumber': '11111111111',
+            'identityNumber': order.billing_identity_number,  # Yeni alan
             'lastLoginDate': user.last_login.strftime(
                 '%Y-%m-%d %H:%M:%S') if user.last_login else timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
             'registrationDate': user.date_joined.strftime('%Y-%m-%d %H:%M:%S'),
@@ -122,7 +125,6 @@ def verify_iyzico_signature(response, secret_key):
     except Exception as sig_err:
         logger.warning(f"Iyzico signature verify failed: {sig_err}")
         return False
-
 
 
 # -----------------------------------------------------------------------------
@@ -520,10 +522,16 @@ def checkout_view(request):
         if form.is_valid():
             with transaction.atomic():
                 order = cart
-                for field in ['payment_method', 'billing_name', 'billing_email', 'billing_address', 'billing_city',
-                              'billing_postal_code']:
-                    setattr(order, field, form.cleaned_data[field])
-                phone_number = form.cleaned_data.get('phone_number')
+                # Yeni alanları kaydet
+                order.billing_name = form.cleaned_data['billing_name']
+                order.billing_email = form.cleaned_data['billing_email']
+                order.billing_address = form.cleaned_data['billing_address']
+                order.billing_city = form.cleaned_data['billing_city']
+                order.billing_postal_code = form.cleaned_data['billing_postal_code']
+                order.billing_phone_number = form.cleaned_data['phone_number']
+                order.billing_identity_number = form.cleaned_data.get('identity_number')  # Yeni alan
+                order.payment_method = form.cleaned_data['payment_method']
+                order.currency = form.cleaned_data['currency']  # Yeni alan
                 order.save()
 
                 if order.payment_method == 'iyzico':
@@ -533,7 +541,8 @@ def checkout_view(request):
                         'base_url': settings.IYZICO_BASE_URL,
                     }
 
-                    iyzico_request, conversation_id = prepare_iyzico_request(order, request.user, phone_number, request)
+                    iyzico_request, conversation_id = prepare_iyzico_request(order, request.user,
+                                                                             order.billing_phone_number, request)
 
                     try:
                         init_data = initialize_iyzico_payment(iyzico_request, options)
@@ -541,7 +550,6 @@ def checkout_view(request):
                         if init_data.get('status') == 'success':
                             order.status = 'pending_iyzico_approval'
                             order.iyzi_conversation_id = conversation_id
-                            order.billing_phone_number = phone_number
                             order.save()
 
                             payment_url = init_data.get('paymentPageUrl')
@@ -561,6 +569,84 @@ def checkout_view(request):
                         logger.exception("Iyzico API isteği sırasında genel hata")
                         return redirect('checkout')
 
+                elif order.payment_method == 'paytr':
+                    try:
+                        merchant_oid = f'ORDER-{order.id}-{random.randint(1000, 9999)}'
+                        user_ip = request.META.get('REMOTE_ADDR')
+                        email = order.billing_email
+
+                        # Para birimi TRY değilse, PayTR sadece TRY destekler. Bu nedenle hata veriyoruz.
+                        if order.currency != 'TRY':
+                            messages.error(request, 'PayTR sadece Türk Lirası (TRY) para birimini destekler.')
+                            return redirect('checkout')
+
+                        payment_amount = int(order.get_total_cost() * 100)  # Kuruş cinsinden
+
+                        # Sepet içeriğini PayTR formatına dönüştürün
+                        basket_items = []
+                        for item in order.items.all():
+                            basket_items.append([
+                                item.portfolio_item.title,
+                                str(item.get_cost()),
+                                item.quantity
+                            ])
+
+                        # Verileri hash'lemek için bir araya getirin
+                        hash_str = (
+                                settings.PAYTR_API_KEY +
+                                user_ip +
+                                str(merchant_oid) +
+                                str(email) +
+                                str(payment_amount) +
+                                json.dumps(basket_items) +
+                                settings.PAYTR_MERCHANT_SALT
+                        )
+
+                        # PayTR token'ını oluşturun (SHA256 ve Base64)
+                        paytr_token = base64.b64encode(hashlib.sha256(hash_str.encode('utf-8')).digest()).decode(
+                            'utf-8')
+
+                        post_data = {
+                            'merchant_id': settings.PAYTR_API_KEY,
+                            'user_ip': user_ip,
+                            'merchant_oid': merchant_oid,
+                            'email': email,
+                            'payment_amount': payment_amount,
+                            'paytr_token': paytr_token,
+                            'user_basket': json.dumps(basket_items),
+                            'currency': order.currency,
+                            'test_mode': settings.DEBUG,
+                            'no_installment': 0,
+                            'callback_url': request.build_absolute_uri(reverse('paytr_callback')),
+                            'merchant_ok_url': request.build_absolute_uri(reverse('payment_success')),
+                            'merchant_fail_url': request.build_absolute_uri(reverse('payment_cancel')),
+                        }
+
+                        # Kimlik numarası PayTR için zorunlu değil ama eklenebilir
+                        if order.billing_identity_number:
+                            post_data['user_id'] = order.billing_identity_number
+
+                        # requests.post(settings.PAYTR_BASE_URL, data=post_data) kısmı daha önce yoktu, bu satırı ekledim
+                        paytr_response = requests.post(settings.PAYTR_BASE_URL, data=post_data)
+                        paytr_response_json = paytr_response.json()
+
+                        if paytr_response_json.get('status') == 'success':
+                            token = paytr_response_json.get('token')
+                            request.session['paytr_token'] = token
+                            order.status = 'pending_paytr_approval'
+                            order.save()
+                            return redirect('paytr_checkout_embed')
+                        else:
+                            messages.error(request,
+                                           paytr_response_json.get('err_msg', 'PayTR ile ödeme başlatılamadı.'))
+                            logger.error(f"PayTR hata: {paytr_response_json}")
+                            return redirect('checkout')
+
+                    except Exception as e:
+                        messages.error(request, 'PayTR ödeme işlemi sırasında bir hata oluştu. Lütfen tekrar deneyin.')
+                        logger.exception("PayTR API isteği sırasında genel hata")
+                        return redirect('checkout')
+
                 elif order.payment_method in ['bank_transfer', 'cash']:
                     order.status = 'pending'
                     order.save()
@@ -572,15 +658,6 @@ def checkout_view(request):
 
     else:
         form = CustomCheckoutForm(user=request.user)
-        if request.user.is_authenticated:
-            form.fields['billing_name'].initial = request.user.get_full_name() or request.user.username
-            form.fields['billing_email'].initial = request.user.email
-            if hasattr(request.user, 'profile'):
-                profile = request.user.profile
-                form.fields['billing_address'].initial = profile.address
-                form.fields['billing_city'].initial = profile.city
-                form.fields['billing_postal_code'].initial = profile.postal_code
-                form.fields['phone_number'].initial = profile.phone_number
 
     context = {
         'cart': cart,
@@ -654,7 +731,6 @@ def iyzico_callback_view(request):
 
         status_ok = response.get('status') == 'success'
         payment_status = response.get('paymentStatus')
-        payment_id = response.get('paymentId')
         basket_id = response.get('basketId')
         conversation_id = response.get('conversationId')
 
@@ -674,15 +750,19 @@ def iyzico_callback_view(request):
         # İmza doğrulama
         if not verify_iyzico_signature(response, options['secret_key']):
             logger.warning(f"İmza doğrulaması başarısız: Order #{order.id if order else 'Unknown'}")
+            messages.error(request, 'Ödeme doğrulaması başarısız. Lütfen tekrar deneyin.')
+            return redirect('checkout')
 
         with transaction.atomic():
-            order.apply_iyzico_result(response)
-            order.iyzi_token_last = token
-            order.save()
+            # Eğer ödeme durumu zaten güncellenmişse tekrar işlem yapma
+            if order.status != 'completed':
+                order.apply_iyzico_result(response)
+                order.iyzi_token_last = token
+                order.save()
 
-            if order.status == 'completed' and order.discount_code_id:
-                order.discount_code.used_count = F('used_count') + 1
-                order.discount_code.save(update_fields=['used_count'])
+                if order.status == 'completed' and order.discount_code_id:
+                    order.discount_code.used_count = F('used_count') + 1
+                    order.discount_code.save(update_fields=['used_count'])
 
             if order.status == 'completed':
                 messages.success(request, f"#{order.id} numaralı siparişinizin ödemesi başarıyla tamamlandı.")
@@ -699,11 +779,11 @@ def iyzico_callback_view(request):
         return redirect('checkout')
 
 
-
 @login_required
 def order_success_view(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
     return render(request, 'order_success.html', {'order': order})
+
 
 @login_required
 @require_POST
@@ -750,3 +830,88 @@ def invoice_view(request, order_id):
         'order': order,
     }
     return render(request, 'invoice.html', context)
+
+
+# -----------------------------------------------------------------------------
+# PayTR Ödeme Akışı
+# -----------------------------------------------------------------------------
+
+@csrf_exempt
+@require_POST
+def paytr_callback_view(request):
+    try:
+        data = request.POST
+
+        # PayTR'nin gönderdiği verileri doğrulayın
+        hash_str = (
+                data.get('merchant_oid') +
+                settings.PAYTR_MERCHANT_SALT +
+                data.get('status') +
+                data.get('total_amount')
+        )
+
+        paytr_token = base64.b64encode(hashlib.sha256(hash_str.encode('utf-8')).digest()).decode('utf-8')
+
+        if data.get('hash') != paytr_token:
+            logger.warning("PayTR callback hash doğrulama başarısız.")
+            return HttpResponse("FAIL")
+
+        merchant_oid = data.get('merchant_oid')
+        status = data.get('status')
+        total_amount = data.get('total_amount')
+
+        with transaction.atomic():
+            try:
+                # PayTR merchant_oid ile siparişi bulun
+                order = Order.objects.get(paytr_merchant_oid=merchant_oid)
+            except Order.DoesNotExist:
+                logger.error(f"PayTR callback: Sipariş bulunamadı. merchant_oid: {merchant_oid}")
+                return HttpResponse("FAIL")
+
+            # Sipariş zaten tamamlandıysa, tekrar işlem yapmayın
+            if order.status == 'completed':
+                return HttpResponse("OK")
+
+            if status == 'success':
+                # Başarılı ödeme durumunu ele alın
+                order.status = 'completed'
+                order.payment_date = timezone.now()
+                order.save()
+
+                # İndirim kodu varsa kullanım sayısını artırın
+                if order.discount_code:
+                    order.discount_code.used_count = F('used_count') + 1
+                    order.discount_code.save(update_fields=['used_count'])
+
+                logger.info(f"PayTR callback: Ödeme başarılı. Sipariş #{order.id}")
+                return HttpResponse("OK")
+            else:
+                # Başarısız veya diğer durumları ele alın
+                order.status = 'payment_failed'
+                order.save()
+                logger.warning(f"PayTR callback: Ödeme başarısız. Sipariş #{order.id}, Durum: {status}")
+                return HttpResponse("OK")
+
+    except Exception as e:
+        logger.exception("PayTR callback işleme hatası.")
+        return HttpResponse("FAIL")
+
+
+@login_required
+def paytr_checkout_embed_view(request):
+    token = request.session.get('paytr_token')
+    if not token:
+        messages.error(request, 'Ödeme işlemi başlatılamadı veya oturum süreniz doldu.')
+        return redirect('checkout')
+
+    return render(request, 'paytr_checkout_embed.html', {'token': token})
+
+
+@login_required
+def iyzico_checkout_embed_view(request):
+    html_content = request.session.get('iyzico_checkout_html')
+    if not html_content:
+        messages.error(request, 'Ödeme işlemi başlatılamadı veya oturum süreniz doldu.')
+        return redirect('checkout')
+
+    return render(request, 'iyzico_checkout_embed.html', {'checkout_form_content': html_content})

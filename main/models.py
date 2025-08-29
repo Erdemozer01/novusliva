@@ -5,7 +5,6 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
-
 from django.db.models import JSONField
 
 
@@ -365,25 +364,30 @@ class Profile(models.Model):
         verbose_name_plural = _("Profiller")
 
 
-# models.py dosyanızda Order modelini bulun ve aşağıdaki gibi güncelleyin
-
 class Order(models.Model):
     """Kullanıcının verdiği siparişleri ve sepetini temsil eder."""
     STATUS_CHOICES = (
         ('cart', _('Sepette')),
         ('pending', _('Ödeme Bekleniyor')),
-        # PayTR kaldırıldığı için bu satır da temizlenebilir
         ('pending_iyzico_approval', _('Iyzico Onayı Bekleniyor')),
+        ('pending_paytr_approval', _('PayTR Onayı Bekleniyor')),
         ('completed', _('Tamamlandı')),
         ('payment_failed', _('Ödeme Başarısız')),
         ('cancelled', _('İptal Edildi')),
     )
 
-    # PayTR kaldırıldığı için bu choices da temizlenebilir
     PAYMENT_METHOD_CHOICES = (
         ('iyzico', _('Iyzico (Kredi/Banka Kartı)')),
+        ('paytr', _('PayTR (Kredi/Banka Kartı)')),
         ('bank_transfer', _('Havale/EFT')),
         ('cash', _('Nakit Ödeme')),
+    )
+
+    CURRENCY_CHOICES = (
+        ('TRY', _('Türk Lirası')),
+        ('USD', _('ABD Doları')),
+        ('EUR', _('Euro')),
+        ('GBP', _('Sterlin')),
     )
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=_("Kullanıcı"))
@@ -442,17 +446,25 @@ class Order(models.Model):
         help_text="Son CF-Retrieve (veya webhook) JSON yanıtı (debug/raporlama)"
     )
 
-    # paytr_merchant_oid alanı artık kaldırılabilir
+    # PayTR alanı
+    paytr_merchant_oid = models.CharField(
+        max_length=255, null=True, blank=True, unique=True,
+        verbose_name=_("PayTR Sipariş ID")
+    )
 
+    # Ortak sipariş bilgileri
     billing_name = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("Fatura Adı"))
     billing_email = models.EmailField(null=True, blank=True, verbose_name=_("Fatura E-posta"))
     billing_address = models.TextField(null=True, blank=True, verbose_name=_("Fatura Adresi"))
     billing_city = models.CharField(max_length=50, null=True, blank=True, verbose_name=_("Şehir"))
     billing_postal_code = models.CharField(max_length=10, null=True, blank=True, verbose_name=_("Posta Kodu"))
-    billing_phone_number = models.CharField(max_length=20, null=True, blank=True, verbose_name=_("Fatura Telefon Numarası"))
+    billing_phone_number = models.CharField(max_length=20, null=True, blank=True,
+                                            verbose_name=_("Fatura Telefon Numarası"))
+    billing_identity_number = models.CharField(max_length=11, null=True, blank=True, verbose_name=_("Kimlik Numarası"))
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='TRY', verbose_name=_("Para Birimi"))
+    identity_number = models.CharField(max_length=11, null=True, blank=True, verbose_name="Kimlik Numarası")
 
 
-    # YENİ ALANLAR
     discount_code = models.ForeignKey(
         'DiscountCode',
         on_delete=models.SET_NULL,
@@ -467,8 +479,6 @@ class Order(models.Model):
         validators=[MinValueValidator(0)]
     )
 
-    # --- YENİ ALANLAR BİTTİ ---
-
     def get_subtotal_cost(self):
         """İndirim uygulanmamış ara toplamı döndürür."""
         return sum(item.get_cost() for item in self.items.all())
@@ -476,7 +486,6 @@ class Order(models.Model):
     def get_total_cost(self):
         """İndirim sonrası ödenecek nihai tutarı döndürür."""
         subtotal = self.get_subtotal_cost()
-        # İndirimin ara toplamdan fazla olmasını engelle
         total = subtotal - self.discount_amount
         return max(total, 0)
 
@@ -491,7 +500,6 @@ class Order(models.Model):
         self.iyzi_bin_number = result.get("binNumber") or self.iyzi_bin_number
         self.iyzi_card_family = result.get("cardFamily") or self.iyzi_card_family
         self.iyzi_raw_response = result
-        # Durum güncelle
         if self.iyzi_payment_status == "SUCCESS":
             self.status = "completed"
             self.payment_date = timezone.now()
@@ -505,6 +513,7 @@ class Order(models.Model):
         verbose_name = _("Sipariş/Sepet")
         verbose_name_plural = _("Siparişler/Sepetler")
         ordering = ['-created_at']
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE, verbose_name=_("Sipariş"))

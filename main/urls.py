@@ -48,4 +48,7 @@ urlpatterns = [
     # Fatura
     path('invoice/<int:order_id>/', views.invoice_view, name='invoice_view'),
 
+    path('checkout/paytr/', views.paytr_checkout_embed_view, name='paytr_checkout_embed'),
+    path('paytr/callback/', views.paytr_callback_view, name='paytr_callback'),
+
 ]
