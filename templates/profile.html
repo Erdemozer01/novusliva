@@ -56,7 +56,7 @@
                                         <p class="text-secondary">@{{ user.username }}</p>
                                         <p class="text-muted">{{ user.email }}</p>
                                         <hr>
-                                        <p><strong>{% trans "About Me" %}:</strong> {{ user.profile.bio|default:"-" }}</p>
+
                                         <p><strong>{% trans "Location" %}:</strong> {{ user.profile.city|default:"-" }}, {{ user.profile.country|default:"-" }}</p>
                                         <p><strong>{% trans "Phone" %}:</strong> {{ user.profile.phone_number|default:"-" }}</p>
                                         <a href="{% url 'order_history' request.user.username %}"

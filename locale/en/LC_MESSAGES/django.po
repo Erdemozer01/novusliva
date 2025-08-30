@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-17 03:12+0300\n"
+"POT-Creation-Date: 2025-08-30 04:18+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,183 +26,799 @@ msgstr ""
 msgid "English"
 msgstr ""
 
-#: .\main\forms.py:16 .\main\forms.py:18
+#: .\main\forms.py:17
 msgid "Your Name"
 msgstr ""
 
-#: .\main\forms.py:24 .\main\forms.py:26
+#: .\main\forms.py:22
 msgid "Your Email"
 msgstr ""
 
-#: .\main\forms.py:33 .\main\forms.py:35
+#: .\main\forms.py:27
 msgid "Subject"
 msgstr ""
 
-#: .\main\forms.py:41 .\main\forms.py:43
+#: .\main\forms.py:32
 msgid "Message"
 msgstr ""
 
-#: .\main\forms.py:57
+#: .\main\forms.py:44
 msgid "Your Name*"
 msgstr ""
 
-#: .\main\forms.py:58
+#: .\main\forms.py:45
 msgid "Your Email*"
 msgstr ""
 
-#: .\main\forms.py:59
+#: .\main\forms.py:46
 msgid "Your Comment*"
 msgstr ""
 
-#: .\main\forms.py:66 .\templates\base.html:145 .\templates\contact.html:49
-msgid "Email"
-msgstr ""
-
-#: .\main\forms.py:72 .\main\forms.py:83 .\templates\registration\login.html:42
-msgid "Username"
-msgstr ""
-
-#: .\main\forms.py:84
-msgid "First Name"
-msgstr ""
-
-#: .\main\forms.py:85
-msgid "Last Name"
-msgstr ""
-
-#: .\main\forms.py:86
-msgid "Email Address"
-msgstr ""
-
-#: .\main\forms.py:89
-msgid "Enter your username"
-msgstr ""
-
-#: .\main\forms.py:90
-msgid "Enter your first name"
-msgstr ""
-
-#: .\main\forms.py:91
-msgid "Enter your last name"
-msgstr ""
-
-#: .\main\forms.py:92
-msgid "Enter your email address"
-msgstr ""
-
-#: .\main\forms.py:100
-msgid "Profile Picture"
-msgstr ""
-
-#: .\main\forms.py:101 .\templates\profile.html:45
-msgid "About Me"
-msgstr ""
-
-#: .\main\forms.py:102
-msgid "Phone Number"
-msgstr ""
-
-#: .\main\forms.py:103
-msgid "Country"
-msgstr ""
-
-#: .\main\forms.py:104
-msgid "City"
-msgstr ""
-
-#: .\main\forms.py:105
-msgid "Address"
-msgstr ""
-
-#: .\main\forms.py:106
-msgid "Birth Date"
-msgstr ""
-
-#: .\main\forms.py:110
-msgid "Write something about yourself..."
-msgstr ""
-
-#: .\main\forms.py:111
-msgid "Your phone number"
-msgstr ""
-
-#: .\main\forms.py:112
-msgid "Country you live in"
-msgstr ""
-
-#: .\main\forms.py:113
-msgid "City you live in"
-msgstr ""
-
-#: .\main\forms.py:114
-msgid "Your full address"
-msgstr ""
-
-#: .\main\forms.py:127 .\main\forms.py:128
+#: .\main\forms.py:54
 msgid "Enter your email"
 msgstr ""
 
-#: .\main\models.py:279
-msgid "Sepette"
+#: .\main\forms.py:57 .\templates\base.html:245 .\templates\contact.html:55
+msgid "Email"
 msgstr ""
 
-#: .\main\models.py:280
-msgid "Tamamlandı"
+#: .\main\forms.py:68
+msgid "Enter your username"
 msgstr ""
 
-#: .\main\models.py:282
-msgid "Kullanıcı"
+#: .\main\forms.py:72
+msgid "Enter your first name"
 msgstr ""
 
-#: .\main\models.py:283
+#: .\main\forms.py:76
+msgid "Enter your last name"
+msgstr ""
+
+#: .\main\forms.py:79
+msgid "Enter your email address"
+msgstr ""
+
+#: .\main\forms.py:86 .\templates\registration\login.html:42
+msgid "Username"
+msgstr ""
+
+#: .\main\forms.py:87
+msgid "First Name"
+msgstr ""
+
+#: .\main\forms.py:88
+msgid "Last Name"
+msgstr ""
+
+#: .\main\forms.py:89
+msgid "Email Address"
+msgstr ""
+
+#: .\main\forms.py:111 .\main\models.py:16 .\main\models.py:57
+#: .\main\models.py:474
+msgid "İndirim Kodu"
+msgstr ""
+
+#: .\main\forms.py:113
+msgid "İndirim kodunuzu girin"
+msgstr ""
+
+#: .\main\forms.py:124 .\templates\profile.html:59
+msgid "About Me"
+msgstr ""
+
+#: .\main\forms.py:125
+msgid "Phone Number"
+msgstr ""
+
+#: .\main\forms.py:126
+msgid "Country"
+msgstr ""
+
+#: .\main\forms.py:127
+msgid "City"
+msgstr ""
+
+#: .\main\forms.py:128
+msgid "Address"
+msgstr ""
+
+#: .\main\forms.py:129
+msgid "Birth Date"
+msgstr ""
+
+#: .\main\forms.py:133
+msgid "Write something about yourself..."
+msgstr ""
+
+#: .\main\forms.py:134
+msgid "Your phone number"
+msgstr ""
+
+#: .\main\forms.py:135
+msgid "Country you live in"
+msgstr ""
+
+#: .\main\forms.py:136
+msgid "City you live in"
+msgstr ""
+
+#: .\main\forms.py:137
+msgid "Your full address"
+msgstr ""
+
+#: .\main\models.py:17
+msgid "Örn: ILK2025, YAZINDIRIMI"
+msgstr ""
+
+#: .\main\models.py:23
+msgid "İndirim Yüzdesi (%)"
+msgstr ""
+
+#: .\main\models.py:24
+msgid "Örn: %15 indirim için '15.00' girin."
+msgstr ""
+
+#: .\main\models.py:27
+msgid "Geçerlilik Başlangıç Tarihi"
+msgstr ""
+
+#: .\main\models.py:30
+msgid "Geçerlilik Bitiş Tarihi"
+msgstr ""
+
+#: .\main\models.py:34 .\main\models.py:70
+msgid "Aktif mi?"
+msgstr ""
+
+#: .\main\models.py:38
+msgid "Maksimum Kullanım Sayısı"
+msgstr ""
+
+#: .\main\models.py:39
+msgid "Sınırsız kullanım için '0' olarak bırakın."
+msgstr ""
+
+#: .\main\models.py:43
+msgid "Kullanım Sayısı"
+msgstr ""
+
+#: .\main\models.py:58
+msgid "İndirim Kodları"
+msgstr ""
+
+#: .\main\models.py:64
+msgid "Banka Adı"
+msgstr ""
+
+#: .\main\models.py:65
+msgid "Hesap Sahibi"
+msgstr ""
+
+#: .\main\models.py:66
+msgid "IBAN"
+msgstr ""
+
+#: .\main\models.py:67
+msgid "SWIFT Kodu"
+msgstr ""
+
+#: .\main\models.py:71
+msgid "Sadece bir tane aktif hesap olabilir."
+msgstr ""
+
+#: .\main\models.py:82
+msgid ""
+"Aynı anda yalnızca bir banka hesabı aktif olabilir. Lütfen diğerini pasif "
+"yapın."
+msgstr ""
+
+#: .\main\models.py:90
+msgid "Banka Hesabı"
+msgstr ""
+
+#: .\main\models.py:91
+msgid "Banka Hesapları"
+msgstr ""
+
+#: .\main\models.py:95 .\main\models.py:137
+msgid "Başlık"
+msgstr ""
+
+#: .\main\models.py:96
+msgid "Açıklama"
+msgstr ""
+
+#: .\main\models.py:97
+msgid "İkon Sınıfı (Bootstrap Icons)"
+msgstr ""
+
+#: .\main\models.py:98
+msgid "Renk Sınıfı (örn: item-cyan)"
+msgstr ""
+
+#: .\main\models.py:99
+msgid "Hizmet Detay Görseli"
+msgstr ""
+
+#: .\main\models.py:106
+msgid "Hizmet"
+msgstr ""
+
+#: .\main\models.py:107
+msgid "Hizmetler"
+msgstr ""
+
+#: .\main\models.py:111 .\main\models.py:163
+msgid "Kategori Adı"
+msgstr ""
+
+#: .\main\models.py:118
+msgid "Blog Kategorisi"
+msgstr ""
+
+#: .\main\models.py:119
+msgid "Blog Kategorileri"
+msgstr ""
+
+#: .\main\models.py:123
+msgid "Etiket Adı"
+msgstr ""
+
+#: .\main\models.py:130
+msgid "Etiket"
+msgstr ""
+
+#: .\main\models.py:131 .\main\models.py:144
+msgid "Etiketler"
+msgstr ""
+
+#: .\main\models.py:135
+msgid "Taslak"
+msgstr ""
+
+#: .\main\models.py:135
+msgid "Yayınlandı"
+msgstr ""
+
+#: .\main\models.py:138
+msgid "İçerik"
+msgstr ""
+
+#: .\main\models.py:139
+msgid "Meta Açıklaması (SEO için)"
+msgstr ""
+
+#: .\main\models.py:141
+msgid "Yazar"
+msgstr ""
+
+#: .\main\models.py:143 .\main\models.py:182
+msgid "Kategori"
+msgstr ""
+
+#: .\main\models.py:145
+msgid "Görsel"
+msgstr ""
+
+#: .\main\models.py:146 .\main\models.py:187 .\main\models.py:240
+#: .\main\models.py:331 .\main\models.py:394
 msgid "Oluşturulma Tarihi"
 msgstr ""
 
-#: .\main\models.py:284
+#: .\main\models.py:147 .\main\models.py:395
+msgid "Güncellenme Tarihi"
+msgstr ""
+
+#: .\main\models.py:148 .\main\models.py:396
 msgid "Durum"
 msgstr ""
 
-#: .\main\views.py:349
-msgid "Thank you for subscribing!"
+#: .\main\models.py:158
+msgid "Blog Yazısı"
 msgstr ""
 
-#: .\main\views.py:353
-msgid "Invalid email address."
+#: .\main\models.py:159
+msgid "Blog Yazıları"
 msgstr ""
 
-#: .\main\views.py:356
-msgid "Invalid request."
+#: .\main\models.py:170
+msgid "Portfolyo Kategorisi"
 msgstr ""
 
-#: .\main\views.py:375 .\main\views.py:443 .\main\views.py:490
-msgid "Your purchase was successful! You can view it in your purchase history."
+#: .\main\models.py:171
+msgid "Portfolyo Kategorileri"
 msgstr ""
 
-#: .\main\views.py:400
-msgid "Your account has been updated!"
+#: .\main\models.py:175
+msgid "Proje Başlığı"
 msgstr ""
 
-#: .\main\views.py:456
-msgid "The project has been added to your cart."
+#: .\main\models.py:176
+msgid "Kısa Açıklama"
 msgstr ""
 
-#: .\main\views.py:458
-msgid "This project is already in your cart."
+#: .\main\models.py:177
+msgid "Uzun Açıklama"
 msgstr ""
 
-#: .\main\views.py:476
-msgid "The item has been removed from your cart."
+#: .\main\models.py:178 .\main\models.py:274
+msgid "Müşteri"
+msgstr ""
+
+#: .\main\models.py:179
+msgid "Meta Açıklaması"
+msgstr ""
+
+#: .\main\models.py:183
+msgid "Proje Tarihi"
+msgstr ""
+
+#: .\main\models.py:184
+msgid "Proje Linki"
+msgstr ""
+
+#: .\main\models.py:185
+msgid "Ana Görsel"
+msgstr ""
+
+#: .\main\models.py:186
+msgid "Fiyat (TL)"
+msgstr ""
+
+#: .\main\models.py:197
+msgid "Portfolyo Öğesi"
+msgstr ""
+
+#: .\main\models.py:198
+msgid "Portfolyo Öğeleri"
+msgstr ""
+
+#: .\main\models.py:203
+msgid "Ait Olduğu Proje"
+msgstr ""
+
+#: .\main\models.py:204
+msgid "Ek Resim"
+msgstr ""
+
+#: .\main\models.py:210
+msgid "Proje Resmi"
+msgstr ""
+
+#: .\main\models.py:211
+msgid "Proje Resimleri"
+msgstr ""
+
+#: .\main\models.py:215 .\main\models.py:234 .\main\models.py:297
+#: .\main\models.py:328
+msgid "Adı Soyadı"
+msgstr ""
+
+#: .\main\models.py:216
+msgid "Unvanı"
+msgstr ""
+
+#: .\main\models.py:217 .\main\models.py:237
+msgid "Fotoğraf"
+msgstr ""
+
+#: .\main\models.py:218 .\main\models.py:543
+msgid "Twitter Linki"
+msgstr ""
+
+#: .\main\models.py:219 .\main\models.py:544
+msgid "Facebook Linki"
+msgstr ""
+
+#: .\main\models.py:220 .\main\models.py:545
+msgid "Instagram Linki"
+msgstr ""
+
+#: .\main\models.py:221 .\main\models.py:546
+msgid "LinkedIn Linki"
+msgstr ""
+
+#: .\main\models.py:222
+msgid "Sıralama için kullanılır (küçük sayı önce gelir)."
+msgstr ""
+
+#: .\main\models.py:228
+msgid "Ekip Üyesi"
+msgstr ""
+
+#: .\main\models.py:229
+msgid "Ekip Üyeleri"
+msgstr ""
+
+#: .\main\models.py:235
+msgid "Unvanı (örn: CEO, Designer)"
+msgstr ""
+
+#: .\main\models.py:236 .\main\models.py:330 .\main\models.py:338
+msgid "Yorum"
+msgstr ""
+
+#: .\main\models.py:239
+msgid "Puan (1-5 arası)"
+msgstr ""
+
+#: .\main\models.py:246
+msgid "Müşteri Yorumu"
+msgstr ""
+
+#: .\main\models.py:247
+msgid "Müşteri Yorumları"
+msgstr ""
+
+#: .\main\models.py:252
+msgid "Yetenek Adı (örn: HTML)"
+msgstr ""
+
+#: .\main\models.py:254
+msgid "Yüzde Değeri (1-100 arası)"
+msgstr ""
+
+#: .\main\models.py:255
+msgid "Sıralama için kullanılır."
+msgstr ""
+
+#: .\main\models.py:261
+msgid "Yetenek"
+msgstr ""
+
+#: .\main\models.py:262
+msgid "Yetenekler"
+msgstr ""
+
+#: .\main\models.py:267
+msgid "Müşteri Adı"
+msgstr ""
+
+#: .\main\models.py:268
+msgid "Müşteri Logosu"
+msgstr ""
+
+#: .\main\models.py:275
+msgid "Müşteriler"
+msgstr ""
+
+#: .\main\models.py:279
+msgid "Hikaye Başlığı"
+msgstr ""
+
+#: .\main\models.py:280
+msgid "Hikaye Alt Başlığı"
+msgstr ""
+
+#: .\main\models.py:281
+msgid "Hikaye Açıklaması"
+msgstr ""
+
+#: .\main\models.py:282
+msgid "Madde 1"
+msgstr ""
+
+#: .\main\models.py:283
+msgid "Madde 2"
+msgstr ""
+
+#: .\main\models.py:284
+msgid "Madde 3"
+msgstr ""
+
+#: .\main\models.py:285
+msgid "Hakkımızda Sayfası Resmi"
+msgstr ""
+
+#: .\main\models.py:286
+msgid "Video Linki"
+msgstr ""
+
+#: .\main\models.py:286
+msgid "YouTube veya Vimeo linki."
+msgstr ""
+
+#: .\main\models.py:292 .\main\models.py:293
+msgid "Hakkımızda Sayfası"
+msgstr ""
+
+#: .\main\models.py:298 .\main\models.py:314 .\main\models.py:329
+#: .\main\models.py:541
+msgid "E-posta Adresi"
+msgstr ""
+
+#: .\main\models.py:299
+msgid "Konu"
+msgstr ""
+
+#: .\main\models.py:300
+msgid "Mesaj"
+msgstr ""
+
+#: .\main\models.py:301
+msgid "Okundu olarak işaretle"
+msgstr ""
+
+#: .\main\models.py:302
+msgid "Gönderilme Tarihi"
+msgstr ""
+
+#: .\main\models.py:308
+msgid "İletişim Formu Mesajı"
+msgstr ""
+
+#: .\main\models.py:309
+msgid "İletişim Formu Mesajları"
+msgstr ""
+
+#: .\main\models.py:315
+msgid "Abonelik Tarihi"
+msgstr ""
+
+#: .\main\models.py:321
+msgid "Bülten Abonesi"
+msgstr ""
+
+#: .\main\models.py:322
+msgid "Bülten Aboneleri"
+msgstr ""
+
+#: .\main\models.py:327
+msgid "Yazı"
+msgstr ""
+
+#: .\main\models.py:332
+msgid "Aktif (Onaylandı)"
+msgstr ""
+
+#: .\main\models.py:339
+msgid "Yorumlar"
+msgstr ""
+
+#: .\main\models.py:344 .\main\models.py:393
+msgid "Kullanıcı"
+msgstr ""
+
+#: .\main\models.py:345
+msgid "Hakkında"
+msgstr ""
+
+#: .\main\models.py:346 .\main\models.py:540
+msgid "Telefon Numarası"
+msgstr ""
+
+#: .\main\models.py:347
+msgid "Ülke"
+msgstr ""
+
+#: .\main\models.py:348 .\main\models.py:459
+msgid "Şehir"
+msgstr ""
+
+#: .\main\models.py:349 .\main\models.py:539
+msgid "Adres"
+msgstr ""
+
+#: .\main\models.py:350
+msgid "Doğum Tarihi"
+msgstr ""
+
+#: .\main\models.py:351 .\main\models.py:460
+msgid "Posta Kodu"
+msgstr ""
+
+#: .\main\models.py:356
+msgid "Stripe Müşteri ID"
+msgstr ""
+
+#: .\main\models.py:363
+msgid "Profil"
+msgstr ""
+
+#: .\main\models.py:364
+msgid "Profiller"
+msgstr ""
+
+#: .\main\models.py:370
+msgid "Sepette"
+msgstr ""
+
+#: .\main\models.py:371
+msgid "Ödeme Bekleniyor"
+msgstr ""
+
+#: .\main\models.py:372
+msgid "Iyzico Onayı Bekleniyor"
+msgstr ""
+
+#: .\main\models.py:373
+msgid "PayTR Onayı Bekleniyor"
+msgstr ""
+
+#: .\main\models.py:374
+msgid "Tamamlandı"
+msgstr ""
+
+#: .\main\models.py:375
+msgid "Ödeme Başarısız"
+msgstr ""
+
+#: .\main\models.py:376
+msgid "İptal Edildi"
+msgstr ""
+
+#: .\main\models.py:380
+msgid "Iyzico (Kredi/Banka Kartı)"
+msgstr ""
+
+#: .\main\models.py:381
+msgid "PayTR (Kredi/Banka Kartı)"
+msgstr ""
+
+#: .\main\models.py:382
+msgid "Havale/EFT"
+msgstr ""
+
+#: .\main\models.py:383
+msgid "Nakit Ödeme"
+msgstr ""
+
+#: .\main\models.py:387
+msgid "Türk Lirası"
+msgstr ""
+
+#: .\main\models.py:388
+msgid "ABD Doları"
+msgstr ""
+
+#: .\main\models.py:389
+msgid "Euro"
+msgstr ""
+
+#: .\main\models.py:390
+msgid "Sterlin"
+msgstr ""
+
+#: .\main\models.py:399 .\templates\emails\order_confirmation_email.html:12
+#: .\templates\order_success.html:46
+msgid "Ödeme Yöntemi"
+msgstr ""
+
+#: .\main\models.py:400
+msgid "Ödeme Tarihi"
+msgstr ""
+
+#: .\main\models.py:452
+msgid "PayTR Sipariş ID"
+msgstr ""
+
+#: .\main\models.py:456
+msgid "Fatura Adı"
+msgstr ""
+
+#: .\main\models.py:457
+msgid "Fatura E-posta"
+msgstr ""
+
+#: .\main\models.py:458
+msgid "Fatura Adresi"
+msgstr ""
+
+#: .\main\models.py:462
+msgid "Fatura Telefon Numarası"
+msgstr ""
+
+#: .\main\models.py:463
+msgid "Kimlik Numarası"
+msgstr ""
+
+#: .\main\models.py:464
+msgid "Para Birimi"
+msgstr ""
+
+#: .\main\models.py:513
+msgid "Sipariş/Sepet"
+msgstr ""
+
+#: .\main\models.py:514
+msgid "Siparişler/Sepetler"
+msgstr ""
+
+#: .\main\models.py:519
+msgid "Sipariş"
+msgstr ""
+
+#: .\main\models.py:521
+msgid "Proje"
+msgstr ""
+
+#: .\main\models.py:522
+msgid "Birim Fiyat"
+msgstr ""
+
+#: .\main\models.py:523 .\templates\emails\order_confirmation_email.html:21
+#: .\templates\order_success.html:67
+msgid "Adet"
+msgstr ""
+
+#: .\main\models.py:533
+msgid "Sipariş Kalemi"
+msgstr ""
+
+#: .\main\models.py:534
+msgid "Sipariş Kalemleri"
+msgstr ""
+
+#: .\main\models.py:549 .\main\models.py:553
+msgid "Site Ayarları"
+msgstr ""
+
+#: .\main\models.py:552
+msgid "Site Ayarı"
+msgstr ""
+
+#: .\main\views.py:405
+msgid "E-bültenimize başarıyla abone oldunuz!"
+msgstr ""
+
+#: .\main\views.py:408
+msgid "Bu e-posta adresi zaten kayıtlı."
+msgstr ""
+
+#: .\main\views.py:411 .\templates\checkout.html:256
+msgid "Bir hata oluştu. Lütfen tekrar deneyin."
+msgstr ""
+
+#: .\main\views.py:412
+msgid "Lütfen geçerli bir e-posta adresi girin."
+msgstr ""
+
+#: .\main\views.py:855
+msgid "Bu kod aktif değil."
+msgstr ""
+
+#: .\main\views.py:858
+msgid "Bu kodun kullanım tarihi henüz başlamadı."
+msgstr ""
+
+#: .\main\views.py:861
+msgid "Bu kodun kullanım süresi dolmuştur."
+msgstr ""
+
+#: .\main\views.py:864
+msgid "Bu kodun kullanım limiti dolmuştur."
+msgstr ""
+
+#: .\main\views.py:868
+msgid "Sepette zaten bir indirim kodu uygulanmış."
+msgstr ""
+
+#: .\main\views.py:880
+msgid "İndirim kodu başarıyla uygulandı."
+msgstr ""
+
+#: .\main\views.py:887
+msgid "Geçersiz indirim kodu."
+msgstr ""
+
+#: .\main\views.py:889
+msgid "Sepetiniz bulunamadı."
+msgstr ""
+
+#: .\main\views.py:891
+msgid "Lütfen bir kod girin."
 msgstr ""
 
 #: .\templates\about.html:5 .\templates\about.html:13 .\templates\about.html:17
-#: .\templates\base.html:66
+#: .\templates\base.html:128
 msgid "About"
 msgstr ""
 
-#: .\templates\about.html:16 .\templates\base.html:65 .\templates\base.html:163
-#: .\templates\blog-details.html:25 .\templates\blog.html:27
-#: .\templates\contact.html:16 .\templates\index.html:5
-#: .\templates\order_history.html:13 .\templates\portfolio-details.html:21
+#: .\templates\about.html:16 .\templates\base.html:127
+#: .\templates\base.html:263 .\templates\blog-details.html:25
+#: .\templates\blog.html:27 .\templates\contact.html:16
+#: .\templates\index.html:5 .\templates\portfolio-details.html:21
 #: .\templates\portfolio.html:17 .\templates\profile.html:13
 #: .\templates\registration\login.html:16
 #: .\templates\registration\register.html:16 .\templates\search_results.html:18
@@ -275,107 +891,111 @@ msgstr ""
 msgid "Clients"
 msgstr ""
 
-#: .\templates\base.html:69 .\templates\team.html:5 .\templates\team.html:13
+#: .\templates\base.html:131 .\templates\team.html:5 .\templates\team.html:13
 #: .\templates\team.html:17
 msgid "Team"
 msgstr ""
 
-#: .\templates\base.html:70 .\templates\testimonials.html:5
+#: .\templates\base.html:132 .\templates\testimonials.html:5
 #: .\templates\testimonials.html:13 .\templates\testimonials.html:17
 msgid "Testimonials"
 msgstr ""
 
-#: .\templates\base.html:73 .\templates\base.html:165
+#: .\templates\base.html:135 .\templates\base.html:265
 #: .\templates\service-details.html:17 .\templates\services.html:5
 #: .\templates\services.html:13 .\templates\services.html:17
 msgid "Services"
 msgstr ""
 
-#: .\templates\base.html:74 .\templates\index.html:108
+#: .\templates\base.html:136 .\templates\index.html:108
 #: .\templates\portfolio-details.html:22 .\templates\portfolio.html:5
 #: .\templates\portfolio.html:14 .\templates\portfolio.html:18
 msgid "Portfolio"
 msgstr ""
 
-#: .\templates\base.html:75 .\templates\blog-details.html:26
+#: .\templates\base.html:137 .\templates\blog-details.html:26
 #: .\templates\blog.html:9 .\templates\blog.html:23 .\templates\blog.html:29
 msgid "Blog"
 msgstr ""
 
-#: .\templates\base.html:76 .\templates\contact.html:5
+#: .\templates\base.html:138 .\templates\contact.html:5
 #: .\templates\contact.html:13 .\templates\contact.html:17
 msgid "Contact"
 msgstr ""
 
-#: .\templates\base.html:83
-msgid "Welcome"
+#: .\templates\base.html:151 .\templates\profile.html:14
+msgid "Profile"
 msgstr ""
 
-#: .\templates\base.html:89
-msgid "Logout"
+#: .\templates\base.html:154
+msgid "Orders"
 msgstr ""
 
-#: .\templates\base.html:95 .\templates\registration\login.html:5
+#: .\templates\base.html:160
+msgid "Admin Panel"
+msgstr ""
+
+#: .\templates\base.html:180 .\templates\registration\login.html:5
 #: .\templates\registration\login.html:13
 #: .\templates\registration\login.html:17
 #: .\templates\registration\login.html:51
 msgid "Login"
 msgstr ""
 
-#: .\templates\base.html:96 .\templates\registration\register.html:5
+#: .\templates\base.html:185 .\templates\registration\register.html:5
 #: .\templates\registration\register.html:13
 #: .\templates\registration\register.html:17
 #: .\templates\registration\register.html:62
 msgid "Register"
 msgstr ""
 
-#: .\templates\base.html:144 .\templates\profile.html:47
+#: .\templates\base.html:244 .\templates\profile.html:61
 msgid "Phone"
 msgstr ""
 
-#: .\templates\base.html:161
+#: .\templates\base.html:261
 msgid "Useful Links"
 msgstr ""
 
-#: .\templates\base.html:164
+#: .\templates\base.html:264
 msgid "About us"
 msgstr ""
 
-#: .\templates\base.html:166
+#: .\templates\base.html:266
 msgid "Terms of service"
 msgstr ""
 
-#: .\templates\base.html:167
+#: .\templates\base.html:267
 msgid "Privacy policy"
 msgstr ""
 
-#: .\templates\base.html:172
+#: .\templates\base.html:272
 msgid "Our Services"
 msgstr ""
 
-#: .\templates\base.html:177
+#: .\templates\base.html:277
 msgid "No services available."
 msgstr ""
 
-#: .\templates\base.html:183
+#: .\templates\base.html:283
 msgid "Our Newsletter"
 msgstr ""
 
-#: .\templates\base.html:184
+#: .\templates\base.html:284
 msgid ""
 "Subscribe to our newsletter and receive the latest news about our products "
 "and services!"
 msgstr ""
 
-#: .\templates\base.html:189
+#: .\templates\base.html:289
 msgid "Subscribe"
 msgstr ""
 
-#: .\templates\base.html:200
+#: .\templates\base.html:300
 msgid "All Rights Reserved"
 msgstr ""
 
-#: .\templates\base.html:255
+#: .\templates\base.html:371
 msgid "An error occurred. Please try again."
 msgstr ""
 
@@ -458,7 +1078,7 @@ msgstr ""
 msgid "Category Posts"
 msgstr ""
 
-#: .\templates\blog.html:21 .\templates\portfolio-details.html:61
+#: .\templates\blog.html:21 .\templates\portfolio-details.html:62
 msgid "Category"
 msgstr ""
 
@@ -471,74 +1091,121 @@ msgstr ""
 msgid "No posts found in this category."
 msgstr ""
 
-#: .\templates\cart_detail.html:3 .\templates\cart_detail.html:8
-msgid "Shopping Cart"
+#: .\templates\checkout.html:4 .\templates\checkout.html:9
+#: .\templates\paytr_checkout_embed.html:4
+#: .\templates\paytr_checkout_embed.html:9
+msgid "Ödeme"
 msgstr ""
 
-#: .\templates\cart_detail.html:22
-msgid "Project"
+#: .\templates\checkout.html:63
+msgid "Uygula"
 msgstr ""
 
-#: .\templates\cart_detail.html:23 .\templates\portfolio-details.html:67
-msgid "Price"
+#: .\templates\checkout.html:178
+msgid "Sepete Geri Dön"
 msgstr ""
 
-#: .\templates\cart_detail.html:32
-msgid "Remove"
+#: .\templates\checkout.html:210
+msgid "İyzico ile Ödemeye Git"
 msgstr ""
 
-#: .\templates\cart_detail.html:38 .\templates\checkout.html:27
-msgid "Total"
+#: .\templates\checkout.html:212
+msgid "PayTR ile Ödemeye Git"
 msgstr ""
 
-#: .\templates\cart_detail.html:46
-msgid "Proceed to Checkout"
+#: .\templates\checkout.html:214
+msgid "Siparişi Tamamla"
 msgstr ""
 
-#: .\templates\cart_detail.html:51
-msgid "Your shopping cart is empty."
+#: .\templates\checkout.html:248
+msgid "Uygulandı"
 msgstr ""
 
-#: .\templates\cart_detail.html:52
-msgid "Continue Shopping"
-msgstr ""
-
-#: .\templates\checkout.html:3 .\templates\checkout.html:9
-msgid "Checkout"
-msgstr ""
-
-#: .\templates\checkout.html:18
-msgid "Order Summary"
-msgstr ""
-
-#: .\templates\checkout.html:33
-msgid "Click the button below to complete your purchase."
-msgstr ""
-
-#: .\templates\checkout.html:34
-msgid "Confirm Purchase"
-msgstr ""
-
-#: .\templates\contact.html:35
+#: .\templates\contact.html:37
 msgid "Get in touch"
 msgstr ""
 
-#: .\templates\contact.html:36
-msgid ""
-"Et id eius voluptates atque nihil voluptatem enim in tempore minima sit ad "
-"mollitia commodi minus."
-msgstr ""
 
-#: .\templates\contact.html:41 .\templates\profile.html:46
+
+#: .\templates\contact.html:47 .\templates\profile.html:60
 msgid "Location"
 msgstr ""
 
-#: .\templates\contact.html:57
+#: .\templates\contact.html:63
 msgid "Call"
 msgstr ""
 
-#: .\templates\contact.html:96
+#: .\templates\contact.html:107
 msgid "Send Message"
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:3
+msgid "Sipariş Onayınız"
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:4
+msgid "Merhaba,"
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:5
+msgid "Siparişiniz başarıyla alınmıştır. Sipariş detaylarınız aşağıdadır:"
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:8
+msgid "Sipariş Bilgileri"
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:9
+#: .\templates\order_success.html:34
+msgid "Sipariş Numarası"
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:10
+#: .\templates\order_success.html:38
+msgid "Sipariş Tarihi"
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:11
+#: .\templates\order_success.html:42
+msgid "Toplam Tutar"
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:16
+#: .\templates\order_success.html:62
+msgid "Sipariş Özeti"
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:20
+#: .\templates\order_success.html:66
+msgid "Ürün"
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:22
+#: .\templates\order_success.html:68
+msgid "Tutar"
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:36
+#: .\templates\order_success.html:82
+msgid "Ara Toplam"
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:41
+#: .\templates\order_success.html:87
+msgid "İndirim"
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:46
+#: .\templates\order_success.html:92
+msgid "Genel Toplam"
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:53
+msgid "Destek için lütfen bizimle iletişime geçin."
+msgstr ""
+
+#: .\templates\emails\order_confirmation_email.html:54
+msgid "İyi günler dileriz!"
 msgstr ""
 
 #: .\templates\index.html:15
@@ -593,28 +1260,32 @@ msgstr ""
 msgid "More Details"
 msgstr ""
 
-#: .\templates\order_history.html:5 .\templates\order_history.html:10
-msgid "Purchase History"
+#: .\templates\order_success.html:5 .\templates\order_success.html:10
+msgid "Sipariş Başarılı"
 msgstr ""
 
-#: .\templates\order_history.html:14 .\templates\profile.html:14
-msgid "Profile"
+#: .\templates\order_success.html:22
+msgid "Siparişiniz Başarıyla Alınmıştır!"
 msgstr ""
 
-#: .\templates\order_history.html:15
-msgid "Orders"
+#: .\templates\order_success.html:24
+msgid ""
+"\n"
+"                                Bize güvendiğiniz için teşekkür ederiz. "
+"Siparişiniz başarıyla alınmıştır ve en kısa sürede işleme konulacaktır.\n"
+"                            "
 msgstr ""
 
-#: .\templates\order_history.html:36
-msgid "My Orders"
+#: .\templates\order_success.html:50
+msgid "Fatura Bilgileri"
 msgstr ""
 
-#: .\templates\order_history.html:41
-msgid "Order"
+#: .\templates\order_success.html:99
+msgid "Sipariş bilgileri görüntülenemiyor. Lütfen destek ile iletişime geçin."
 msgstr ""
 
-#: .\templates\order_history.html:54
-msgid "You have not made any purchases yet."
+#: .\templates\order_success.html:105
+msgid "Ana Sayfaya Geri Dön"
 msgstr ""
 
 #: .\templates\portfolio-details.html:5 .\templates\portfolio-details.html:18
@@ -625,23 +1296,23 @@ msgstr ""
 msgid "Project information"
 msgstr ""
 
-#: .\templates\portfolio-details.html:64
+#: .\templates\portfolio-details.html:66
 msgid "Client"
 msgstr ""
 
 #: .\templates\portfolio-details.html:70
-msgid "Add to Cart"
-msgstr ""
-
-#: .\templates\portfolio-details.html:73
 msgid "Project date"
 msgstr ""
 
-#: .\templates\portfolio-details.html:77
+#: .\templates\portfolio-details.html:75
+msgid "Price"
+msgstr ""
+
+#: .\templates\portfolio-details.html:82
 msgid "Project URL"
 msgstr ""
 
-#: .\templates\portfolio-details.html:81
+#: .\templates\portfolio-details.html:86
 msgid "Visit Website"
 msgstr ""
 
@@ -653,15 +1324,15 @@ msgstr ""
 msgid "My Profile"
 msgstr ""
 
-#: .\templates\profile.html:48
+#: .\templates\profile.html:63
 msgid "View Purchase History"
 msgstr ""
 
-#: .\templates\profile.html:60
+#: .\templates\profile.html:70
 msgid "Update Profile"
 msgstr ""
 
-#: .\templates\profile.html:125
+#: .\templates\profile.html:130
 msgid "Update"
 msgstr ""
 

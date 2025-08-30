@@ -119,9 +119,9 @@ class DiscountApplyForm(forms.Form):
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['bio', 'phone_number', 'country', 'city', 'address', 'birth_date']
+        fields = ['phone_number', 'country', 'city', 'address', 'birth_date']
         labels = {
-            'bio': _('About Me'),
+
             'phone_number': _('Phone Number'),
             'country': _('Country'),
             'city': _('City'),
@@ -129,8 +129,7 @@ class ProfileUpdateForm(forms.ModelForm):
             'birth_date': _('Birth Date'),
         }
         widgets = {
-            'bio': forms.Textarea(
-                attrs={'class': 'form-control', 'rows': 4, 'placeholder': _('Write something about yourself...')}),
+
             'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Your phone number')}),
             'country': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Country you live in')}),
             'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('City you live in')}),

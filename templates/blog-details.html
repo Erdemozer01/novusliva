@@ -92,9 +92,9 @@
             {% for comment in comments %}
             <div id="comment-{{ comment.id }}" class="comment">
               <div class="d-flex">
-                <div class="comment-img"><img src="{% static 'assets/img/blog/comments-1.jpg' %}" alt="{% trans 'Comment Author' %}"></div>
+                <div class="comment-img"><img src="{% static 'assets/img/default.png' %}" alt="{% trans 'Comment Author' %}" class="img-thumbnail"></div>
                 <div>
-                  <h5><a href="">{{ comment.name }}</a></h5>
+                  <h5>{{ comment.name }}</h5>
                   <time datetime="{{ comment.created_at|date:"Y-m-d" }}">{{ comment.created_at|date:"d M, Y - H:i" }}</time>
                   <p>{{ comment.body|linebreaks }}</p>
                 </div>

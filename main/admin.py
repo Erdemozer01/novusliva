@@ -20,7 +20,7 @@ from .models import (
     OrderItem,
     Order,
     Profile,
-    # YENİ EKLENEN MODELLERİ IMPORT EDİN
+    Comment,
     DiscountCode,
     BankAccount,
 )
@@ -81,6 +81,16 @@ class TagAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug')
     prepopulated_fields = {'slug': ('name',)}
 
+
+class CommentInline(admin.TabularInline):
+    model = Comment
+    extra = 1
+    classes = ('collapse',) # Bu, yorumları varsayılan olarak gizler.
+    # Modeldeki doğru alan isimlerini kullanın
+    fields = ('name', 'email', 'body', 'created_at', 'active')
+    readonly_fields = ('created_at',)
+
+
 @admin.register(BlogPost)
 class BlogPostAdmin(admin.ModelAdmin):
     list_display = ('title', 'author', 'category', 'status', 'created_at')
@@ -89,6 +99,7 @@ class BlogPostAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title',)}
     date_hierarchy = 'created_at'
     filter_horizontal = ('tags',)
+    inlines = [CommentInline]
 
 # Portfolyo Modelleri Admin Ayarları
 @admin.register(PortfolioCategory)

@@ -306,15 +306,16 @@ def blog_details_view(request, post_id):
         if comment_form.is_valid():
             new_comment = comment_form.save(commit=False)
             new_comment.post = post
+            new_comment.active = True
             new_comment.save()
 
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({
                     'success': True,
-                    'message': 'Yorumunuz gönderildi ve onaylandıktan sonra yayınlanacaktır.'
+                    'message': 'Yorumunuz başarıyla yayınlandı.'
                 })
 
-            messages.success(request, 'Yorumunuz gönderildi ve onaylandıktan sonra yayınlanacaktır.')
+            messages.success(request, 'Yorumunuz başarıyla yayınlandı.')
             return redirect(post.get_absolute_url())
         else:
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':

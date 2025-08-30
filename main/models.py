@@ -342,7 +342,6 @@ class Comment(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name=_("Kullanıcı"))
-    bio = models.TextField(blank=True, verbose_name=_("Hakkında"))
     phone_number = models.CharField(max_length=20, blank=True, verbose_name=_("Telefon Numarası"))
     country = models.CharField(max_length=50, blank=True, verbose_name=_("Ülke"))
     city = models.CharField(max_length=50, blank=True, verbose_name=_("Şehir"))
@@ -546,7 +545,7 @@ class SiteSetting(models.Model):
     linkedin_url = models.URLField(blank=True, null=True, verbose_name=_("LinkedIn Linki"))
 
     def __str__(self):
-        return _("Site Ayarları")
+        return str(_("Site Ayarları"))
 
     class Meta:
         verbose_name = _("Site Ayarı")
