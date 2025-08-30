@@ -21,7 +21,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
 from django.views.generic import TemplateView
-
 from main.sitemaps import StaticViewSitemap, BlogPostSitemap, PortfolioItemSitemap
 
 sitemaps = {

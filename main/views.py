@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import requests
+from django.contrib.admin.views.decorators import staff_member_required
 
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -28,7 +29,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import (
     ContactForm, CommentForm, UserRegisterForm, SubscriberForm,
-    UserUpdateForm, ProfileUpdateForm, CheckoutForm as CustomCheckoutForm, DiscountApplyForm
+    UserUpdateForm, ProfileUpdateForm, CheckoutForm as CustomCheckoutForm, DiscountApplyForm, CampaignEmailForm
 )
 from .models import (
     Service, BlogPost, Tag, PortfolioItem, PortfolioCategory,
@@ -129,9 +130,6 @@ def verify_iyzico_signature(response, secret_key):
         return False
 
 
-# -----------------------------------------------------------------------------
-# E-posta Gönderme Fonksiyonu (DRY Prensibi)
-# -----------------------------------------------------------------------------
 def send_email_wrapper(subject, recipient_list, html_content, plain_content=None):
     """
     E-posta gönderme işlemini tek bir fonksiyonda toplar.
@@ -153,9 +151,6 @@ def send_email_wrapper(subject, recipient_list, html_content, plain_content=None
         logger.error(f"E-posta gönderiminde hata oluştu: {e}")
 
 
-# -----------------------------------------------------------------------------
-# Ana Sayfa Görünümü
-# -----------------------------------------------------------------------------
 def index_view(request):
     about_content = AboutPage.objects.first()
     latest_portfolio_items = PortfolioItem.objects.all()[:6]
@@ -169,9 +164,6 @@ def index_view(request):
     return render(request, 'index.html', context)
 
 
-# -----------------------------------------------------------------------------
-# Hakkımızda Sayfası Görünümü
-# -----------------------------------------------------------------------------
 def about_view(request):
     team_members = TeamMember.objects.all()
     skills = Skill.objects.all()
@@ -185,9 +177,6 @@ def about_view(request):
     return render(request, 'about.html', context)
 
 
-# -----------------------------------------------------------------------------
-# Hizmetler Sayfası Görünümü
-# -----------------------------------------------------------------------------
 def services_view(request):
     services = Service.objects.all()
     context = {
@@ -196,9 +185,6 @@ def services_view(request):
     return render(request, 'services.html', context)
 
 
-# -----------------------------------------------------------------------------
-# Portfolyo Sayfası Görünümü
-# -----------------------------------------------------------------------------
 def portfolio_view(request):
     items = PortfolioItem.objects.all()
     categories = PortfolioCategory.objects.all()
@@ -210,9 +196,6 @@ def portfolio_view(request):
     return render(request, 'portfolio.html', context)
 
 
-# -----------------------------------------------------------------------------
-# Portfolyo Detay Sayfası Görünümü
-# -----------------------------------------------------------------------------
 def portfolio_details_view(request, item_id):
     item = get_object_or_404(PortfolioItem, pk=item_id)
 
@@ -222,9 +205,6 @@ def portfolio_details_view(request, item_id):
     return render(request, 'portfolio-details.html', context)
 
 
-# -----------------------------------------------------------------------------
-# Takım Sayfası Görünümü
-# -----------------------------------------------------------------------------
 def team_view(request):
     team_members = TeamMember.objects.all()
     context = {
@@ -233,9 +213,6 @@ def team_view(request):
     return render(request, 'team.html', context)
 
 
-# -----------------------------------------------------------------------------
-# Müşteri Yorumları Sayfası Görünümü
-# -----------------------------------------------------------------------------
 def testimonials_view(request):
     testimonials = Testimonial.objects.all()
     context = {
@@ -244,9 +221,6 @@ def testimonials_view(request):
     return render(request, 'testimonials.html', context)
 
 
-# -----------------------------------------------------------------------------
-# Blog Sayfası Görünümü
-# -----------------------------------------------------------------------------
 def blog_view(request):
     all_posts = BlogPost.objects.filter(status='published').order_by('-created_at')
     paginator = Paginator(all_posts, 6)
@@ -259,9 +233,6 @@ def blog_view(request):
     return render(request, 'blog.html', context)
 
 
-# -----------------------------------------------------------------------------
-# İletişim Sayfası Görünümü
-# -----------------------------------------------------------------------------
 def contact_view(request):
     if request.method == 'POST':
         form = ContactForm(request.POST)
@@ -727,10 +698,6 @@ def remove_item_view(request, item_id):
     return redirect('cart_detail')
 
 
-# -----------------------------------------------------------------------------
-# Iyzico Ödeme Akışı
-# -----------------------------------------------------------------------------
-
 @csrf_exempt
 def iyzico_callback_view(request):
     if request.method != 'POST':
@@ -900,10 +867,6 @@ def invoice_view(request, order_id):
     return render(request, 'invoice.html', context)
 
 
-# -----------------------------------------------------------------------------
-# PayTR Ödeme Akışı
-# -----------------------------------------------------------------------------
-
 @csrf_exempt
 @require_POST
 def paytr_callback_view(request):
@@ -1031,3 +994,60 @@ def iyzico_checkout_embed_view(request):
         return redirect('checkout')
 
     return render(request, 'iyzico_checkout_embed.html', {'checkout_form_content': html_content})
+
+
+@staff_member_required
+def send_campaign_email_view(request):
+    if request.method == 'POST':
+        form = CampaignEmailForm(request.POST)
+        if form.is_valid():
+            subject = form.cleaned_data['subject']
+            message_content = form.cleaned_data['message']
+            subscriber_ids_str = form.cleaned_data['subscribers']
+
+            # ID string'ini listeye çevir
+            subscriber_ids = [int(sid) for sid in subscriber_ids_str.split(',')]
+
+            # Veritabanından ilgili abonelerin e-posta adreslerini al
+            recipients = list(Subscriber.objects.filter(id__in=subscriber_ids).values_list('email', flat=True))
+
+            if recipients:
+                try:
+                    # E-posta içeriğini HTML şablonu ile render et
+                    html_content = render_to_string('emails/campaign_email.html', {
+                        'subject': subject,
+                        'message_content': message_content,
+                    })
+
+                    # Mevcut e-posta gönderme fonksiyonunuzu kullanın
+                    send_email_wrapper(
+                        subject=subject,
+                        recipient_list=recipients,
+                        html_content=html_content
+                    )
+
+                    messages.success(request, f"{len(recipients)} aboneye kampanya e-postası başarıyla gönderildi.")
+                except Exception as e:
+                    logger.error(f"Kampanya e-postası gönderilirken hata oluştu: {e}")
+                    messages.error(request, f"E-posta gönderimi sırasında bir hata oluştu: {e}")
+            else:
+                messages.warning(request, "E-posta gönderilecek geçerli abone bulunamadı.")
+
+            # Admini abone listesi sayfasına geri yönlendir
+            return redirect(reverse('admin:main_subscriber_changelist'))
+
+    else:
+        # GET isteği ile gelen abone ID'lerini al
+        subscriber_ids = request.GET.get('ids')
+        if not subscriber_ids:
+            messages.error(request, "Lütfen en az bir abone seçin.")
+            return redirect(reverse('admin:YOUR_APP_NAME_subscriber_changelist'))
+
+        form = CampaignEmailForm(initial={'subscribers': subscriber_ids})
+
+    context = {
+        'form': form,
+        'title': 'Kampanya E-postası Gönder',
+        'opts': Subscriber._meta,  # Admin template'i için gerekli
+    }
+    return render(request, 'emails/send_campaign_email.html', context)

@@ -1,0 +1,35 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <form method="post">
+        {% csrf_token %}
+
+        <fieldset class="module aligned">
+            <div class="form-row">
+                {{ form.subject.label_tag }} {{ form.subject }}
+                {% if form.subject.errors %}
+                    <div class="errors">{{ form.subject.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="form-row">
+                {{ form.message.label_tag }} {{ form.message }}
+                {% if form.message.errors %}
+                    <div class="errors">{{ form.message.errors }}</div>
+                {% endif %}
+            </div>
+        </fieldset>
+
+        {{ form.subscribers }}
+        
+        <div class="submit-row">
+            <input type="submit" value="E-postaları Gönder" class="default">
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,6 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
+from django.http import HttpResponseRedirect
+from .views import send_campaign_email_view
+from django.urls import path
+
+from django.urls import reverse
+
+
 from .models import (
     Service,
     Category,
@@ -152,10 +159,34 @@ class ContactMessageAdmin(admin.ModelAdmin):
     search_fields = ('name', 'email', 'subject', 'message')
     readonly_fields = ('name', 'email', 'subject', 'message', 'created_at')
 
+
 @admin.register(Subscriber)
 class SubscriberAdmin(admin.ModelAdmin):
+    # Modelinizdeki 'created_at' alanını kullanıyoruz. 'is_active' alanı olmadığı için kaldırdık.
     list_display = ('email', 'created_at')
+    list_filter = ('created_at',)
     search_fields = ('email',)
+    actions = ['send_campaign_action']
+
+    def send_campaign_action(self, request, queryset):
+        """
+        Seçilen abonelere kampanya e-postası göndermek için ara forma yönlendirir.
+        """
+        redirect_url = reverse('admin:send_campaign_email')
+        ids_string = ','.join(str(id) for id in queryset.values_list('id', flat=True))
+        return HttpResponseRedirect(f'{redirect_url}?ids={ids_string}')
+
+    # Action'ın admin panelindeki görünen adını ayarlayalım
+    send_campaign_action.short_description = "Seçilen Abonelere Kampanya E-postası Gönder"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('send-campaign-email/', self.admin_site.admin_view(send_campaign_email_view),
+                 name='send_campaign_email'),
+        ]
+        return custom_urls + urls
+
 
 @admin.register(SiteSetting)
 class SiteSettingAdmin(admin.ModelAdmin):
@@ -189,3 +220,20 @@ class BankAccountAdmin(admin.ModelAdmin):
     list_display = ('bank_name', 'account_holder', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('bank_name', 'account_holder')
+    actions = ['send_campaign_action']
+
+    def send_campaign_action(self, request, queryset):
+        """
+        Seçilen abonelere kampanya e-postası göndermek için ara forma yönlendirir.
+        """
+        # Seçilen abonelerin ID'lerini virgülle ayrılmış bir string'e dönüştür
+        selected_ids = queryset.values_list('id', flat=True)
+        ids_string = ','.join(str(id) for id in selected_ids)
+
+        # URL'e ID'leri query parameter olarak ekle
+        redirect_url = f"{reverse('send_campaign_email')}?ids={ids_string}"
+
+        return HttpResponseRedirect(redirect_url)
+
+    # Action'ın admin panelindeki görünen adını ayarlayalım
+    send_campaign_action.short_description = "Seçilen Abonelere Kampanya E-postası Gönder"

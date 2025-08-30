@@ -245,3 +245,17 @@ class CheckoutForm(forms.ModelForm):
             self.fields['billing_email'].initial = user.email
             if hasattr(user, 'profile'):
                 self.fields['phone_number'].initial = user.profile.phone_number
+
+
+class CampaignEmailForm(forms.Form):
+    subject = forms.CharField(
+        label="E-posta Konusu",
+        max_length=200,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    message = forms.CharField(
+        label="E-posta Mesajı (HTML destekler)",
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 10})
+    )
+    # Seçilen abonelerin ID'lerini gizli olarak tutacağız
+    subscribers = forms.CharField(widget=forms.HiddenInput())
