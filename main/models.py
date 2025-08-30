@@ -348,12 +348,7 @@ class Profile(models.Model):
     address = models.CharField(max_length=255, blank=True, verbose_name=_("Adres"))
     birth_date = models.DateField(null=True, blank=True, verbose_name=_("Doğum Tarihi"))
     postal_code = models.CharField(max_length=10, blank=True, null=True, verbose_name=_("Posta Kodu"))
-    stripe_customer_id = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name=_("Stripe Müşteri ID")
-    )
+
 
     def __str__(self):
         return f"{self.user.username} Profili"
