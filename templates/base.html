@@ -10,7 +10,7 @@
     <title>{% block title %}Company Bootstrap Template{% endblock %}</title>
 
     {% block meta_description %}
-        <meta name="description" content="Projenizin varsayılan meta açıklaması buraya gelecek.">
+        <meta name="description" content="{% trans "Your project's default meta description will go here." %}">
     {% endblock %}
 
     <meta name="keywords" content="">
@@ -32,69 +32,69 @@
     <link href="{% static 'assets/css/main.css' %}" rel="stylesheet">
 
     <style>
-        /* Dil ve Çıkış Yap butonlarının link gibi görünmesi için stiller */
+        /* Styles for Language and Logout buttons to look like links */
         .language-form button, .logout-form button {
             background: none !important;
             border: none !important;
-            padding: 10px 20px !important; /* Bu değeri kontrol edin */
+            padding: 10px 20px !important; /* Check this value */
             text-align: left !important;
             width: 100% !important;
             color: #333 !important;
             font-weight: 400 !important;
             font-size: 14px !important;
-            padding-left: 16px !important; /* Örnek değer, diğer dropdown item'larla aynı olmalı */
+            padding-left: 16px !important; /* Example value, should be same as other dropdown items */
         }
 
         .language-form button:hover, .logout-form button:hover {
             background-color: #f2f2f2 !important;
-            color: #007bff !important; /* Temanızın ana rengi */
+            color: #007bff !important; /* Your theme's main color */
         }
 
-        /* Sepet ikonu için temel stil ve büyüklük */
+        /* Base style and size for cart icon */
         .cart-icon {
-            font-size: 28px !important; /* İkon boyutunu biraz küçülttük */
+            font-size: 28px !important; /* We reduced the icon size a bit */
             color: var(--default-color) !important;
             position: relative;
-            display: flex; /* İçindeki elemanları hizalamak için flexbox kullanın */
-            align-items: center; /* Dikeyde ortala */
+            display: flex; /* Use flexbox to align elements inside */
+            align-items: center; /* Vertically center */
             transition: color 0.3s ease;
-            text-decoration: none !important; /* Link alt çizgisi olmaması için */
+            text-decoration: none !important; /* To remove link underline */
         }
 
-        /* Sepet içindeki ürün sayısı için sayaç (badge) stil ve konumlandırma */
+        /* Style and positioning for the cart item count badge */
         .cart-count {
-            position: absolute; /* .cart-icon'a göre mutlak konumlandırma */
-            top: 5px; /* Üstten konum */
-            right: -18px; /* Sağdan konum */
+            position: absolute; /* Absolute positioning relative to .cart-icon */
+            top: 5px; /* Position from top */
+            right: -18px; /* Position from right */
 
             background-color: var(--accent-color, #ff5722) !important;
             color: #fff !important;
 
-            font-size: 7px; /* Sayaç yazısının boyutu */
+            font-size: 7px; /* Font size of the counter text */
             font-weight: 700;
             line-height: 1;
 
-            padding: 3px 6px; /* İç boşluk */
-            border: 2px solid #fff; /* Beyaz kenarlık */
-            border-radius: 50%; /* Dairesel görünüm */
+            padding: 3px 6px; /* Inner padding */
+            border: 2px solid #fff; /* White border */
+            border-radius: 50%; /* Circular shape */
 
-            min-width: 20px; /* Minimum genişlik */
-            height: 20px; /* Yükseklik */
+            min-width: 20px; /* Minimum width */
+            height: 20px; /* Height */
 
-            display: flex; /* İçeriği ortalamak için flex kullan */
-            align-items: center; /* Dikeyde ortala */
-            justify-content: center; /* Yatayda ortala */
+            display: flex; /* Use flex to center the content */
+            align-items: center; /* Vertically center */
+            justify-content: center; /* Horizontally center */
 
-            white-space: nowrap; /* Sayı iki haneli olduğunda satır atlamasını önler */
+            white-space: nowrap; /* Prevents line break when the number is two digits */
 
-            transform: scale(1); /* Başlangıç boyutu */
-            transition: transform 0.3s ease, background-color 0.3s ease; /* Animasyon */
+            transform: scale(1); /* Initial size */
+            transition: transform 0.3s ease, background-color 0.3s ease; /* Animation */
             z-index: 10;
         }
 
-        /* Sepet ikonu üzerine gelindiğinde sayacın büyümesi */
+        /* Enlarge the counter when hovering over the cart icon */
         .cart-icon:hover {
-            color: var(--accent-color, #007bff) !important; /* İkon rengini değiştir */
+            color: var(--accent-color, #007bff) !important; /* Change icon color */
         }
 
         .cart-icon:hover .cart-count {
@@ -103,7 +103,7 @@
         }
 
         .dropdown-menu .dropdown-item {
-            padding: 10px 16px !important; /* Genellikle bu değer kullanılır */
+            padding: 10px 16px !important; /* This value is commonly used */
         }
 
         .language-form button:hover, .logout-form button:hover {
@@ -162,17 +162,17 @@
                             {% endif %}
                             <li>
                                 <hr class="dropdown-divider">
-                            </li>
-                            <li>
-                                <a href="#" class="dropdown-item"
-                                   onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                </li>
+                                <li>
+                                    <a href="#" class="dropdown-item"
+                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                     <i class="bi bi-box-arrow-right me-2"></i>
-                                    Çıkış Yap
-                                </a>
-                                <form id="logout-form" action="{% url 'logout' %}" method="post" style="display: none;">
+                                    {% trans "Logout" %}
+                                    </a>
+                                    <form id="logout-form" action="{% url 'logout' %}" method="post" style="display: none;">
                                     {% csrf_token %}
-                                </form>
-                            </li>
+                                    </form>
+                                </li>
                         </ul>
                     </li>
                 {% else %}
@@ -340,26 +340,26 @@
 
                     const formData = new FormData(newsletterForm);
 
-                    // CSRF token'ı FormData'ya manuel olarak eklemek daha güvenli olabilir.
-                    // Django'nun `{{ csrf_token }}` etiketini zaten kullandığınız için bu isteğe bağlıdır.
+                    // Manually adding the CSRF token to FormData might be more secure.
+                    // This is optional since you are already using the `{{ csrf_token }}` tag.
                     // formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
-                    // Mesaj alanını temizle ve yükleme durumunu göster.
-                    newsletterMessage.textContent = 'İşleniyor...';
-                    newsletterMessage.className = 'text-info'; // Veya sadece bir spinner ekleyebilirsiniz.
+                    // Clear the message area and show loading status.
+                    newsletterMessage.textContent = 'Processing...';
+                    newsletterMessage.className = 'text-info'; // Or you can just add a spinner.
 
                     fetch(newsletterForm.action, {
                         method: 'POST',
                         body: formData,
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
-                            // CSRF token'ı header'da göndermek daha sağlamdır.
+                            // Sending the CSRF token in the header is more robust.
                             'X-CSRFToken': formData.get('csrfmiddlewaretoken')
                         }
                     })
                         .then(response => {
                             if (!response.ok) {
-                                // Sunucu 200 olmayan bir HTTP yanıtı döndürdüğünde hata fırlat
+                                // Throw an error if the server returns a non-200 HTTP response
                                 throw new Error('Network response was not ok');
                             }
                             return response.json();

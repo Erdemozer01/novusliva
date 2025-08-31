@@ -9,77 +9,77 @@ from django.db.models import JSONField
 
 
 class DiscountCode(models.Model):
-    """Sitede kullanılabilecek indirim kodlarını temsil eder."""
+    """Represents discount codes that can be used on the site."""
     code = models.CharField(
         max_length=50,
         unique=True,
-        verbose_name=_("İndirim Kodu"),
-        help_text=_("Örn: ILK2025, YAZINDIRIMI")
+        verbose_name=_("Discount Code"),
+        help_text=_("E.g: FIRST2025, SUMMERDISCOUNT")
     )
     discount_percentage = models.DecimalField(
         max_digits=5,
         decimal_places=2,
         validators=[MinValueValidator(0), MaxValueValidator(100)],
-        verbose_name=_("İndirim Yüzdesi (%)"),
-        help_text=_("Örn: %15 indirim için '15.00' girin.")
+        verbose_name=_("Discount Percentage (%)"),
+        help_text=_("Ex: Enter '15.00' for a 15% discount.")
     )
     valid_from = models.DateTimeField(
-        verbose_name=_("Geçerlilik Başlangıç Tarihi")
+        verbose_name=_("Valid From")
     )
     valid_to = models.DateTimeField(
-        verbose_name=_("Geçerlilik Bitiş Tarihi")
+        verbose_name=_("Valid To")
     )
     is_active = models.BooleanField(
         default=True,
-        verbose_name=_("Aktif mi?")
+        verbose_name=_("Is Active?")
     )
     max_uses = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("Maksimum Kullanım Sayısı"),
-        help_text=_("Sınırsız kullanım için '0' olarak bırakın.")
+        verbose_name=_("Maximum Uses"),
+        help_text=_("Leave '0' for unlimited use.")
     )
     used_count = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("Kullanım Sayısı")
+        verbose_name=_("Used Count")
     )
 
     def __str__(self):
-        return f"{self.code} - %{self.discount_percentage} indirim"
+        return f"{self.code} - %{self.discount_percentage} discount"
 
     def is_valid(self):
-        """Kupon kodunun şu an geçerli olup olmadığını kontrol eder."""
+        """Checks if the coupon code is currently valid."""
         now = timezone.now()
         is_active = self.is_active and (self.valid_from <= now <= self.valid_to)
         has_uses_left = (self.max_uses == 0) or (self.used_count < self.max_uses)
         return is_active and has_uses_left
 
     class Meta:
-        verbose_name = _("İndirim Kodu")
-        verbose_name_plural = _("İndirim Kodları")
+        verbose_name = _("Discount Code")
+        verbose_name_plural = _("Discount Codes")
         ordering = ['-valid_from']
 
 
 class BankAccount(models.Model):
-    """Site sahibinin havale/EFT ödemeleri için banka hesap bilgilerini tutar."""
-    bank_name = models.CharField(max_length=100, verbose_name=_("Banka Adı"))
-    account_holder = models.CharField(max_length=100, verbose_name=_("Hesap Sahibi"))
+    """Holds bank account information for bank transfer payments."""
+    bank_name = models.CharField(max_length=100, verbose_name=_("Bank Name"))
+    account_holder = models.CharField(max_length=100, verbose_name=_("Account Holder"))
     iban = models.CharField(max_length=34, verbose_name=_("IBAN"))
-    swift_code = models.CharField(max_length=11, blank=True, verbose_name=_("SWIFT Kodu"))
+    swift_code = models.CharField(max_length=11, blank=True, verbose_name=_("SWIFT Code"))
     is_active = models.BooleanField(
         default=False,
-        verbose_name=_("Aktif mi?"),
-        help_text=_("Sadece bir tane aktif hesap olabilir.")
+        verbose_name=_("Is Active?"),
+        help_text=_("Only one account can be active at a time.")
     )
 
     def __str__(self):
         return f"{self.bank_name} - {self.account_holder}"
 
     def clean(self):
-        """Sadece bir tane aktif hesap olmasını sağlar."""
+        """Ensures that there is only one active account."""
         if self.is_active:
             if BankAccount.objects.filter(is_active=True).exclude(pk=self.pk).exists():
                 raise ValidationError(
-                    _("Aynı anda yalnızca bir banka hesabı aktif olabilir. Lütfen diğerini pasif yapın.")
+                    _("Only one bank account can be active at a time. Please deactivate the other one.")
                 )
 
     def save(self, *args, **kwargs):
@@ -87,65 +87,65 @@ class BankAccount(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
-        verbose_name = _("Banka Hesabı")
-        verbose_name_plural = _("Banka Hesapları")
+        verbose_name = _("Bank Account")
+        verbose_name_plural = _("Bank Accounts")
 
 
 class Service(models.Model):
-    title = models.CharField(max_length=200, verbose_name=_("Başlık"))
-    description = models.TextField(verbose_name=_("Açıklama"))
-    icon_class = models.CharField(max_length=100, verbose_name=_("İkon Sınıfı (Bootstrap Icons)"))
-    color_class = models.CharField(max_length=50, verbose_name=_("Renk Sınıfı (örn: item-cyan)"))
-    image = models.ImageField(upload_to='service_images/', verbose_name=_("Hizmet Detay Görseli"), blank=True,
+    title = models.CharField(max_length=200, verbose_name=_("Title"))
+    description = models.TextField(verbose_name=_("Description"))
+    icon_class = models.CharField(max_length=100, verbose_name=_("Icon Class (Bootstrap Icons)"))
+    color_class = models.CharField(max_length=50, verbose_name=_("Color Class (e.g: item-cyan)"))
+    image = models.ImageField(upload_to='service_images/', verbose_name=_("Service Detail Image"), blank=True,
                               null=True)
 
     def __str__(self):
         return self.title
 
     class Meta:
-        verbose_name = _("Hizmet")
-        verbose_name_plural = _("Hizmetler")
+        verbose_name = _("Service")
+        verbose_name_plural = _("Services")
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=100, verbose_name=_("Kategori Adı"))
+    name = models.CharField(max_length=100, verbose_name=_("Category Name"))
     slug = models.SlugField(max_length=120, unique=True)
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name = _("Blog Kategorisi")
-        verbose_name_plural = _("Blog Kategorileri")
+        verbose_name = _("Blog Category")
+        verbose_name_plural = _("Blog Categories")
 
 
 class Tag(models.Model):
-    name = models.CharField(max_length=100, verbose_name=_("Etiket Adı"))
+    name = models.CharField(max_length=100, verbose_name=_("Tag Name"))
     slug = models.SlugField(max_length=120, unique=True)
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name = _("Etiket")
-        verbose_name_plural = _("Etiketler")
+        verbose_name = _("Tag")
+        verbose_name_plural = _("Tags")
 
 
 class BlogPost(models.Model):
-    STATUS_CHOICES = (('draft', _('Taslak')), ('published', _('Yayınlandı')))
+    STATUS_CHOICES = (('draft', _('Draft')), ('published', _('Published')))
 
-    title = models.CharField(max_length=255, verbose_name=_("Başlık"))
-    content = models.TextField(verbose_name=_("İçerik"))
-    meta_description = models.CharField(max_length=160, blank=True, verbose_name=_("Meta Açıklaması (SEO için)"))
+    title = models.CharField(max_length=255, verbose_name=_("Title"))
+    content = models.TextField(verbose_name=_("Content"))
+    meta_description = models.CharField(max_length=160, blank=True, verbose_name=_("Meta Description (for SEO)"))
     slug = models.SlugField(max_length=255, unique=True)
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_posts', verbose_name=_("Yazar"))
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_posts', verbose_name=_("Author"))
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='blog_posts',
-                                 verbose_name=_("Kategori"))
-    tags = models.ManyToManyField(Tag, blank=True, related_name='blog_posts', verbose_name=_("Etiketler"))
-    image = models.ImageField(upload_to='blog_images/', verbose_name=_("Görsel"))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Oluşturulma Tarihi"))
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Güncellenme Tarihi"))
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft', verbose_name=_("Durum"))
+                                 verbose_name=_("Category"))
+    tags = models.ManyToManyField(Tag, blank=True, related_name='blog_posts', verbose_name=_("Tags"))
+    image = models.ImageField(upload_to='blog_images/', verbose_name=_("Image"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft', verbose_name=_("Status"))
 
     def get_absolute_url(self):
         return reverse('blog_details', kwargs={'post_id': self.pk})
@@ -155,36 +155,36 @@ class BlogPost(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = _("Blog Yazısı")
-        verbose_name_plural = _("Blog Yazıları")
+        verbose_name = _("Blog Post")
+        verbose_name_plural = _("Blog Posts")
 
 
 class PortfolioCategory(models.Model):
-    name = models.CharField(max_length=100, verbose_name=_("Kategori Adı"))
+    name = models.CharField(max_length=100, verbose_name=_("Category Name"))
     slug = models.SlugField(max_length=120, unique=True)
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name = _("Portfolyo Kategorisi")
-        verbose_name_plural = _("Portfolyo Kategorileri")
+        verbose_name = _("Portfolio Category")
+        verbose_name_plural = _("Portfolio Categories")
 
 
 class PortfolioItem(models.Model):
-    title = models.CharField(max_length=255, verbose_name=_("Proje Başlığı"))
-    short_description = models.CharField(max_length=255, verbose_name=_("Kısa Açıklama"))
-    long_description = models.TextField(verbose_name=_("Uzun Açıklama"))
-    client = models.CharField(max_length=200, verbose_name=_("Müşteri"), blank=True)
-    meta_description = models.CharField(max_length=160, blank=True, verbose_name=_("Meta Açıklaması"))
+    title = models.CharField(max_length=255, verbose_name=_("Project Title"))
+    short_description = models.CharField(max_length=255, verbose_name=_("Short Description"))
+    long_description = models.TextField(verbose_name=_("Long Description"))
+    client = models.CharField(max_length=200, verbose_name=_("Client"), blank=True)
+    meta_description = models.CharField(max_length=160, blank=True, verbose_name=_("Meta Description"))
     slug = models.SlugField(max_length=255, unique=True)
     category = models.ForeignKey(PortfolioCategory, on_delete=models.SET_NULL, null=True, blank=True,
-                                 related_name='items', verbose_name=_("Kategori"))
-    project_date = models.DateField(null=True, blank=True, verbose_name=_("Proje Tarihi"))
-    project_url = models.URLField(blank=True, verbose_name=_("Proje Linki"))
-    main_image = models.ImageField(upload_to='portfolio_images/', verbose_name=_("Ana Görsel"))
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Fiyat (TL)"))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Oluşturulma Tarihi"))
+                                 related_name='items', verbose_name=_("Category"))
+    project_date = models.DateField(null=True, blank=True, verbose_name=_("Project Date"))
+    project_url = models.URLField(blank=True, verbose_name=_("Project Link"))
+    main_image = models.ImageField(upload_to='portfolio_images/', verbose_name=_("Main Image"))
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Price (TL)"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
 
     def get_absolute_url(self):
         return reverse('portfolio_details', kwargs={'item_id': self.pk})
@@ -194,217 +194,217 @@ class PortfolioItem(models.Model):
 
     class Meta:
         ordering = ['-project_date']
-        verbose_name = _("Portfolyo Öğesi")
-        verbose_name_plural = _("Portfolyo Öğeleri")
+        verbose_name = _("Portfolio Item")
+        verbose_name_plural = _("Portfolio Items")
 
 
 class PortfolioImage(models.Model):
     portfolio_item = models.ForeignKey(PortfolioItem, on_delete=models.CASCADE, related_name='images',
-                                       verbose_name=_("Ait Olduğu Proje"))
-    image = models.ImageField(upload_to='portfolio_images/details/', verbose_name=_("Ek Resim"))
+                                       verbose_name=_("Belongs to Project"))
+    image = models.ImageField(upload_to='portfolio_images/details/', verbose_name=_("Additional Image"))
 
     def __str__(self):
-        return f"{self.portfolio_item.title} için resim"
+        return f"Image for {self.portfolio_item.title}"
 
     class Meta:
-        verbose_name = _("Proje Resmi")
-        verbose_name_plural = _("Proje Resimleri")
+        verbose_name = _("Project Image")
+        verbose_name_plural = _("Project Images")
 
 
 class TeamMember(models.Model):
-    full_name = models.CharField(max_length=100, verbose_name=_("Adı Soyadı"))
-    title = models.CharField(max_length=100, verbose_name=_("Unvanı"))
-    photo = models.ImageField(upload_to='team_photos/', verbose_name=_("Fotoğraf"))
-    twitter_url = models.URLField(blank=True, verbose_name=_("Twitter Linki"))
-    facebook_url = models.URLField(blank=True, verbose_name=_("Facebook Linki"))
-    instagram_url = models.URLField(blank=True, verbose_name=_("Instagram Linki"))
-    linkedin_url = models.URLField(blank=True, verbose_name=_("LinkedIn Linki"))
-    order = models.PositiveIntegerField(default=0, help_text=_("Sıralama için kullanılır (küçük sayı önce gelir)."))
+    full_name = models.CharField(max_length=100, verbose_name=_("Full Name"))
+    title = models.CharField(max_length=100, verbose_name=_("Title"))
+    photo = models.ImageField(upload_to='team_photos/', verbose_name=_("Photo"))
+    twitter_url = models.URLField(blank=True, verbose_name=_("Twitter Link"))
+    facebook_url = models.URLField(blank=True, verbose_name=_("Facebook Link"))
+    instagram_url = models.URLField(blank=True, verbose_name=_("Instagram Link"))
+    linkedin_url = models.URLField(blank=True, verbose_name=_("LinkedIn Link"))
+    order = models.PositiveIntegerField(default=0, help_text=_("Used for sorting (a smaller number comes first)."))
 
     def __str__(self):
         return self.full_name
 
     class Meta:
-        verbose_name = _("Ekip Üyesi")
-        verbose_name_plural = _("Ekip Üyeleri")
+        verbose_name = _("Team Member")
+        verbose_name_plural = _("Team Members")
         ordering = ['order', 'full_name']
 
 
 class Testimonial(models.Model):
-    name = models.CharField(max_length=100, verbose_name=_("Adı Soyadı"))
-    title = models.CharField(max_length=100, verbose_name=_("Unvanı (örn: CEO, Designer)"))
-    comment = models.TextField(verbose_name=_("Yorum"))
-    photo = models.ImageField(upload_to='testimonials/', verbose_name=_("Fotoğraf"))
+    name = models.CharField(max_length=100, verbose_name=_("Full Name"))
+    title = models.CharField(max_length=100, verbose_name=_("Title (e.g: CEO, Designer)"))
+    comment = models.TextField(verbose_name=_("Comment"))
+    photo = models.ImageField(upload_to='testimonials/', verbose_name=_("Photo"))
     rating = models.IntegerField(default=5, validators=[MinValueValidator(1), MaxValueValidator(5)],
-                                 verbose_name=_("Puan (1-5 arası)"))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Oluşturulma Tarihi"))
+                                 verbose_name=_("Rating (1-5)"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name = _("Müşteri Yorumu")
-        verbose_name_plural = _("Müşteri Yorumları")
+        verbose_name = _("Customer Testimonial")
+        verbose_name_plural = _("Customer Testimonials")
         ordering = ['-created_at']
 
 
 class Skill(models.Model):
-    name = models.CharField(max_length=100, verbose_name=_("Yetenek Adı (örn: HTML)"))
+    name = models.CharField(max_length=100, verbose_name=_("Skill Name (e.g: HTML)"))
     percentage = models.PositiveIntegerField(validators=[MaxValueValidator(100)],
-                                             verbose_name=_("Yüzde Değeri (1-100 arası)"))
-    order = models.PositiveIntegerField(default=0, help_text=_("Sıralama için kullanılır."))
+                                             verbose_name=_("Percentage Value (1-100)"))
+    order = models.PositiveIntegerField(default=0, help_text=_("Used for sorting."))
 
     def __str__(self):
         return f"{self.name} ({self.percentage}%)"
 
     class Meta:
-        verbose_name = _("Yetenek")
-        verbose_name_plural = _("Yetenekler")
+        verbose_name = _("Skill")
+        verbose_name_plural = _("Skills")
         ordering = ['order']
 
 
 class Client(models.Model):
-    name = models.CharField(max_length=100, verbose_name=_("Müşteri Adı"))
-    logo = models.ImageField(upload_to='client_logos/', verbose_name=_("Müşteri Logosu"))
+    name = models.CharField(max_length=100, verbose_name=_("Client Name"))
+    logo = models.ImageField(upload_to='client_logos/', verbose_name=_("Client Logo"))
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name = _("Müşteri")
-        verbose_name_plural = _("Müşteriler")
+        verbose_name = _("Client")
+        verbose_name_plural = _("Clients")
 
 
 class AboutPage(models.Model):
-    story_title = models.CharField(max_length=200, verbose_name=_("Hikaye Başlığı"))
-    story_subtitle = models.CharField(max_length=100, verbose_name=_("Hikaye Alt Başlığı"))
-    story_description = models.TextField(verbose_name=_("Hikaye Açıklaması"))
-    bullet_point_1 = models.CharField(max_length=255, verbose_name=_("Madde 1"))
-    bullet_point_2 = models.CharField(max_length=255, verbose_name=_("Madde 2"))
-    bullet_point_3 = models.CharField(max_length=255, verbose_name=_("Madde 3"))
-    image = models.ImageField(upload_to='about/', verbose_name=_("Hakkımızda Sayfası Resmi"))
-    video_url = models.URLField(verbose_name=_("Video Linki"), blank=True, help_text=_("YouTube veya Vimeo linki."))
+    story_title = models.CharField(max_length=200, verbose_name=_("Story Title"))
+    story_subtitle = models.CharField(max_length=100, verbose_name=_("Story Subtitle"))
+    story_description = models.TextField(verbose_name=_("Story Description"))
+    bullet_point_1 = models.CharField(max_length=255, verbose_name=_("Bullet Point 1"))
+    bullet_point_2 = models.CharField(max_length=255, verbose_name=_("Bullet Point 2"))
+    bullet_point_3 = models.CharField(max_length=255, verbose_name=_("Bullet Point 3"))
+    image = models.ImageField(upload_to='about/', verbose_name=_("About Page Image"))
+    video_url = models.URLField(verbose_name=_("Video Link"), blank=True, help_text=_("YouTube or Vimeo link."))
 
     def __str__(self):
-        return "Hakkımızda Sayfası İçeriği"
+        return str(_("About Page Content"))
 
     class Meta:
-        verbose_name = _("Hakkımızda Sayfası")
-        verbose_name_plural = _("Hakkımızda Sayfası")
+        verbose_name = _("About Page")
+        verbose_name_plural = _("About Page")
 
 
 class ContactMessage(models.Model):
-    name = models.CharField(max_length=100, verbose_name=_("Adı Soyadı"))
-    email = models.EmailField(verbose_name=_("E-posta Adresi"))
-    subject = models.CharField(max_length=200, verbose_name=_("Konu"))
-    message = models.TextField(verbose_name=_("Mesaj"))
-    is_read = models.BooleanField(default=False, verbose_name=_("Okundu olarak işaretle"))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Gönderilme Tarihi"))
+    name = models.CharField(max_length=100, verbose_name=_("Full Name"))
+    email = models.EmailField(verbose_name=_("Email Address"))
+    subject = models.CharField(max_length=200, verbose_name=_("Subject"))
+    message = models.TextField(verbose_name=_("Message"))
+    is_read = models.BooleanField(default=False, verbose_name=_("Mark as Read"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Sent Date"))
 
     def __str__(self):
-        return f"'{self.name}' tarafından gönderilen mesaj: '{self.subject}'"
+        return f"Message from '{self.name}': '{self.subject}'"
 
     class Meta:
-        verbose_name = _("İletişim Formu Mesajı")
-        verbose_name_plural = _("İletişim Formu Mesajları")
+        verbose_name = _("Contact Form Message")
+        verbose_name_plural = _("Contact Form Messages")
         ordering = ['-created_at']
 
 
 class Subscriber(models.Model):
-    email = models.EmailField(unique=True, verbose_name=_("E-posta Adresi"))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Abonelik Tarihi"))
+    email = models.EmailField(unique=True, verbose_name=_("Email Address"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Subscription Date"))
 
     def __str__(self):
         return self.email
 
     class Meta:
-        verbose_name = _("Bülten Abonesi")
-        verbose_name_plural = _("Bülten Aboneleri")
+        verbose_name = _("Newsletter Subscriber")
+        verbose_name_plural = _("Newsletter Subscribers")
         ordering = ['-created_at']
 
 
 class Comment(models.Model):
-    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='comments', verbose_name=_("Yazı"))
-    name = models.CharField(max_length=100, verbose_name=_("Adı Soyadı"))
-    email = models.EmailField(verbose_name=_("E-posta Adresi"))
-    body = models.TextField(verbose_name=_("Yorum"))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Oluşturulma Tarihi"))
-    active = models.BooleanField(default=False, verbose_name=_("Aktif (Onaylandı)"))
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='comments', verbose_name=_("Post"))
+    name = models.CharField(max_length=100, verbose_name=_("Full Name"))
+    email = models.EmailField(verbose_name=_("Email Address"))
+    body = models.TextField(verbose_name=_("Comment"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    active = models.BooleanField(default=False, verbose_name=_("Active (Approved)"))
 
     def __str__(self):
-        return f"'{self.post.title}' yazısına '{self.name}' tarafından yapılan yorum"
+        return f"Comment by '{self.name}' on '{self.post.title}'"
 
     class Meta:
-        verbose_name = _("Yorum")
-        verbose_name_plural = _("Yorumlar")
+        verbose_name = _("Comment")
+        verbose_name_plural = _("Comments")
         ordering = ['created_at']
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name=_("Kullanıcı"))
-    phone_number = models.CharField(max_length=20, blank=True, verbose_name=_("Telefon Numarası"))
-    country = models.CharField(max_length=50, blank=True, verbose_name=_("Ülke"))
-    city = models.CharField(max_length=50, blank=True, verbose_name=_("Şehir"))
-    address = models.CharField(max_length=255, blank=True, verbose_name=_("Adres"))
-    birth_date = models.DateField(null=True, blank=True, verbose_name=_("Doğum Tarihi"))
-    postal_code = models.CharField(max_length=10, blank=True, null=True, verbose_name=_("Posta Kodu"))
+    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name=_("User"))
+    phone_number = models.CharField(max_length=20, blank=True, verbose_name=_("Phone Number"))
+    country = models.CharField(max_length=50, blank=True, verbose_name=_("Country"))
+    city = models.CharField(max_length=50, blank=True, verbose_name=_("City"))
+    address = models.CharField(max_length=255, blank=True, verbose_name=_("Address"))
+    birth_date = models.DateField(null=True, blank=True, verbose_name=_("Birth Date"))
+    postal_code = models.CharField(max_length=10, blank=True, null=True, verbose_name=_("Postal Code"))
 
 
     def __str__(self):
-        return f"{self.user.username} Profili"
+        return f"{self.user.username} Profile"
 
     class Meta:
-        verbose_name = _("Profil")
-        verbose_name_plural = _("Profiller")
+        verbose_name = _("Profile")
+        verbose_name_plural = _("Profiles")
 
 
 class Order(models.Model):
-    """Kullanıcının verdiği siparişleri ve sepetini temsil eder."""
+    """Represents the user's orders and cart."""
     STATUS_CHOICES = (
-        ('cart', _('Sepette')),
-        ('pending', _('Ödeme Bekleniyor')),
-        ('pending_iyzico_approval', _('Iyzico Onayı Bekleniyor')),
-        ('pending_paytr_approval', _('PayTR Onayı Bekleniyor')),
-        ('completed', _('Tamamlandı')),
-        ('payment_failed', _('Ödeme Başarısız')),
-        ('cancelled', _('İptal Edildi')),
+        ('cart', _('In Cart')),
+        ('pending', _('Payment Pending')),
+        ('pending_iyzico_approval', _('Pending Iyzico Approval')),
+        ('pending_paytr_approval', _('Pending PayTR Approval')),
+        ('completed', _('Completed')),
+        ('payment_failed', _('Payment Failed')),
+        ('cancelled', _('Cancelled')),
     )
 
     PAYMENT_METHOD_CHOICES = (
-        ('iyzico', _('Iyzico (Kredi/Banka Kartı)')),
-        ('paytr', _('PayTR (Kredi/Banka Kartı)')),
-        ('bank_transfer', _('Havale/EFT')),
-        ('cash', _('Nakit Ödeme')),
+        ('iyzico', _('Iyzico (Credit/Debit Card)')),
+        ('paytr', _('PayTR (Credit/Debit Card)')),
+        ('bank_transfer', _('Bank Transfer')),
+        ('cash', _('Cash Payment')),
     )
 
     CURRENCY_CHOICES = (
-        ('TRY', _('Türk Lirası')),
-        ('USD', _('ABD Doları')),
+        ('TRY', _('Turkish Lira')),
+        ('USD', _('US Dollar')),
         ('EUR', _('Euro')),
-        ('GBP', _('Sterlin')),
+        ('GBP', _('Pound Sterling')),
     )
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=_("Kullanıcı"))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Oluşturulma Tarihi"))
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Güncellenme Tarihi"))
-    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='cart', verbose_name=_("Durum"))
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=_("User"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='cart', verbose_name=_("Status"))
 
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, null=True, blank=True,
-                                      verbose_name=_("Ödeme Yöntemi"))
-    payment_date = models.DateTimeField(null=True, blank=True, verbose_name=_("Ödeme Tarihi"))
+                                      verbose_name=_("Payment Method"))
+    payment_date = models.DateTimeField(null=True, blank=True, verbose_name=_("Payment Date"))
 
-    # Iyzico alanları
+    # Iyzico fields
     iyzi_conversation_id = models.CharField(
         max_length=64, blank=True, null=True, unique=True,
-        help_text="CF-Initialize sırasında üretilen conversationId"
+        help_text="ConversationId generated during CF-Initialize"
     )
     iyzi_token_last = models.CharField(
         max_length=64, blank=True, null=True,
-        help_text="CF-Initialize sonrası callback'e gelecek son token (opsiyonel)"
+        help_text="Last token that will come to the callback after CF-Initialize (optional)"
     )
     iyzi_paymentId = models.CharField(
         max_length=255, blank=True, null=True, unique=True,
-        help_text="CF-Retrieve ile dönen nihai paymentId (unique)"
+        help_text="Final paymentId returned by CF-Retrieve (unique)"
     )
     iyzi_payment_status = models.CharField(
         max_length=32, blank=True, null=True,
@@ -412,52 +412,51 @@ class Order(models.Model):
     )
     iyzi_price = models.DecimalField(
         max_digits=12, decimal_places=2, blank=True, null=True,
-        help_text="CF-Initialize 'price' (kalemlerin toplamı)"
+        help_text="CF-Initialize 'price' (sum of items)"
     )
     iyzi_paid_price = models.DecimalField(
         max_digits=12, decimal_places=2, blank=True, null=True,
-        help_text="CF-Retrieve 'paidPrice' (taksit komisyonu dahil son tahsilat)"
+        help_text="CF-Retrieve 'paidPrice' (final collection including installment commission)"
     )
     iyzi_currency = models.CharField(
         max_length=3, blank=True, null=True, default="TRY",
-        help_text="TRY / USD / EUR / GBP (yurtdışı satışta önemli)"
+        help_text="TRY / USD / EUR / GBP (important for international sales)"
     )
     iyzi_installment = models.PositiveSmallIntegerField(
-        blank=True, null=True, help_text="Gerçekleşen taksit sayısı (1,2,3,6,9,12)"
+        blank=True, null=True, help_text="Number of installments (1,2,3,6,9,12)"
     )
     iyzi_fraud_status = models.SmallIntegerField(
         blank=True, null=True,
         help_text="CF-Retrieve fraudStatus: -2/-1/0/1/2"
     )
     iyzi_bin_number = models.CharField(
-        max_length=6, blank=True, null=True, help_text="kartın ilk 6 hanesi (BIN)"
+        max_length=6, blank=True, null=True, help_text="First 6 digits of the card (BIN)"
     )
     iyzi_card_family = models.CharField(
         max_length=32, blank=True, null=True, help_text="Bonus/Axess/World/Maximum/Paraf/..."
     )
     iyzi_raw_response = JSONField(
         blank=True, null=True,
-        help_text="Son CF-Retrieve (veya webhook) JSON yanıtı (debug/raporlama)"
+        help_text="Final CF-Retrieve (or webhook) JSON response (for debug/reporting)"
     )
 
-    # PayTR alanı
+    # PayTR field
     paytr_merchant_oid = models.CharField(
         max_length=255, null=True, blank=True, unique=True,
-        verbose_name=_("PayTR Sipariş ID")
+        verbose_name=_("PayTR Order ID")
     )
 
-    # Ortak sipariş bilgileri
-    billing_name = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("Fatura Adı"))
-    billing_email = models.EmailField(null=True, blank=True, verbose_name=_("Fatura E-posta"))
-    billing_address = models.TextField(null=True, blank=True, verbose_name=_("Fatura Adresi"))
-    billing_city = models.CharField(max_length=50, null=True, blank=True, verbose_name=_("Şehir"))
-    billing_postal_code = models.CharField(max_length=10, null=True, blank=True, verbose_name=_("Posta Kodu"))
+    # Common order information
+    billing_name = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("Billing Name"))
+    billing_email = models.EmailField(null=True, blank=True, verbose_name=_("Billing Email"))
+    billing_address = models.TextField(null=True, blank=True, verbose_name=_("Billing Address"))
+    billing_city = models.CharField(max_length=50, null=True, blank=True, verbose_name=_("City"))
+    billing_postal_code = models.CharField(max_length=10, null=True, blank=True, verbose_name=_("Postal Code"))
     billing_phone_number = models.CharField(max_length=20, null=True, blank=True,
-                                            verbose_name=_("Fatura Telefon Numarası"))
-    billing_identity_number = models.CharField(max_length=11, null=True, blank=True, verbose_name=_("Kimlik Numarası"))
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='TRY', verbose_name=_("Para Birimi"))
-    identity_number = models.CharField(max_length=11, null=True, blank=True, verbose_name="Kimlik Numarası")
-
+                                            verbose_name=_("Billing Phone Number"))
+    billing_identity_number = models.CharField(max_length=11, null=True, blank=True, verbose_name=_("Identity Number"))
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='TRY', verbose_name=_("Currency"))
+    identity_number = models.CharField(max_length=11, null=True, blank=True, verbose_name=_("Identity Number"))
 
     discount_code = models.ForeignKey(
         'DiscountCode',
@@ -465,7 +464,7 @@ class Order(models.Model):
         null=True,
         blank=True,
         related_name='orders',
-        verbose_name=_("İndirim Kodu")
+        verbose_name=_("Discount Code")
     )
 
     discount_amount = models.DecimalField(
@@ -474,17 +473,17 @@ class Order(models.Model):
     )
 
     def get_subtotal_cost(self):
-        """İndirim uygulanmamış ara toplamı döndürür."""
+        """Returns the subtotal without discounts."""
         return sum(item.get_cost() for item in self.items.all())
 
     def get_total_cost(self):
-        """İndirim sonrası ödenecek nihai tutarı döndürür."""
+        """Returns the final amount to be paid after discount."""
         subtotal = self.get_subtotal_cost()
         total = subtotal - self.discount_amount
         return max(total, 0)
 
     def apply_iyzico_result(self, result: dict):
-        """CF-Retrieve (veya webhook) sonucunu modele uygular."""
+        """Applies the result of CF-Retrieve (or webhook) to the model."""
         self.iyzi_payment_status = result.get("paymentStatus")
         self.iyzi_paymentId = result.get("paymentId") or self.iyzi_paymentId
         self.iyzi_paid_price = result.get("paidPrice") or self.iyzi_paid_price
@@ -501,47 +500,55 @@ class Order(models.Model):
             self.status = "payment_failed"
 
     def __str__(self):
-        return f'{self.user.username} - Sipariş #{self.id} ({self.get_status_display()})'
+        return f'{self.user.username} - Order #{self.id} ({self.get_status_display()})'
 
     class Meta:
-        verbose_name = _("Sipariş/Sepet")
-        verbose_name_plural = _("Siparişler/Sepetler")
+        verbose_name = _("Order/Cart")
+        verbose_name_plural = _("Orders/Carts")
         ordering = ['-created_at']
 
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE, verbose_name=_("Sipariş"))
+    order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE, verbose_name=_("Order"))
     portfolio_item = models.ForeignKey('PortfolioItem', related_name='order_items', on_delete=models.CASCADE,
-                                       verbose_name=_("Proje"))
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Birim Fiyat"))
-    quantity = models.PositiveIntegerField(default=1, verbose_name=_("Adet"))
+                                       verbose_name=_("Project"))
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Unit Price"))
+    quantity = models.PositiveIntegerField(default=1, verbose_name=_("Quantity"))
 
     def get_cost(self):
-        """Bu kalemdeki toplam maliyeti hesaplar."""
+        """Calculates the total cost for this item."""
         return self.price * self.quantity
 
     def __str__(self):
         return f"{self.quantity} x {self.portfolio_item.title}"
 
     class Meta:
-        verbose_name = _("Sipariş Kalemi")
-        verbose_name_plural = _("Sipariş Kalemleri")
+        verbose_name = _("Order Item")
+        verbose_name_plural = _("Order Items")
+
+
+class Feature(models.Model):
+    title = models.CharField(max_length=200)
+    icon_class = models.CharField(max_length=50)  # Bootstrap ikon sınıfı
+
+    def __str__(self):
+        return self.title
 
 
 class SiteSetting(models.Model):
-    """Sitenin genel ayarlarını tutan model."""
-    address = models.CharField(max_length=255, verbose_name=_("Adres"))
-    phone = models.CharField(max_length=20, verbose_name=_("Telefon Numarası"))
-    email = models.EmailField(verbose_name=_("E-posta Adresi"))
+    """A model to hold general site settings."""
+    address = models.CharField(max_length=255, verbose_name=_("Address"))
+    phone = models.CharField(max_length=20, verbose_name=_("Phone Number"))
+    email = models.EmailField(verbose_name=_("Email Address"))
 
-    twitter_url = models.URLField(blank=True, null=True, verbose_name=_("Twitter Linki"))
-    facebook_url = models.URLField(blank=True, null=True, verbose_name=_("Facebook Linki"))
-    instagram_url = models.URLField(blank=True, null=True, verbose_name=_("Instagram Linki"))
-    linkedin_url = models.URLField(blank=True, null=True, verbose_name=_("LinkedIn Linki"))
+    twitter_url = models.URLField(blank=True, null=True, verbose_name=_("Twitter Link"))
+    facebook_url = models.URLField(blank=True, null=True, verbose_name=_("Facebook Link"))
+    instagram_url = models.URLField(blank=True, null=True, verbose_name=_("Instagram Link"))
+    linkedin_url = models.URLField(blank=True, null=True, verbose_name=_("LinkedIn Link"))
 
     def __str__(self):
-        return str(_("Site Ayarları"))
+        return str(_("Site Settings"))
 
     class Meta:
-        verbose_name = _("Site Ayarı")
-        verbose_name_plural = _("Site Ayarları")
+        verbose_name = _("Site Setting")
+        verbose_name_plural = _("Site Settings")

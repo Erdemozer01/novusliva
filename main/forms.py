@@ -1,5 +1,3 @@
-# forms.py
-
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
@@ -108,9 +106,9 @@ class UserUpdateForm(forms.ModelForm):
 
 class DiscountApplyForm(forms.Form):
     code = forms.CharField(
-        label=_("İndirim Kodu"),
+        label=_("Discount Code"),
         widget=forms.TextInput(attrs={
-            'placeholder': _('İndirim kodunuzu girin'),
+            'placeholder': _('Enter your discount code'),
             'class': 'form-control'
         })
     )
@@ -121,7 +119,6 @@ class ProfileUpdateForm(forms.ModelForm):
         model = Profile
         fields = ['phone_number', 'country', 'city', 'address', 'birth_date']
         labels = {
-
             'phone_number': _('Phone Number'),
             'country': _('Country'),
             'city': _('City'),
@@ -129,7 +126,6 @@ class ProfileUpdateForm(forms.ModelForm):
             'birth_date': _('Birth Date'),
         }
         widgets = {
-
             'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Your phone number')}),
             'country': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Country you live in')}),
             'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('City you live in')}),
@@ -142,20 +138,20 @@ class CheckoutForm(forms.ModelForm):
     phone_number = forms.CharField(
         max_length=20,
         required=True,
-        label="Telefon Numarası",
+        label=_("Phone Number"),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Telefon numaranızı girin',
+            'placeholder': _('Enter your phone number'),
         })
     )
 
     identity_number = forms.CharField(
         max_length=11,
         required=True,
-        label="Kimlik Numarası",
+        label=_("Identity Number"),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Kimlik numaranızı girin'
+            'placeholder': _('Enter your identity number')
         })
     )
 
@@ -163,14 +159,14 @@ class CheckoutForm(forms.ModelForm):
         choices=Order.PAYMENT_METHOD_CHOICES,
         widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
         initial='iyzico',
-        label="Ödeme Yöntemi"
+        label=_("Payment Method")
     )
 
     currency = forms.ChoiceField(
         choices=Order.CURRENCY_CHOICES,
         widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
         initial='TRY',
-        label="Para Birimi"
+        label=_("Currency")
     )
 
     class Meta:
@@ -190,43 +186,43 @@ class CheckoutForm(forms.ModelForm):
             'billing_name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'required': True,
-                'placeholder': 'Adınızı ve soyadınızı girin'
+                'placeholder': _('Enter your first and last name')
             }),
             'billing_email': forms.EmailInput(attrs={
                 'class': 'form-control',
                 'required': True,
-                'placeholder': 'E-posta adresinizi girin'
+                'placeholder': _('Enter your email address')
             }),
             'billing_address': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
                 'required': True,
-                'placeholder': 'Tam adresinizi girin'
+                'placeholder': _('Enter your full address')
             }),
             'billing_city': forms.TextInput(attrs={
                 'class': 'form-control',
                 'required': True,
-                'placeholder': 'Şehir adını girin'
+                'placeholder': _('Enter city name')
             }),
             'billing_postal_code': forms.TextInput(attrs={
                 'class': 'form-control',
                 'required': True,
-                'placeholder': 'Posta kodunu girin'
+                'placeholder': _('Enter postal code')
             }),
         }
         labels = {
-            'billing_name': 'Ad Soyad',
-            'billing_email': 'E-posta Adresi',
-            'billing_address': 'Adres',
-            'billing_city': 'Şehir',
-            'billing_postal_code': 'Posta Kodu',
+            'billing_name': _('Full Name'),
+            'billing_email': _('Email Address'),
+            'billing_address': _('Address'),
+            'billing_city': _('City'),
+            'billing_postal_code': _('Postal Code'),
         }
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        # Alanları sırasını belirleyelim
+        # Reorder fields
         self.order_fields([
             'payment_method',
             'currency',
@@ -249,13 +245,13 @@ class CheckoutForm(forms.ModelForm):
 
 class CampaignEmailForm(forms.Form):
     subject = forms.CharField(
-        label="E-posta Konusu",
+        label=_("Email Subject"),
         max_length=200,
         widget=forms.TextInput(attrs={'class': 'form-control'})
     )
     message = forms.CharField(
-        label="E-posta Mesajı (HTML destekler)",
+        label=_("Email Message (supports HTML)"),
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 10})
     )
-    # Seçilen abonelerin ID'lerini gizli olarak tutacağız
+    # We will hold the IDs of selected subscribers in a hidden field
     subscribers = forms.CharField(widget=forms.HiddenInput())

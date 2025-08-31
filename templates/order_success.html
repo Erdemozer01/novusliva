@@ -2,12 +2,12 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{% trans "Sipariş Başarılı" %}{% endblock %}
+{% block title %}{% trans "Order Successful" %}{% endblock %}
 
 {% block content %}
     <div class="page-title accent-background">
         <div class="container d-lg-flex justify-content-between align-items-center">
-            <h1 class="mb-2 mb-lg-0">{% trans "Sipariş Başarılı" %}</h1>
+            <h1 class="mb-2 mb-lg-0">{% trans "Order Successful" %}</h1>
         </div>
     </div>
 
@@ -19,10 +19,10 @@
                         <div class="mb-4">
                             <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
                         </div>
-                        <h2 class="text-success mb-3">{% trans "Siparişiniz Başarıyla Alınmıştır!" %}</h2>
+                        <h2 class="text-success mb-3">{% trans "Your Order Has Been Successfully Placed!" %}</h2>
                         <p class="lead">
                             {% blocktrans %}
-                                Bize güvendiğiniz için teşekkür ederiz. Siparişiniz başarıyla alınmıştır ve en kısa sürede işleme konulacaktır.
+                                Thank you for your trust. Your order has been successfully received and will be processed as soon as possible.
                             {% endblocktrans %}
                         </p>
 
@@ -31,23 +31,23 @@
                         {% if order %}
                             <div class="row g-3 text-start">
                                 <div class="col-md-6">
-                                    <strong>{% trans "Sipariş Numarası" %}:</strong>
+                                    <strong>{% trans "Order Number" %}:</strong>
                                     <span class="d-block">{{ order.id }}</span>
                                 </div>
                                 <div class="col-md-6">
-                                    <strong>{% trans "Sipariş Tarihi" %}:</strong>
+                                    <strong>{% trans "Order Date" %}:</strong>
                                     <span class="d-block">{{ order.created_at|date:"d M Y H:i" }}</span>
                                 </div>
                                 <div class="col-md-6">
-                                    <strong>{% trans "Toplam Tutar" %}:</strong>
+                                    <strong>{% trans "Total Amount" %}:</strong>
                                     <span class="d-block">{{ order.get_total_cost|floatformat:2 }} TL</span>
                                 </div>
                                 <div class="col-md-6">
-                                    <strong>{% trans "Ödeme Yöntemi" %}:</strong>
+                                    <strong>{% trans "Payment Method" %}:</strong>
                                     <span class="d-block">{{ order.get_payment_method_display }}</span>
                                 </div>
                                 <div class="col-12 mt-4">
-                                    <strong>{% trans "Fatura Bilgileri" %}:</strong>
+                                    <strong>{% trans "Billing Information" %}:</strong>
                                     <address class="d-block mb-0">
                                         {{ order.billing_name }}<br>
                                         {{ order.billing_address }}<br>
@@ -59,13 +59,13 @@
                             </div>
 
                             <div class="table-responsive mt-4">
-                                <h5 class="text-start">{% trans "Sipariş Özeti" %}</h5>
+                                <h5 class="text-start">{% trans "Order Summary" %}</h5>
                                 <table class="table table-bordered">
                                     <thead>
                                         <tr>
-                                            <th>{% trans "Ürün" %}</th>
-                                            <th class="text-center">{% trans "Adet" %}</th>
-                                            <th class="text-end">{% trans "Tutar" %}</th>
+                                            <th>{% trans "Product" %}</th>
+                                            <th class="text-center">{% trans "Quantity" %}</th>
+                                            <th class="text-end">{% trans "Amount" %}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -79,30 +79,30 @@
                                     </tbody>
                                     <tfoot>
                                         <tr class="table-light">
-                                            <td colspan="2" class="text-end fw-bold">{% trans "Ara Toplam" %}</td>
+                                            <td colspan="2" class="text-end fw-bold">{% trans "Subtotal" %}</td>
                                             <td class="text-end">{{ order.get_subtotal_cost|floatformat:2 }} TL</td>
                                         </tr>
                                         {% if order.discount_amount > 0 %}
                                             <tr class="table-light text-success">
-                                                <td colspan="2" class="text-end fw-bold">{% trans "İndirim" %} ({{ order.discount_code.code }})</td>
+                                                <td colspan="2" class="text-end fw-bold">{% trans "Discount" %} ({{ order.discount_code.code }})</td>
                                                 <td class="text-end">-{{ order.discount_amount|floatformat:2 }} TL</td>
                                             </tr>
                                         {% endif %}
                                         <tr class="table-light">
-                                            <td colspan="2" class="text-end fw-bold h5">{% trans "Genel Toplam" %}</td>
+                                            <td colspan="2" class="text-end fw-bold h5">{% trans "Grand Total" %}</td>
                                             <td class="text-end fw-bold h5">{{ order.get_total_cost|floatformat:2 }} TL</td>
                                         </tr>
                                     </tfoot>
                                 </table>
                             </div>
                         {% else %}
-                            <p class="mt-4 text-muted">{% trans "Sipariş bilgileri görüntülenemiyor. Lütfen destek ile iletişime geçin." %}</p>
+                            <p class="mt-4 text-muted">{% trans "Order information cannot be displayed. Please contact support." %}</p>
                         {% endif %}
 
                         <div class="mt-4">
                             <a href="/" class="btn btn-primary">
                                 <i class="bi bi-house-door me-2"></i>
-                                {% trans "Ana Sayfaya Geri Dön" %}
+                                {% trans "Back to Home Page" %}
                             </a>
                         </div>
                     </div>
@@ -110,5 +110,4 @@
             </div>
         </div>
     </section>
-
 {% endblock %}

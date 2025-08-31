@@ -33,7 +33,7 @@
               {% if post.image %}
                 <img src="{{ post.image.url }}" class="img-fluid" alt="{{ post.title }}">
               {% else %}
-                <img src="{% static 'assets/img/placeholder.png' %}" class="img-fluid" alt="{% trans 'No Image Available' %}">
+                <img src="{% static 'assets/img/default.png' %}" class="img-fluid" alt="{% trans 'No Image Available' %}">
               {% endif %}
               <span class="post-date">{{ post.created_at|date:"d M" }}</span>
             </div>

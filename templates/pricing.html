@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}Fiyatlandırma - Company Bootstrap Template{% endblock %}
+{% block title %}{% trans "Pricing - Company Bootstrap Template" %}{% endblock %}
 
 {% block body_class %}pricing-page{% endblock %}
 
@@ -9,11 +10,11 @@
 
   <div class="page-title accent-background">
     <div class="container d-lg-flex justify-content-between align-items-center">
-      <h1 class="mb-2 mb-lg-0">Pricing</h1>
+      <h1 class="mb-2 mb-lg-0">{% trans "Pricing" %}</h1>
       <nav class="breadcrumbs">
         <ol>
-          <li><a href="{% url 'index' %}">Home</a></li>
-          <li class="current">Pricing</li>
+          <li><a href="{% url 'index' %}">{% trans "Home" %}</a></li>
+          <li class="current">{% trans "Pricing" %}</li>
         </ol>
       </nav>
     </div>
@@ -22,57 +23,57 @@
     <div class="container">
 
       <div class="row gy-4">
-        
+
         <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="100">
           <div class="pricing-item">
-            <h3>Free Plan</h3>
-            <p class="description">Ullam mollitia quasi nobis soluta in voluptatum et sint palora dex strater</p>
-            <h4><sup>$</sup>0<span> / month</span></h4>
-            <a href="#" class="cta-btn">Start a free trial</a>
-            <p class="text-center small">No credit card required</p>
+            <h3>{% trans "Free Plan" %}</h3>
+            <p class="description">{% trans "A great starting point for individuals and small projects." %}</p>
+            <h4><sup>$</sup>0<span> {% trans "/ month" %}</span></h4>
+            <a href="#" class="cta-btn">{% trans "Start a free trial" %}</a>
+            <p class="text-center small">{% trans "No credit card required" %}</p>
             <ul>
-              <li><i class="bi bi-check"></i> <span>Quam adipiscing vitae proin</span></li>
-              <li><i class="bi bi-check"></i> <span>Nec feugiat nisl pretium</span></li>
-              <li><i class="bi bi-check"></i> <span>Nulla at volutpat diam uteera</span></li>
-              <li class="na"><i class="bi bi-x"></i> <span>Pharetra massa massa ultricies</span></li>
-              <li class="na"><i class="bi bi-x"></i> <span>Massa ultricies mi quis hendrerit</span></li>
-              <li class="na"><i class="bi bi-x"></i> <span>Voluptate id voluptas qui sed aperiam rerum</span></li>
-              <li class="na"><i class="bi bi-x"></i> <span>Iure nihil dolores recusandae odit voluptatibus</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "Access to core features" %}</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "Basic analytics dashboard" %}</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "Email support" %}</span></li>
+              <li class="na"><i class="bi bi-x"></i> <span>{% trans "Limited storage space" %}</span></li>
+              <li class="na"><i class="bi bi-x"></i> <span>{% trans "Custom domain" %}</span></li>
+              <li class="na"><i class="bi bi-x"></i> <span>{% trans "Advanced reporting" %}</span></li>
+              <li class="na"><i class="bi bi-x"></i> <span>{% trans "24/7 priority support" %}</span></li>
             </ul>
           </div>
         </div><div class="col-lg-4" data-aos="zoom-in" data-aos-delay="200">
           <div class="pricing-item featured">
-            <p class="popular">Popular</p>
-            <h3>Business Plan</h3>
-            <p class="description">Ullam mollitia quasi nobis soluta in voluptatum et sint palora dex strater</p>
-            <h4><sup>$</sup>29<span> / month</span></h4>
-            <a href="#" class="cta-btn">Start a free trial</a>
-            <p class="text-center small">No credit card required</p>
+            <p class="popular">{% trans "Popular" %}</p>
+            <h3>{% trans "Business Plan" %}</h3>
+            <p class="description">{% trans "The perfect solution for growing businesses and teams." %}</p>
+            <h4><sup>$</sup>29<span> {% trans "/ month" %}</span></h4>
+            <a href="#" class="cta-btn">{% trans "Start a free trial" %}</a>
+            <p class="text-center small">{% trans "No credit card required" %}</p>
             <ul>
-              <li><i class="bi bi-check"></i> <span>Quam adipiscing vitae proin</span></li>
-              <li><i class="bi bi-check"></i> <span>Nec feugiat nisl pretium</span></li>
-              <li><i class="bi bi-check"></i> <span>Nulla at volutpat diam uteera</span></li>
-              <li><i class="bi bi-check"></i> <span>Pharetra massa massa ultricies</span></li>
-              <li><i class="bi bi-check"></i> <span>Massa ultricies mi quis hendrerit</span></li>
-              <li><i class="bi bi-check"></i> <span>Voluptate id voluptas qui sed aperiam rerum</span></li>
-              <li class="na"><i class="bi bi-x"></i> <span>Iure nihil dolores recusandae odit voluptatibus</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "Access to all features" %}</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "Full analytics dashboard" %}</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "Priority email and chat support" %}</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "Unlimited storage space" %}</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "Custom domain and branding" %}</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "Advanced reporting and insights" %}</span></li>
+              <li class="na"><i class="bi bi-x"></i> <span>{% trans "Dedicated account manager" %}</span></li>
             </ul>
           </div>
         </div><div class="col-lg-4" data-aos="zoom-in" data-aos-delay="300">
           <div class="pricing-item">
-            <h3>Developer Plan</h3>
-            <p class="description">Ullam mollitia quasi nobis soluta in voluptatum et sint palora dex strater</p>
-            <h4><sup>$</sup>49<span> / month</span></h4>
-            <a href="#" class="cta-btn">Start a free trial</a>
-            <p class="text-center small">No credit card required</p>
+            <h3>{% trans "Developer Plan" %}</h3>
+            <p class="description">{% trans "Designed for developers who need powerful tools and control." %}</p>
+            <h4><sup>$</sup>49<span> {% trans "/ month" %}</span></h4>
+            <a href="#" class="cta-btn">{% trans "Start a free trial" %}</a>
+            <p class="text-center small">{% trans "No credit card required" %}</p>
             <ul>
-              <li><i class="bi bi-check"></i> <span>Quam adipiscing vitae proin</span></li>
-              <li><i class="bi bi-check"></i> <span>Nec feugiat nisl pretium</span></li>
-              <li><i class="bi bi-check"></i> <span>Nulla at volutpat diam uteera</span></li>
-              <li><i class="bi bi-check"></i> <span>Pharetra massa massa ultricies</span></li>
-              <li><i class="bi bi-check"></i> <span>Massa ultricies mi quis hendrerit</span></li>
-              <li><i class="bi bi-check"></i> <span>Voluptate id voluptas qui sed aperiam rerum</span></li>
-              <li><i class="bi bi-check"></i> <span>Iure nihil dolores recusandae odit voluptatibus</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "Complete API access" %}</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "Real-time data streaming" %}</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "Dedicated server resources" %}</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "High-volume data processing" %}</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "Advanced security protocols" %}</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "24/7 technical support" %}</span></li>
+              <li><i class="bi bi-check"></i> <span>{% trans "Custom integration options" %}</span></li>
             </ul>
           </div>
         </div></div>

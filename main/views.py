@@ -34,7 +34,7 @@ from .forms import (
 from .models import (
     Service, BlogPost, Tag, PortfolioItem, PortfolioCategory,
     TeamMember, Testimonial, Category, ContactMessage, Skill,
-    Client, AboutPage, Order, OrderItem, DiscountCode, Subscriber
+    Client, AboutPage, Order, OrderItem, DiscountCode, Subscriber, Feature
 )
 
 logger = logging.getLogger(__name__)
@@ -131,9 +131,7 @@ def verify_iyzico_signature(response, secret_key):
 
 
 def send_email_wrapper(subject, recipient_list, html_content, plain_content=None):
-    """
-    E-posta gönderme işlemini tek bir fonksiyonda toplar.
-    """
+
     if plain_content is None:
         plain_content = strip_tags(html_content)
 
@@ -178,10 +176,15 @@ def about_view(request):
 
 
 def services_view(request):
-    services = Service.objects.all()
+    services = Service.objects.all()  # Tüm hizmetleri veritabanından çeker
+    features = Feature.objects.all()  # Tüm özellikleri veritabanından çeker
+
     context = {
-        'services': services
+        'services': services,
+        'features': features,
     }
+
+
     return render(request, 'services.html', context)
 
 
@@ -367,20 +370,20 @@ def register_view(request):
 
 @require_POST
 def subscribe_view(request):
-    """E-bülten aboneliği için POST isteğini AJAX ile işler."""
     email = request.POST.get('email')
     if email:
         try:
-            # E-posta adresi veritabanına eklenir. `unique=True` hatası yakalanır.
+            # The email address is added to the database. The `unique=True` error is caught.
             Subscriber.objects.create(email=email)
-            return JsonResponse({'success': True, 'message': _("E-bültenimize başarıyla abone oldunuz!")})
+            return JsonResponse({'success': True, 'message': _("You have successfully subscribed to our newsletter!")})
         except IntegrityError:
-            # unique kısıtlaması hatası (e-posta zaten kayıtlı)
-            return JsonResponse({'success': False, 'message': _("Bu e-posta adresi zaten kayıtlı.")})
+            # unique constraint error (email is already registered)
+            return JsonResponse({'success': False, 'message': _("This email address is already registered.")})
         except Exception:
-            # Diğer olası hatalar
-            return JsonResponse({'success': False, 'message': _("Bir hata oluştu. Lütfen tekrar deneyin.")})
-    return JsonResponse({'success': False, 'message': _("Lütfen geçerli bir e-posta adresi girin.")})
+            # Other potential errors
+            return JsonResponse({'success': False, 'message': _("An error occurred. Please try again.")})
+    return JsonResponse({'success': False, 'message': _("Please enter a valid email address.")})
+
 
 
 def service_details_view(request, service_id):
@@ -775,11 +778,7 @@ def iyzico_callback_view(request):
 
 @login_required
 def order_success_view(request, order_id):
-    """
-    Siparişin başarıyla tamamlandığını gösterir ve sipariş onay e-postası gönderir.
-    E-posta gönderme işlemi, siparişin veritabanına kaydedildiği anda yapılmalıdır.
-    Bu örnekte, sipariş ID'sini alarak işlem yapıyoruz.
-    """
+
     try:
         order = get_object_or_404(Order, id=order_id)
     except Exception as e:
@@ -819,20 +818,20 @@ def apply_discount_view(request):
 
             # Yeni ve daha spesifik hata kontrolleri
             if not discount_code.is_active:
-                return JsonResponse({'success': False, 'message': _("Bu kod aktif değil.")})
+                return JsonResponse({'success': False, 'message': _("This code is not active.")})
 
             if discount_code.valid_from and now < discount_code.valid_from:
-                return JsonResponse({'success': False, 'message': _("Bu kodun kullanım tarihi henüz başlamadı.")})
+                return JsonResponse({'success': False, 'message': _("This code's usage date has not yet started.")})
 
             if discount_code.valid_to and now > discount_code.valid_to:
-                return JsonResponse({'success': False, 'message': _("Bu kodun kullanım süresi dolmuştur.")})
+                return JsonResponse({'success': False, 'message': _("This code has expired.")})
 
             if discount_code.max_uses and discount_code.used_count >= discount_code.max_uses:
-                return JsonResponse({'success': False, 'message': _("Bu kodun kullanım limiti dolmuştur.")})
+                return JsonResponse({'success': False, 'message': _("This code's usage limit has been reached.")})
 
             # Eğer zaten bir indirim kodu uygulanmışsa
             if cart.discount_code:
-                return JsonResponse({'success': False, 'message': _("Sepette zaten bir indirim kodu uygulanmış.")})
+                return JsonResponse({'success': False, 'message': _("A discount code has already been applied to the cart.")})
 
             # İndirimi uygula
             subtotal = cart.get_subtotal_cost()
@@ -844,18 +843,18 @@ def apply_discount_view(request):
 
             return JsonResponse({
                 'success': True,
-                'message': _("İndirim kodu başarıyla uygulandı."),
+                'message': _("Discount code applied successfully."),
                 'subtotal': f"{cart.get_subtotal_cost():.2f}",
                 'discount_amount': f"{cart.discount_amount:.2f}",
                 'total': f"{cart.get_total_cost():.2f}",
             })
 
         except DiscountCode.DoesNotExist:
-            return JsonResponse({'success': False, 'message': _("Geçersiz indirim kodu.")})
+            return JsonResponse({'success': False, 'message': _("Invalid discount code.")})
         except Order.DoesNotExist:
-            return JsonResponse({'success': False, 'message': _("Sepetiniz bulunamadı.")})
+            return JsonResponse({'success': False, 'message': _("Your cart could not be found.")})
 
-    return JsonResponse({'success': False, 'message': _("Lütfen bir kod girin.")})
+    return JsonResponse({'success': False, 'message': _("Please enter a code.")})
 
 
 @login_required
