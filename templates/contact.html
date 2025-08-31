@@ -22,24 +22,20 @@
 
     <section id="contact" class="contact section">
 
-        <div class="mb-5">
-            <iframe style="width: 100%; height: 400px;"
-                    src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d12097.433213460943!2d-74.0062269!3d40.7101282!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0xb89d1fe6bc499443!2sDowntown+Conference+Center!5e0!3m2!1smk!2sbg!4v1539943755621"
-                    frameborder="0" allowfullscreen=""></iframe>
-        </div>
 
-        <div class="container" data-aos="fade">
+        <div class="container mt-4" data-aos="fade">
 
             <div class="row gy-5 gx-lg-5">
 
                 <div class="col-lg-4">
                     <div class="info">
                         <h3>{% trans "Get in touch" %}</h3>
-                        <p>{% blocktrans %}
-                            Bize ulaşmak için aşağıdaki iletişim bilgilerini kullanabilir veya formu
-                            doldurarak bize doğrudan bir mesaj gönderebilirsiniz. Sorularınız en kısa sürede
-                            yanıtlanacaktır.
-                        {% endblocktrans %}</p>
+                        <p>
+                            {% blocktrans %}
+                                You can use the contact information below to reach us, or you can send us a message
+                                directly by filling out the form. Your questions will be answered as soon as possible.
+                            {% endblocktrans %}
+                        </p>
 
                         <div class="info-item d-flex">
                             <i class="bi bi-geo-alt flex-shrink-0"></i>
@@ -68,7 +64,8 @@
                     </div>
                 </div>
 
-                <div class="col-lg-8">
+                <div class="col-lg-8 shadow-lg p-4">
+                    <h3>{% trans "Send us a message" %}</h3>
 
                     {% if messages %}
                         <div class="container mt-4">
