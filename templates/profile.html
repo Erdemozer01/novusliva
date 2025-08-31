@@ -59,7 +59,7 @@
 
                                         <p><strong>{% trans "Location" %}:</strong> {{ user.profile.city|default:"-" }}, {{ user.profile.country|default:"-" }}</p>
                                         <p><strong>{% trans "Phone" %}:</strong> {{ user.profile.phone_number|default:"-" }}</p>
-                                        <a href="{% url 'order_history' request.user.username %}"
+                                        <a href="{% url 'order_history' user.username %}"
                                            class="btn btn-outline-secondary btn-sm mt-3">{% trans "View Purchase History" %}</a>
                                     </div>
                                 </div>
