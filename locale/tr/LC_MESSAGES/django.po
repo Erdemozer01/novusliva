@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-01 10:21+0300\n"
+"POT-Creation-Date: 2025-09-01 19:04+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -58,7 +58,7 @@ msgstr "Yorumunuz*"
 msgid "Enter your email"
 msgstr "E-posta adresinizi girin"
 
-#: .\main\forms.py:55 .\templates\base.html:262 .\templates\contact.html:51
+#: .\main\forms.py:55 .\templates\base.html:264 .\templates\contact.html:51
 msgid "Email"
 msgstr "E-posta"
 
@@ -91,12 +91,12 @@ msgid "Last Name"
 msgstr "Soyisim"
 
 #: .\main\forms.py:87 .\main\forms.py:215 .\main\models.py:298
-#: .\main\models.py:314 .\main\models.py:329 .\main\models.py:542
+#: .\main\models.py:314 .\main\models.py:329 .\main\models.py:581
 msgid "Email Address"
 msgstr "E-posta Adresi"
 
 #: .\main\forms.py:109 .\main\models.py:16 .\main\models.py:57
-#: .\main\models.py:467 .\templates\checkout.html:47
+#: .\main\models.py:466 .\templates\checkout.html:47
 msgid "Discount Code"
 msgstr "İndirim Kodu"
 
@@ -105,7 +105,7 @@ msgid "Enter your discount code"
 msgstr "İndirim kodunuzu girin"
 
 #: .\main\forms.py:122 .\main\forms.py:141 .\main\models.py:345
-#: .\main\models.py:541
+#: .\main\models.py:580
 msgid "Phone Number"
 msgstr "Telefon Numarası"
 
@@ -114,12 +114,12 @@ msgid "Country"
 msgstr "Ülke"
 
 #: .\main\forms.py:124 .\main\forms.py:217 .\main\models.py:347
-#: .\main\models.py:453
+#: .\main\models.py:452
 msgid "City"
 msgstr "Şehir"
 
 #: .\main\forms.py:125 .\main\forms.py:216 .\main\models.py:348
-#: .\main\models.py:540
+#: .\main\models.py:579
 msgid "Address"
 msgstr "Adres"
 
@@ -147,7 +147,7 @@ msgstr "Tam adresiniz"
 msgid "Enter your phone number"
 msgstr "Telefon numaranızı girin"
 
-#: .\main\forms.py:151 .\main\models.py:457 .\main\models.py:459
+#: .\main\forms.py:151 .\main\models.py:456 .\main\models.py:458
 msgid "Identity Number"
 msgstr "Kimlik Numarası"
 
@@ -155,12 +155,12 @@ msgstr "Kimlik Numarası"
 msgid "Enter your identity number"
 msgstr "Kimlik numaranızı girin"
 
-#: .\main\forms.py:162 .\main\models.py:393 .\templates\checkout.html:139
+#: .\main\forms.py:162 .\main\models.py:392 .\templates\checkout.html:139
 #: .\templates\order_success.html:46
 msgid "Payment Method"
 msgstr "Ödeme Yöntemi"
 
-#: .\main\forms.py:169 .\main\models.py:458 .\templates\checkout.html:154
+#: .\main\forms.py:169 .\main\models.py:457 .\templates\checkout.html:154
 msgid "Currency"
 msgstr "Para Birimi"
 
@@ -185,7 +185,7 @@ msgstr "Posta kodunu girin"
 msgid "Full Name"
 msgstr "Tam Ad"
 
-#: .\main\forms.py:218 .\main\models.py:350 .\main\models.py:454
+#: .\main\forms.py:218 .\main\models.py:350 .\main\models.py:453
 msgid "Postal Code"
 msgstr "Posta Kodu"
 
@@ -218,7 +218,7 @@ msgstr "Geçerlilik Başlangıcı"
 msgid "Valid To"
 msgstr "Geçerlilik Bitişi"
 
-#: .\main\models.py:34 .\main\models.py:70
+#: .\main\models.py:34 .\main\models.py:70 .\main\models.py:561
 msgid "Is Active?"
 msgstr "Aktif mi?"
 
@@ -262,7 +262,9 @@ msgstr "Aynı anda sadece bir hesap aktif olabilir."
 msgid ""
 "Only one bank account can be active at a time. Please deactivate the other "
 "one."
-msgstr "Aynı anda sadece bir banka hesabı aktif olabilir. Lütfen diğerini devre dışı bırakın."
+msgstr ""
+"Aynı anda sadece bir banka hesabı aktif olabilir. Lütfen diğerini devre dışı "
+"bırakın."
 
 #: .\main\models.py:90
 msgid "Bank Account"
@@ -273,10 +275,11 @@ msgid "Bank Accounts"
 msgstr "Banka Hesapları"
 
 #: .\main\models.py:95 .\main\models.py:137 .\main\models.py:216
+#: .\main\models.py:540
 msgid "Title"
 msgstr "Başlık"
 
-#: .\main\models.py:96
+#: .\main\models.py:96 .\main\models.py:543
 msgid "Description"
 msgstr "Açıklama"
 
@@ -296,7 +299,7 @@ msgstr "Hizmet Detay Görseli"
 msgid "Service"
 msgstr "Hizmet"
 
-#: .\main\models.py:107 .\templates\base.html:144 .\templates\base.html:282
+#: .\main\models.py:107 .\templates\base.html:147 .\templates\base.html:284
 #: .\templates\service-details.html:17 .\templates\services.html:5
 #: .\templates\services.html:13 .\templates\services.html:17
 msgid "Services"
@@ -351,20 +354,20 @@ msgstr "Yazar"
 msgid "Category"
 msgstr "Kategori"
 
-#: .\main\models.py:145
+#: .\main\models.py:145 .\main\models.py:547
 msgid "Image"
 msgstr "Görsel"
 
 #: .\main\models.py:146 .\main\models.py:187 .\main\models.py:240
-#: .\main\models.py:331 .\main\models.py:388
+#: .\main\models.py:331 .\main\models.py:387
 msgid "Created At"
 msgstr "Oluşturulma Tarihi"
 
-#: .\main\models.py:147 .\main\models.py:389
+#: .\main\models.py:147 .\main\models.py:388
 msgid "Updated At"
 msgstr "Güncellenme Tarihi"
 
-#: .\main\models.py:148 .\main\models.py:390
+#: .\main\models.py:148 .\main\models.py:389
 msgid "Status"
 msgstr "Durum"
 
@@ -449,19 +452,19 @@ msgstr "Proje Görselleri"
 msgid "Photo"
 msgstr "Fotoğraf"
 
-#: .\main\models.py:218 .\main\models.py:544
+#: .\main\models.py:218 .\main\models.py:583
 msgid "Twitter Link"
 msgstr "Twitter Bağlantısı"
 
-#: .\main\models.py:219 .\main\models.py:545
+#: .\main\models.py:219 .\main\models.py:584
 msgid "Facebook Link"
 msgstr "Facebook Bağlantısı"
 
-#: .\main\models.py:220 .\main\models.py:546
+#: .\main\models.py:220 .\main\models.py:585
 msgid "Instagram Link"
 msgstr "Instagram Bağlantısı"
 
-#: .\main\models.py:221 .\main\models.py:547
+#: .\main\models.py:221 .\main\models.py:586
 msgid "LinkedIn Link"
 msgstr "LinkedIn Bağlantısı"
 
@@ -613,140 +616,166 @@ msgstr "Aktif (Onaylanmış)"
 msgid "Comments"
 msgstr "Yorumlar"
 
-#: .\main\models.py:344 .\main\models.py:387
+#: .\main\models.py:344 .\main\models.py:386
 msgid "User"
 msgstr "Kullanıcı"
 
-#: .\main\models.py:357 .\templates\base.html:160 .\templates\profile.html:14
+#: .\main\models.py:356 .\templates\base.html:163 .\templates\profile.html:14
 msgid "Profile"
 msgstr "Profil"
 
-#: .\main\models.py:358
+#: .\main\models.py:357
 msgid "Profiles"
 msgstr "Profiller"
 
-#: .\main\models.py:364
+#: .\main\models.py:363
 msgid "In Cart"
 msgstr "Sepette"
 
-#: .\main\models.py:365
+#: .\main\models.py:364
 msgid "Payment Pending"
 msgstr "Ödeme Bekliyor"
 
-#: .\main\models.py:366
+#: .\main\models.py:365
 msgid "Pending Iyzico Approval"
 msgstr "Iyzico Onayı Bekleniyor"
 
-#: .\main\models.py:367
+#: .\main\models.py:366
 msgid "Pending PayTR Approval"
 msgstr "PayTR Onayı Bekleniyor"
 
-#: .\main\models.py:368 .\templates\order_history.html:24
+#: .\main\models.py:367 .\templates\order_history.html:24
 msgid "Completed"
 msgstr "Tamamlandı"
 
-#: .\main\models.py:369
+#: .\main\models.py:368
 msgid "Payment Failed"
 msgstr "Ödeme Başarısız"
 
-#: .\main\models.py:370 .\templates\order_history.html:28
+#: .\main\models.py:369 .\templates\order_history.html:28
 msgid "Cancelled"
 msgstr "İptal Edildi"
 
-#: .\main\models.py:374
+#: .\main\models.py:373
 msgid "Iyzico (Credit/Debit Card)"
 msgstr "Iyzico (Kredi/Banka Kartı)"
 
-#: .\main\models.py:375
+#: .\main\models.py:374
 msgid "PayTR (Credit/Debit Card)"
 msgstr "PayTR (Kredi/Banka Kartı)"
 
-#: .\main\models.py:376
+#: .\main\models.py:375
 msgid "Bank Transfer"
 msgstr "Banka Havalesi"
 
-#: .\main\models.py:377
+#: .\main\models.py:376
 msgid "Cash Payment"
 msgstr "Nakit Ödeme"
 
-#: .\main\models.py:381
+#: .\main\models.py:380
 msgid "Turkish Lira"
 msgstr "Türk Lirası"
 
-#: .\main\models.py:382
+#: .\main\models.py:381
 msgid "US Dollar"
 msgstr "ABD Doları"
 
-#: .\main\models.py:383
+#: .\main\models.py:382
 msgid "Euro"
 msgstr "Euro"
 
-#: .\main\models.py:384
+#: .\main\models.py:383
 msgid "Pound Sterling"
 msgstr "Sterlin"
 
-#: .\main\models.py:394
+#: .\main\models.py:393
 msgid "Payment Date"
 msgstr "Ödeme Tarihi"
 
-#: .\main\models.py:446
+#: .\main\models.py:445
 msgid "PayTR Order ID"
 msgstr "PayTR Sipariş No"
 
-#: .\main\models.py:450
+#: .\main\models.py:449
 msgid "Billing Name"
 msgstr "Fatura Adı"
 
-#: .\main\models.py:451
+#: .\main\models.py:450
 msgid "Billing Email"
 msgstr "Fatura E-postası"
 
-#: .\main\models.py:452
+#: .\main\models.py:451
 msgid "Billing Address"
 msgstr "Fatura Adresi"
 
-#: .\main\models.py:456
+#: .\main\models.py:455
 msgid "Billing Phone Number"
 msgstr "Fatura Telefon Numarası"
 
-#: .\main\models.py:506
+#: .\main\models.py:505
 msgid "Order/Cart"
 msgstr "Sipariş/Sepet"
 
-#: .\main\models.py:507
+#: .\main\models.py:506
 msgid "Orders/Carts"
 msgstr "Siparişler/Sepetler"
 
-#: .\main\models.py:512
+#: .\main\models.py:511 .\main\models.py:565
 msgid "Order"
 msgstr "Sipariş"
 
-#: .\main\models.py:514
+#: .\main\models.py:513
 msgid "Project"
 msgstr "Proje"
 
-#: .\main\models.py:515
+#: .\main\models.py:514
 msgid "Unit Price"
 msgstr "Birim Fiyat"
 
-#: .\main\models.py:516 .\templates\cart_detail.html:32
+#: .\main\models.py:515 .\templates\cart_detail.html:32
 #: .\templates\order_success.html:67
 msgid "Quantity"
 msgstr "Adet"
 
-#: .\main\models.py:526
+#: .\main\models.py:525
 msgid "Order Item"
 msgstr "Sipariş Öğesi"
 
-#: .\main\models.py:527
+#: .\main\models.py:526
 msgid "Order Items"
 msgstr "Sipariş Öğeleri"
 
-#: .\main\models.py:550 .\main\models.py:554
+#: .\main\models.py:551 .\templates\blog.html:65 .\templates\index.html:23
+#: .\templates\index.html:35 .\templates\index.html:48
+#: .\templates\search_results.html:51
+msgid "Read More"
+msgstr "Devamını Oku"
+
+#: .\main\models.py:552
+msgid "Button Text"
+msgstr "Düğme Metni"
+
+#: .\main\models.py:557
+msgid "Button URL"
+msgstr "Düğme Bağlantısı"
+
+#: .\main\models.py:570
+#, fuzzy
+#| msgid "Carousel Image 1"
+msgid "Carousel Item"
+msgstr "Döngüsel Galeri Görseli 1"
+
+#: .\main\models.py:571
+#, fuzzy
+#| msgid "Carousel Image 1"
+msgid "Carousel Items"
+msgstr "Döngüsel Galeri Görseli 1"
+
+#: .\main\models.py:589 .\main\models.py:593
 msgid "Site Settings"
 msgstr "Site Ayarları"
 
-#: .\main\models.py:553
+#: .\main\models.py:592
 msgid "Site Setting"
 msgstr "Site Ayarı"
 
@@ -758,7 +787,7 @@ msgstr "E-posta bültenimize başarıyla abone oldunuz!"
 msgid "This email address is already registered."
 msgstr "Bu e-posta adresi zaten kayıtlı."
 
-#: .\main\views.py:384 .\templates\base.html:388 .\templates\checkout.html:254
+#: .\main\views.py:384 .\templates\base.html:390 .\templates\checkout.html:254
 msgid "An error occurred. Please try again."
 msgstr "Bir hata oluştu. Lütfen tekrar deneyin."
 
@@ -803,12 +832,12 @@ msgid "Please enter a code."
 msgstr "Lütfen bir kod girin."
 
 #: .\templates\about.html:5 .\templates\about.html:13 .\templates\about.html:17
-#: .\templates\base.html:137
+#: .\templates\base.html:140
 msgid "About"
 msgstr "Hakkımızda"
 
-#: .\templates\about.html:16 .\templates\base.html:136
-#: .\templates\base.html:280 .\templates\blog-details.html:25
+#: .\templates\about.html:16 .\templates\base.html:139
+#: .\templates\base.html:282 .\templates\blog-details.html:25
 #: .\templates\blog.html:27 .\templates\contact.html:16
 #: .\templates\index.html:5 .\templates\portfolio-details.html:21
 #: .\templates\portfolio.html:17 .\templates\pricing.html:16
@@ -884,7 +913,9 @@ msgstr "Ekibimiz"
 msgid ""
 "Meet the dedicated professionals who are the driving force behind our "
 "success."
-msgstr "Başarımızın arkasındaki itici güç olan kendini işine adamış profesyonellerle tanışın."
+msgstr ""
+"Başarımızın arkasındaki itici güç olan kendini işine adamış profesyonellerle "
+"tanışın."
 
 #: .\templates\about.html:95
 msgid "Our Skills"
@@ -894,103 +925,106 @@ msgstr "Yeteneklerimiz"
 msgid ""
 "A showcase of our technical expertise and the core competencies that drive "
 "our results."
-msgstr "Teknik uzmanlığımızı ve sonuçlarımızı yönlendiren temel yetkinliklerimizi sergiliyoruz."
+msgstr ""
+"Teknik uzmanlığımızı ve sonuçlarımızı yönlendiren temel yetkinliklerimizi "
+"sergiliyoruz."
 
 #: .\templates\about.html:118
 msgid ""
 "We are proud to have collaborated with a diverse range of leading companies "
 "and brands."
-msgstr "Çeşitli önde gelen şirket ve markalarla iş birliği yapmaktan gurur duyuyoruz."
+msgstr ""
+"Çeşitli önde gelen şirket ve markalarla iş birliği yapmaktan gurur duyuyoruz."
 
 #: .\templates\base.html:13
 msgid "Your project's default meta description will go here."
 msgstr "Projenizin varsayılan meta açıklaması buraya gelecektir."
 
-#: .\templates\base.html:140 .\templates\team.html:5 .\templates\team.html:13
+#: .\templates\base.html:143 .\templates\team.html:5 .\templates\team.html:13
 #: .\templates\team.html:17
 msgid "Team"
 msgstr "Ekip"
 
-#: .\templates\base.html:141 .\templates\testimonials.html:5
+#: .\templates\base.html:144 .\templates\testimonials.html:5
 #: .\templates\testimonials.html:13 .\templates\testimonials.html:17
 msgid "Testimonials"
 msgstr "Yorumlar"
 
-#: .\templates\base.html:145 .\templates\index.html:125
+#: .\templates\base.html:148 .\templates\index.html:125
 #: .\templates\portfolio-details.html:22 .\templates\portfolio.html:5
 #: .\templates\portfolio.html:14 .\templates\portfolio.html:18
 msgid "Portfolio"
 msgstr "Portfolyo"
 
-#: .\templates\base.html:146 .\templates\blog-details.html:26
+#: .\templates\base.html:149 .\templates\blog-details.html:26
 #: .\templates\blog.html:9 .\templates\blog.html:23 .\templates\blog.html:29
 msgid "Blog"
 msgstr "Blog"
 
-#: .\templates\base.html:147 .\templates\contact.html:5
+#: .\templates\base.html:150 .\templates\contact.html:5
 #: .\templates\contact.html:13 .\templates\contact.html:17
 msgid "Contact"
 msgstr "İletişim"
 
-#: .\templates\base.html:163
+#: .\templates\base.html:166
 msgid "Orders"
 msgstr "Siparişler"
 
-#: .\templates\base.html:169
+#: .\templates\base.html:172
 msgid "Admin Panel"
 msgstr "Yönetim Paneli"
 
-#: .\templates\base.html:178
+#: .\templates\base.html:181
 msgid "Logout"
 msgstr "Çıkış Yap"
 
-#: .\templates\base.html:195 .\templates\registration\login.html:5
+#: .\templates\base.html:198 .\templates\registration\login.html:5
 #: .\templates\registration\login.html:13
 #: .\templates\registration\login.html:17
 #: .\templates\registration\login.html:51
 msgid "Login"
 msgstr "Giriş Yap"
 
-#: .\templates\base.html:200 .\templates\registration\register.html:5
+#: .\templates\base.html:203 .\templates\registration\register.html:5
 #: .\templates\registration\register.html:13
 #: .\templates\registration\register.html:17
 #: .\templates\registration\register.html:62
 msgid "Register"
 msgstr "Kayıt Ol"
 
-#: .\templates\base.html:261 .\templates\profile.html:61
+#: .\templates\base.html:263 .\templates\profile.html:61
 msgid "Phone"
 msgstr "Telefon"
 
-#: .\templates\base.html:278
+#: .\templates\base.html:280
 msgid "Useful Links"
 msgstr "Faydalı Bağlantılar"
 
-#: .\templates\base.html:281
+#: .\templates\base.html:283
 msgid "About us"
 msgstr "Hakkımızda"
 
-#: .\templates\base.html:283
+#: .\templates\base.html:285
 msgid "Terms of service"
 msgstr "Hizmet şartları"
 
-#: .\templates\base.html:284
+#: .\templates\base.html:286
 msgid "Privacy policy"
 msgstr "Gizlilik politikası"
 
-#: .\templates\base.html:289
+#: .\templates\base.html:291
 msgid "Our Services"
 msgstr "Hizmetlerimiz"
 
-#: .\templates\base.html:294
+#: .\templates\base.html:296
 msgid "No services available."
 msgstr "Hiç hizmet bulunmuyor."
 
-#: .\templates\base.html:300
+#: .\templates\base.html:302
 msgid "Our Newsletter"
 msgstr "E-posta Bültenimiz"
 
-#: .\templates\base.html:301
+#: .\templates\base.html:303
 msgid ""
 "Subscribe to our newsletter and receive the latest news about our products "
 "and services!"
@@ -998,11 +1032,11 @@ msgstr ""
 "E-posta bültenimize abone olun ve ürünlerimiz ile hizmetlerimiz hakkında en "
 "son haberleri alın!"
 
-#: .\templates\base.html:306
+#: .\templates\base.html:308
 msgid "Subscribe"
 msgstr "Abone Ol"
 
-#: .\templates\base.html:317
+#: .\templates\base.html:319
 msgid "All Rights Reserved"
 msgstr "Tüm Hakları Saklıdır"
 
@@ -1016,7 +1050,8 @@ msgstr "Lütfen formdaki hataları düzeltin."
 
 #: .\templates\blog-details.html:17
 msgid "A server error occurred while sending your message. Please try again."
-msgstr "Mesajınız gönderilirken bir sunucu hatası oluştu. Lütfen tekrar deneyin."
+msgstr ""
+"Mesajınız gönderilirken bir sunucu hatası oluştu. Lütfen tekrar deneyin."
 
 #: .\templates\blog-details.html:51
 #, python-format
@@ -1059,7 +1094,8 @@ msgstr "Yorum Gönder"
 #: .\templates\blog-details.html:121
 msgid ""
 "Your email address will not be published. Required fields are marked with *"
-msgstr "E-posta adresiniz yayınlanmayacaktır. Gerekli alanlar * ile işaretlenmiştir."
+msgstr ""
+"E-posta adresiniz yayınlanmayacaktır. Gerekli alanlar * ile işaretlenmiştir."
 
 #: .\templates\blog-details.html:130
 msgid "Post Comment"
@@ -1080,11 +1116,6 @@ msgstr "Son yazı bulunamadı."
 #: .\templates\blog.html:7
 msgid "Category Posts"
 msgstr "Kategori Yazıları"
-
-#: .\templates\blog.html:65 .\templates\index.html:23 .\templates\index.html:35
-#: .\templates\index.html:48 .\templates\search_results.html:51
-msgid "Read More"
-msgstr "Devamını Oku"
 
 #: .\templates\blog.html:71
 msgid "No posts found in this category."
@@ -1221,7 +1252,8 @@ msgstr "Hello,"
 
 #: .\templates\emails\order_confirmation_email.html:5
 msgid "Siparişiniz başarıyla alınmıştır. Sipariş detaylarınız aşağıdadır:"
-msgstr "Your order has been received successfully. Your order details are below:"
+msgstr ""
+"Your order has been received successfully. Your order details are below:"
 
 #: .\templates\emails\order_confirmation_email.html:8
 msgid "Sipariş Bilgileri"
@@ -1476,7 +1508,9 @@ msgstr "Ödemeyi tamamlamak için lütfen aşağıdaki güvenli pencereyi kullan
 #: .\templates\paytr_checkout_embed.html:30
 msgid ""
 "If the payment window does not appear, check your browser's Pop-up blocker."
-msgstr "Eğer ödeme penceresi görünmezse, tarayıcınızın Pop-up engelleyicisini kontrol edin."
+msgstr ""
+"Eğer ödeme penceresi görünmezse, tarayıcınızın Pop-up engelleyicisini "
+"kontrol edin."
 
 #: .\templates\paytr_checkout_embed.html:42
 msgid "Payment token not found. Please restart the payment process."
@@ -1615,7 +1649,8 @@ msgstr "Geliştirici Planı"
 
 #: .\templates\pricing.html:65
 msgid "Designed for developers who need powerful tools and control."
-msgstr "Güçlü araçlara ve kontrole ihtiyaç duyan geliştiriciler için tasarlandı."
+msgstr ""
+"Güçlü araçlara ve kontrole ihtiyaç duyan geliştiriciler için tasarlandı."
 
 #: .\templates\pricing.html:70
 msgid "Complete API access"
@@ -1735,8 +1770,7 @@ msgstr "Özellikler"
 msgid ""
 "Here are some of the key features that make our services stand out from the "
 "crowd."
-msgstr ""
-"Hizmetlerimizi diğerlerinden ayıran bazı temel özellikler şunlardır."
+msgstr "Hizmetlerimizi diğerlerinden ayıran bazı temel özellikler şunlardır."
 
 #: .\templates\team.html:49
 msgid "No team members have been added yet."

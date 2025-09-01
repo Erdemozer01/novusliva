@@ -29,6 +29,7 @@ from .models import (
     Comment,
     DiscountCode,
     BankAccount,
+    CarouselItem,
 )
 
 
@@ -244,3 +245,10 @@ class BankAccountAdmin(admin.ModelAdmin):
 
     # Action'ın admin panelindeki görünen adını ayarlayalım
     send_campaign_action.short_description = "Seçilen Abonelere Kampanya E-postası Gönder"
+
+
+@admin.register(CarouselItem)
+class CarouselItemAdmin(admin.ModelAdmin):
+    list_display = ('title', 'order', 'is_active')
+    list_editable = ('order', 'is_active')
+    search_fields = ('title',)

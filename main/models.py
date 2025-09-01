@@ -349,7 +349,6 @@ class Profile(models.Model):
     birth_date = models.DateField(null=True, blank=True, verbose_name=_("Birth Date"))
     postal_code = models.CharField(max_length=10, blank=True, null=True, verbose_name=_("Postal Code"))
 
-
     def __str__(self):
         return f"{self.user.username} Profile"
 
@@ -530,6 +529,46 @@ class OrderItem(models.Model):
 class Feature(models.Model):
     title = models.CharField(max_length=200)
     icon_class = models.CharField(max_length=50)  # Bootstrap ikon sınıfı
+
+    def __str__(self):
+        return self.title
+
+
+class CarouselItem(models.Model):
+    title = models.CharField(
+        max_length=100,
+        verbose_name=_("Title")
+    )
+    description = models.TextField(
+        verbose_name=_("Description")
+    )
+    image = models.ImageField(
+        upload_to='carousel/',
+        verbose_name=_("Image")
+    )
+    button_text = models.CharField(
+        max_length=50,
+        default=_("Read More"),
+        verbose_name=_("Button Text")
+    )
+    button_url = models.CharField(
+        max_length=200,
+        default='/about',
+        verbose_name=_("Button URL")
+    )
+    is_active = models.BooleanField(
+        default=False,
+        verbose_name=_("Is Active?")
+    )
+    order = models.IntegerField(
+        default=0,
+        verbose_name=_("Order")
+    )
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = _("Carousel Item")
+        verbose_name_plural = _("Carousel Items")
 
     def __str__(self):
         return self.title
