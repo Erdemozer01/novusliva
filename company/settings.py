@@ -163,7 +163,7 @@ IYZICO_API_KEY = os.getenv('IYZICO_API_KEY')
 IYZICO_SECRET_KEY = os.getenv('IYZICO_SECRET_KEY')
 IYZICO_BASE_URL = os.getenv('IYZICO_BASE_URL')
 
-PAYTR_API_KEY = "SizinMağazaNo"
-PAYTR_API_SECRET = "SizinMağazaParolası"
-PAYTR_MERCHANT_SALT = "SizinMağazaGizliAnahtarı"
-PAYTR_BASE_URL = "https://www.paytr.com/odeme/api/v2" # veya uygun endpoint
+PAYTR_API_KEY = os.getenv('PAYTR_API_KEY')
+PAYTR_API_SECRET = os.getenv('PAYTR_API_SECRET')
+PAYTR_MERCHANT_SALT = os.getenv('PAYTR_MERCHANT_SALT')
+PAYTR_BASE_URL = os.getenv('PAYTR_BASE_URL')
