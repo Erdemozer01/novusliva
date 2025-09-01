@@ -229,10 +229,11 @@
                 </li>
 
                 <li>
-                    <a href="{% url 'cart_detail' %}" class="cart-icon position-relative">
-                        <i class="bi bi-cart">
-                            <span class="badge bg-primary rounded-pill cart-count"
-                                  id="cart-item-count">{{ cart_item_count }}</span>
+                    <a href="{% url 'cart_detail' %}" class="cart-icon position-relative d-inline-block">
+                        <i class="bi bi-cart fs-4 text-primary">
+            <span class="badge bg-danger rounded-pill cart-count" id="cart-item-count">
+                {{ cart_item_count }}
+            </span>
                         </i>
                     </a>
                 </li>
