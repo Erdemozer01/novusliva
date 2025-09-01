@@ -58,45 +58,48 @@
             color: #007bff !important; /* Your theme's main color */
         }
 
-        /* Base style and size for cart icon */
+        /* Sepet İkonu için Temel Stiller */
         .cart-icon {
-            font-size: 28px !important; /* We reduced the icon size a bit */
-            color: var(--default-color) !important;
+            /* İkonun boyutunu buradan değiştirin */
+            font-size: 10px;
+            color: var(--default-color);
             position: relative;
-            display: flex; /* Use flexbox to align elements inside */
-            align-items: center; /* Vertically center */
+            display: flex;
+            align-items: center;
             transition: color 0.3s ease;
-            text-decoration: none !important; /* To remove link underline */
+            text-decoration: none;
         }
 
-        /* Style and positioning for the cart item count badge */
+
         .cart-count {
-            position: absolute; /* Absolute positioning relative to .cart-icon */
-            top: 5px; /* Position from top */
-            right: -18px; /* Position from right */
+            /* Sayacın konumu */
+            position: absolute;
 
-            background-color: var(--accent-color, #ff5722) !important;
-            color: #fff !important;
+            top: 0;
+            right: 0;
+            /* Dikey konumu aşağıya çekmek için translateY değerini değiştirin */
+            transform: translate(50%, -20%);
 
-            font-size: 7px; /* Font size of the counter text */
+            /* Görsel özellikler */
+            background-color: var(--accent-color, #ff5722);
+            color: #fff;
+            font-size: 7px;
             font-weight: 700;
             line-height: 1;
+            padding: 3px 6px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            min-width: 20px;
+            height: 20px;
 
-            padding: 3px 6px; /* Inner padding */
-            border: 2px solid #fff; /* White border */
-            border-radius: 50%; /* Circular shape */
+            /* İçerik hizalaması (sayıyı ortalamak için) */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
 
-            min-width: 20px; /* Minimum width */
-            height: 20px; /* Height */
-
-            display: flex; /* Use flex to center the content */
-            align-items: center; /* Vertically center */
-            justify-content: center; /* Horizontally center */
-
-            white-space: nowrap; /* Prevents line break when the number is two digits */
-
-            transform: scale(1); /* Initial size */
-            transition: transform 0.3s ease, background-color 0.3s ease; /* Animation */
+            /* Diğer */
+            transition: transform 0.3s ease, background-color 0.3s ease;
             z-index: 10;
         }
 
@@ -229,11 +232,9 @@
                 </li>
 
                 <li>
-                    <a href="{% url 'cart_detail' %}" class="cart-icon position-relative d-inline-block">
-                        <i class="bi bi-cart fs-4 text-primary">
-            <span class="badge bg-danger rounded-pill cart-count" id="cart-item-count">
-                {{ cart_item_count }}
-            </span>
+                    <a href="{% url 'cart_detail' %}" class="position-relative d-inline-block">
+                        <i class="bi bi-cart fs-3 text-primary cart-icon">
+                            <span class="badge bg-danger rounded-pill cart-count">{{ cart_item_count }}</span>
                         </i>
                     </a>
                 </li>
