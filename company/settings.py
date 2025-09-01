@@ -163,7 +163,46 @@ IYZICO_API_KEY = os.getenv('IYZICO_API_KEY')
 IYZICO_SECRET_KEY = os.getenv('IYZICO_SECRET_KEY')
 IYZICO_BASE_URL = os.getenv('IYZICO_BASE_URL')
 
-PAYTR_API_KEY = os.getenv('PAYTR_API_KEY')
-PAYTR_API_SECRET = os.getenv('PAYTR_API_SECRET')
-PAYTR_MERCHANT_SALT = os.getenv('PAYTR_MERCHANT_SALT')
-PAYTR_BASE_URL = os.getenv('PAYTR_BASE_URL')
+PAYTR_MERCHANT_ID = os.environ.get('PAYTR_MERCHANT_ID')
+PAYTR_MERCHANT_SALT = os.environ.get('PAYTR_MERCHANT_SALT')
+PAYTR_MERCHANT_KEY = os.environ.get('PAYTR_MERCHANT_KEY')
+
+PAYTR_API_URL = "https://www.paytr.com/odeme/api/get-token"
+
+# LOGLAMA AYARLARI
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+    'loggers': {
+        'main': {  # main/views.py için özel bir logger
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}

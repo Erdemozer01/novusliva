@@ -2,6 +2,8 @@ import base64
 import hashlib
 import hmac
 import json
+import uuid
+
 import requests
 from django.contrib.admin.views.decorators import staff_member_required
 
@@ -502,29 +504,28 @@ def checkout_view(request):
         if form.is_valid():
             with transaction.atomic():
                 order = cart
-                # Yeni alanları kaydet
+                # Siparişin fatura bilgilerini kaydet
                 order.billing_name = form.cleaned_data['billing_name']
                 order.billing_email = form.cleaned_data['billing_email']
                 order.billing_address = form.cleaned_data['billing_address']
                 order.billing_city = form.cleaned_data['billing_city']
                 order.billing_postal_code = form.cleaned_data['billing_postal_code']
                 order.billing_phone_number = form.cleaned_data['phone_number']
-                order.billing_identity_number = form.cleaned_data.get('identity_number')  # Yeni alan
+                order.billing_identity_number = form.cleaned_data.get('identity_number')
                 order.payment_method = form.cleaned_data['payment_method']
-                order.currency = form.cleaned_data['currency']  # Yeni alan
+                order.currency = form.cleaned_data['currency']
                 order.save()
 
+                # --- IYZICO ENTEGRASYON BLOĞU ---
                 if order.payment_method == 'iyzico':
-                    options = {
-                        'api_key': settings.IYZICO_API_KEY,
-                        'secret_key': settings.IYZICO_SECRET_KEY,
-                        'base_url': settings.IYZICO_BASE_URL,
-                    }
-
-                    iyzico_request, conversation_id = prepare_iyzico_request(order, request.user,
-                                                                             order.billing_phone_number, request)
-
                     try:
+                        options = {
+                            'api_key': settings.IYZICO_API_KEY,
+                            'secret_key': settings.IYZICO_SECRET_KEY,
+                            'base_url': settings.IYZICO_BASE_URL,
+                        }
+                        iyzico_request, conversation_id = prepare_iyzico_request(order, request.user,
+                                                                                 order.billing_phone_number, request)
                         init_data = initialize_iyzico_payment(iyzico_request, options)
 
                         if init_data.get('status') == 'success':
@@ -539,76 +540,66 @@ def checkout_view(request):
                                 request.session['iyzico_checkout_html'] = init_data.get('checkoutFormContent')
                                 return redirect('iyzico_checkout_embed')
                         else:
-                            messages.error(request, init_data.get('errorMessage', 'Iyzico ile ödeme başlatılamadı.'))
+                            error_message = init_data.get('errorMessage', 'Iyzico ile ödeme başlatılamadı.')
+                            messages.error(request, error_message)
                             logger.error(f"Iyzico ödeme başlatma hatası: {init_data}")
                             return redirect('checkout')
-
                     except Exception as e:
-                        messages.error(request,
-                                       'Ödeme işlemi sırasında bir sunucu hatası oluştu. Lütfen tekrar deneyin.')
+                        messages.error(request, 'Iyzico ödeme işlemi sırasında bir hata oluştu. Lütfen tekrar deneyin.')
                         logger.exception("Iyzico API isteği sırasında genel hata")
                         return redirect('checkout')
 
+                # --- PAYTR ENTEGRASYON BLOĞU ---
                 elif order.payment_method == 'paytr':
                     try:
-                        merchant_oid = f'ORDER-{order.id}-{random.randint(1000, 9999)}'
-                        user_ip = request.META.get('REMOTE_ADDR')
+                        # merchant_oid'yi sadece alfanumerik karakterlerden oluştur
+                        merchant_oid = f'{order.id}{uuid.uuid4().hex}'
+
+                        # Gerçek IP adresi için güvenli yöntem
+                        user_ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0] or request.META.get(
+                            'REMOTE_ADDR', '127.0.0.1')
                         email = order.billing_email
 
-                        # Para birimi TRY değilse, PayTR sadece TRY destekler. Bu nedenle hata veriyoruz.
                         if order.currency != 'TRY':
                             messages.error(request, 'PayTR sadece Türk Lirası (TRY) para birimini destekler.')
                             return redirect('checkout')
 
-                        payment_amount = int(order.get_total_cost() * 100)  # Kuruş cinsinden
+                        payment_amount = int(order.get_total_cost() * 100)
 
-                        # DİKKAT: Sepet içeriğini PayTR formatına dönüştürün
-                        # Ürün fiyatları da kuruş cinsinden (integer) olmalıdır.
-                        basket_items = []
-                        for item in order.items.all():
-                            basket_items.append([
-                                item.portfolio_item.title,
-                                str(int(item.get_cost() * 100)),  # Fiyatı kuruşa çevir ve string yap
-                                item.quantity
-                            ])
+                        basket_items = [[item.portfolio_item.title, str(int(item.get_cost() * 100)), item.quantity] for
+                                        item in order.items.all()]
+                        user_basket_base64 = base64.b64encode(json.dumps(basket_items).encode()).decode('utf-8')
 
-                        # DİKKAT: Sepet içeriği JSON formatına çevrilip Base64 ile kodlanmalı
-                        user_basket_str = json.dumps(basket_items)
-                        user_basket_base64 = base64.b64encode(user_basket_str.encode()).decode()
-
-                        # Sabit değerler
-                        no_installment = "1"  # Taksit istemiyorsanız 1, istiyorsanız 0
-                        max_installment = "0"  # Maksimum taksit sayısı, 0 ise sınırsız
+                        no_installment = "0"
+                        max_installment = "0"
                         test_mode = "1" if settings.DEBUG else "0"
 
-                        # DİKKAT: PayTR token'ı için hash'lenecek metin (hash_str) dokümantasyona göre oluşturulmalı
+                        # Hash oluşturma (sırasına dikkat)
                         hash_str = (
-                                settings.PAYTR_API_KEY +
-                                user_ip +
-                                merchant_oid +
-                                email +
+                                str(settings.PAYTR_MERCHANT_ID) +
+                                str(user_ip) +
+                                str(merchant_oid) +
+                                str(email) +
                                 str(payment_amount) +
-                                user_basket_base64 +
-                                no_installment +
-                                max_installment +
-                                order.currency +
-                                test_mode +
-                                settings.PAYTR_MERCHANT_SALT
+                                str(user_basket_base64) +
+                                str(no_installment) +
+                                str(max_installment) +
+                                str(order.currency) +
+                                str(test_mode)
                         )
+                        hash_bytes = hmac.new(settings.PAYTR_MERCHANT_KEY.encode('utf-8'), hash_str.encode('utf-8'),
+                                              hashlib.sha256).digest()
+                        paytr_token = base64.b64encode(hash_bytes).decode('utf-8')
 
-                        # DİKKAT: PayTR token'ını oluşturun (SHA256 ve Base64)
-                        paytr_token = base64.b64encode(hashlib.sha256(hash_str.encode('utf-8')).digest()).decode(
-                            'utf-8')
-
+                        # API'ye gönderilecek veriyi hazırla
                         post_data = {
-                            'merchant_id': settings.PAYTR_API_KEY,
-                            # Ayarlardaki PAYTR_API_KEY aslında Merchant ID olmalı
+                            'merchant_id': settings.PAYTR_MERCHANT_ID,
                             'user_ip': user_ip,
                             'merchant_oid': merchant_oid,
                             'email': email,
                             'payment_amount': payment_amount,
                             'paytr_token': paytr_token,
-                            'user_basket': user_basket_base64,  # Base64 ile kodlanmış sepet
+                            'user_basket': user_basket_base64,
                             'currency': order.currency,
                             'no_installment': int(no_installment),
                             'max_installment': int(max_installment),
@@ -618,25 +609,25 @@ def checkout_view(request):
                             'user_phone': order.billing_phone_number,
                             'merchant_ok_url': request.build_absolute_uri(reverse('payment_success')),
                             'merchant_fail_url': request.build_absolute_uri(reverse('payment_cancel')),
-                            'timeout_limit': 30,  # Ödeme sayfası zaman aşımı (dakika)
+                            'timeout_limit': 30,
                             'lang': 'tr',
                         }
 
-                        # settings.py dosyanızdaki PAYTR_BASE_URL'nin "https://www.paytr.com/odeme/api/get-token" olduğundan emin olun
-                        paytr_response = requests.post(settings.PAYTR_BASE_URL, data=post_data)
-                        paytr_response_json = paytr_response.json()
+                        # API'ye istek gönder
+                        response = requests.post(settings.PAYTR_API_URL, data=post_data)
+                        response_data = response.json()
 
-                        if paytr_response_json.get('status') == 'success':
-                            token = paytr_response_json.get('token')
+                        if response_data.get('status') == 'success':
+                            token = response_data.get('token')
                             request.session['paytr_token'] = token
                             order.status = 'pending_paytr_approval'
-                            order.paytr_merchant_oid = merchant_oid  # Geri dönüşlerde siparişi bulmak için merchant_oid'i kaydedin
+                            order.paytr_merchant_oid = merchant_oid
                             order.save()
-                            return redirect('paytr_checkout_embed')  # Bu isimde bir URL'niz olmalı
+                            return redirect('paytr_checkout_embed')
                         else:
-                            error_message = paytr_response_json.get('err_msg', 'PayTR ile ödeme başlatılamadı.')
+                            error_message = response_data.get('reason', 'PayTR ile ödeme başlatılamadı.')
                             messages.error(request, error_message)
-                            logger.error(f"PayTR API hatası: {paytr_response_json}")
+                            logger.error(f"PayTR API hatası: {response_data}")
                             return redirect('checkout')
 
                     except requests.exceptions.RequestException as req_err:
@@ -648,6 +639,7 @@ def checkout_view(request):
                         logger.exception("PayTR API isteği sırasında genel hata")
                         return redirect('checkout')
 
+                # --- DİĞER ÖDEME YÖNTEMLERİ ---
                 elif order.payment_method in ['bank_transfer', 'cash']:
                     order.status = 'pending'
                     order.save()
@@ -656,7 +648,6 @@ def checkout_view(request):
 
         else:
             messages.error(request, 'Lütfen tüm gerekli alanları doğru şekilde doldurun.')
-
     else:
         form = CustomCheckoutForm(user=request.user)
 
