@@ -1735,46 +1735,50 @@ msgstr "Henüz hiçbir referans eklenmedi."
 msgid "My Cart"
 msgstr "Sepetim"
 
-#: .\templates\cart_detail.html:9
+#: .\templates\cart_detail.html:8
+msgid "My Cart"
+msgstr "Sepetim"
+
+#: .\templates\cart_detail.html:25
 msgid "Products in Your Cart"
 msgstr "Sepetinizdeki Ürünler"
 
-#: .\templates\cart_detail.html:15
+#: .\templates\cart_detail.html:30
 msgid "Product"
 msgstr "Ürün"
 
-#: .\templates\cart_detail.html:16
+#: .\templates\cart_detail.html:31
 msgid "Price"
 msgstr "Fiyat"
 
-#: .\templates\cart_detail.html:17
+#: .\templates\cart_detail.html:32
 msgid "Quantity"
-msgstr "Adet"
+msgstr "Miktar"
 
-#: .\templates\cart_detail.html:18
+#: .\templates\cart_detail.html:33
 msgid "Total"
 msgstr "Toplam"
 
-#: .\templates\cart_detail.html:19
+#: .\templates\cart_detail.html:34
 msgid "Actions"
 msgstr "İşlemler"
 
-#: .\templates\cart_detail.html:43
+#: .\templates\cart_detail.html:74
 msgid "Are you sure you want to completely remove this item from your cart?"
 msgstr "Bu ürünü sepetinizden tamamen kaldırmak istediğinizden emin misiniz?"
 
-#: .\templates\cart_detail.html:56
+#: .\templates\cart_detail.html:87
 msgid "Total Amount:"
 msgstr "Toplam Tutar:"
 
-#: .\templates\cart_detail.html:61
+#: .\templates\cart_detail.html:91
 msgid "Proceed to Checkout"
-msgstr "Ödemeye Git"
+msgstr "Ödeme Sayfasına Git"
 
-#: .\templates\cart_detail.html:66
+#: .\templates\cart_detail.html:98
 msgid "Your cart is currently empty."
-msgstr "Sepetinizde henüz hiç ürün bulunmamaktadır."
+msgstr "Sepetiniz şu anda boş."
 
-#: .\templates\cart_detail.html:71
+#: .\templates\cart_detail.html:103
 msgid "Browse Products Now"
-msgstr "Hemen Ürünleri İnceleyin"
+msgstr "Şimdi Ürünlere Göz Atın"
