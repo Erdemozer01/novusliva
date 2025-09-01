@@ -14,6 +14,13 @@
     {% endblock %}
 
     <meta name="keywords" content="">
+    <meta name="author" content="Mehmet Erdem ÖZER">
+    <meta name="robots" content="index, follow">
+    <meta name="googlebot" content="index, follow">
+    <meta name="google" content="notranslate">
+    <meta name="google-site-verification" content="your-verification-code">
+
+    <link rel="canonical" href="{% static "assets/img/novusliva.jpg" %}">
 
     <link href="{% static 'assets/img/novusliva.jpg' %}" rel="icon">
     <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
@@ -28,6 +35,7 @@
     <link href="{% static 'assets/vendor/aos/aos.css' %}" rel="stylesheet">
     <link href="{% static 'assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
     <link href="{% static 'assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet">
+
 
     <link href="{% static 'assets/css/main.css' %}" rel="stylesheet">
 
@@ -162,17 +170,17 @@
                             {% endif %}
                             <li>
                                 <hr class="dropdown-divider">
-                                </li>
-                                <li>
-                                    <a href="#" class="dropdown-item"
-                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                            </li>
+                            <li>
+                                <a href="#" class="dropdown-item"
+                                   onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                     <i class="bi bi-box-arrow-right me-2"></i>
                                     {% trans "Logout" %}
-                                    </a>
-                                    <form id="logout-form" action="{% url 'logout' %}" method="post" style="display: none;">
+                                </a>
+                                <form id="logout-form" action="{% url 'logout' %}" method="post" style="display: none;">
                                     {% csrf_token %}
-                                    </form>
-                                </li>
+                                </form>
+                            </li>
                         </ul>
                     </li>
                 {% else %}
