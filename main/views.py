@@ -552,10 +552,7 @@ def checkout_view(request):
                 # --- PAYTR ENTEGRASYON BLOĞU ---
                 elif order.payment_method == 'paytr':
                     try:
-                        # merchant_oid'yi sadece alfanumerik karakterlerden oluştur
                         merchant_oid = f'{order.id}{uuid.uuid4().hex}'
-
-                        # Gerçek IP adresi için güvenli yöntem
                         user_ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0] or request.META.get(
                             'REMOTE_ADDR', '127.0.0.1')
                         email = order.billing_email
@@ -574,7 +571,6 @@ def checkout_view(request):
                         max_installment = "0"
                         test_mode = "1" if settings.DEBUG else "0"
 
-                        # Hash oluşturma (sırasına dikkat)
                         hash_str = (
                                 str(settings.PAYTR_MERCHANT_ID) +
                                 str(user_ip) +
@@ -591,7 +587,6 @@ def checkout_view(request):
                                               hashlib.sha256).digest()
                         paytr_token = base64.b64encode(hash_bytes).decode('utf-8')
 
-                        # API'ye gönderilecek veriyi hazırla
                         post_data = {
                             'merchant_id': settings.PAYTR_MERCHANT_ID,
                             'user_ip': user_ip,
@@ -613,8 +608,13 @@ def checkout_view(request):
                             'lang': 'tr',
                         }
 
-                        # API'ye istek gönder
-                        response = requests.post(settings.PAYTR_API_URL, data=post_data)
+                        # Proxy kullanmamak için proxies={} parametresi eklendi
+                        response = requests.post(settings.PAYTR_API_URL, data=post_data, proxies={})
+
+                        # --- HATA AYIKLAMA SATIRI ---
+                        logger.debug(f"PayTR API yanıt metni: {response.text}")
+                        # -----------------------------
+
                         response_data = response.json()
 
                         if response_data.get('status') == 'success':
