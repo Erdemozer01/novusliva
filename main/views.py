@@ -613,7 +613,16 @@ def checkout_view(request):
                             'lang': 'tr',
                         }
 
-                        response = requests.post(settings.PAYTR_API_URL, post_data)
+                        scraperapi_key = "5a275ef41f9cf522baea57a38b95c58b"
+
+                        params = {
+                            'api_key': scraperapi_key,
+                            'url': settings.PAYTR_API_URL,
+                            'method': 'POST',
+                            'body': post_data
+                        }
+
+                        response = requests.get("http://api.scraperapi.com", params=params)
 
                         # --- HATA AYIKLAMA İÇİN EKLENECEK BÖLÜM 2 ---
                         print(f"PayTR Yanıt Status Kodu: {response.status_code}")
