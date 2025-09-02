@@ -600,7 +600,7 @@ def checkout_view(request):
                             'user_name': order.billing_name,
                             'user_address': order.billing_address,
                             'user_phone': order.billing_phone_number,
-                            'merchant_ok_url': request.build_absolute_uri(reverse('payment_success')),
+                            'merchant_ok_url': request.build_absolute_uri(reverse('paytr_callback')),
                             'merchant_fail_url': request.build_absolute_uri(reverse('payment_cancel')),
                             'timeout_limit': 30,
                             'lang': 'tr',
