@@ -852,65 +852,64 @@ def invoice_view(request, order_id):
 @csrf_exempt
 @require_POST
 def paytr_callback_view(request):
-    if request.method != 'POST':
-        # PayTR sadece POST metodu ile bildirim gönderir.
-        return HttpResponseForbidden("Invalid request method.")
-
+    """
+    Bu view, PayTR'dan gelen ödeme sonuç bildirimlerini işler.
+    Dökümantasyondaki "2. ADIM"a karşılık gelir.
+    """
     post_data = request.POST
 
-    # Mağaza bilgilerinizi settings.py dosyasından alın
-    merchant_key = settings.PAYTR_SECRET_KEY.encode('utf-8')
+    # --- HASH KONTROLÜ ---
+    # PayTR'dan gelen hash'i, kendi oluşturacağımız hash ile karşılaştıracağız.
+    # Bu kontrol, bildirimin gerçekten PayTR'dan geldiğini ve değiştirilmediğini doğrular.
+    # Bu adımı atlamak ciddi güvenlik zaafiyetlerine yol açar.
+
+    merchant_key = settings.PAYTR_MERCHANT_KEY
     merchant_salt = settings.PAYTR_MERCHANT_SALT
 
-    # PayTR'dan gelen hash değeri
-    paytr_hash = post_data.get('hash')
-
-    # İmza doğrulaması için kendi hash'imizi oluşturalım
+    # Hash oluşturmak için kullanılacak metin
     hash_str = (
-            post_data.get('merchant_oid') +
+            post_data.get('merchant_oid', '') +
             merchant_salt +
-            post_data.get('status') +
-            post_data.get('total_amount')
+            post_data.get('status', '') +
+            post_data.get('total_amount', '')
     )
 
-    # HMAC-SHA256 ile hash oluşturma ve Base64'e çevirme
+    # Kendi hash'imizi HMAC-SHA256 ile oluşturuyoruz
     calculated_hash_bytes = hmac.new(merchant_key, hash_str.encode('utf-8'), hashlib.sha256).digest()
-    calculated_hash = base64.b64encode(calculated_hash_bytes)
+    calculated_hash = base64.b64encode(calculated_hash_bytes).decode('utf-8')
 
-    # Hash doğrulaması: PayTR'dan gelen hash ile bizim hesapladığımız hash eşleşmiyorsa,
-    # istek geçersizdir ve maddi kayıpları önlemek için işlem yapılmamalıdır.
-    if calculated_hash.decode('utf-8') != paytr_hash:
-        logger.warning(f"PayTR callback hash mismatch for merchant_oid: {post_data.get('merchant_oid')}")
-        # PayTR'a hatalı bildirim olduğunu belirtmek için bir metin dönebilirsiniz ama 'OK' dışında
-        # dönen her şey PayTR'ın bildirimi tekrar göndermesine neden olabilir. Genellikle loglamak yeterlidir.
+    # Hash'ler eşleşmiyorsa, işlemi reddet
+    if calculated_hash != post_data.get('hash'):
+        logger.warning(f"PayTR callback HASH MISMATCH for merchant_oid: {post_data.get('merchant_oid')}")
+        # PayTR'a hatalı bildirim olduğunu belirtmek için metin dönebilirsiniz.
+        # "OK" dışında dönen her şey, PayTR'ın bildirimi tekrar göndermesine neden olabilir.
+        # Genellikle loglamak ve işlemi sonlandırmak yeterlidir.
         return HttpResponse("PAYTR notification failed: bad hash", status=400)
 
-    # --- Hash doğrulandı, şimdi siparişi güncelleyebiliriz ---
+    # --- SİPARİŞ İŞLEMLERİ ---
 
     merchant_oid = post_data.get('merchant_oid')
 
     try:
         # 1. ADIM: merchant_oid ile ilgili siparişi veritabanından bul.
-        # Bir önceki adımda bu değeri Order modeline kaydetmiştik.
-        # Eğer kaydetmediyseniz, merchant_oid'den sipariş ID'sini parse etmeniz gerekir.
         order = get_object_or_404(Order, paytr_merchant_oid=merchant_oid)
 
-        # 2. ADIM: Siparişin durumunu kontrol et.
-        # Eğer sipariş zaten 'completed' veya 'failed' ise, aynı bildirimin tekrar gelmesi ihtimaline
-        # karşı tekrar işlem yapma. Bu, mükerrer işlemleri önler.
+        # 2. ADIM: Siparişin durumunu kontrol et (Mükerrer bildirim önleme).
+        # Eğer sipariş zaten 'completed' veya 'failed' ise, aynı bildirimin tekrar
+        # gelmesi ihtimaline karşı tekrar işlem yapma.
         if order.status in ['completed', 'failed']:
             logger.info(
-                f"PayTR callback received for an already processed order: {merchant_oid}, Status: {order.status}")
+                f"PayTR callback received for an already processed order: {merchant_oid}, Status: {order.status}"
+            )
             return HttpResponse("OK")
 
+        # Veritabanı işlemlerini güvenli bir blok içine alıyoruz
         with transaction.atomic():
             if post_data.get('status') == 'success':
                 # ÖDEME BAŞARILI
                 order.status = 'completed'
-                order.payment_id = post_data.get('payment_id', '')  # PayTR ödeme ID'si (varsa)
 
-                # Müşterinin ödediği toplam tutarı kaydet (taksit komisyonu dahil)
-                # total_amount kuruş cinsindendir, 100'e bölerek TL'ye çevir.
+                # Güncel ödeme tutarını `total_amount` üzerinden al (kuruş cinsindendir)
                 final_amount = float(post_data.get('total_amount')) / 100.0
                 order.total_paid = final_amount
 
@@ -921,10 +920,8 @@ def paytr_callback_view(request):
                     order.discount_code.used_count = F('used_count') + 1
                     order.discount_code.save(update_fields=['used_count'])
 
-                # Müşteriye sipariş onayı e-postası gönder
-                # order_success_view içindeki e-posta gönderme mantığını buraya taşıyabilir
-                # veya bir sinyal (signal) kullanarak bu işlemi tetikleyebilirsiniz.
-                # Örnek:
+                # Müşteriye sipariş onayı e-postası / SMS gönderimi gibi işlemler
+                # bu blokta tetiklenmelidir.
                 # send_order_confirmation_email(order)
 
             else:
@@ -938,14 +935,15 @@ def paytr_callback_view(request):
             order.save()
 
     except Order.DoesNotExist:
-        # Eğer merchant_oid ile bir sipariş bulunamazsa, bu durumu logla.
+        # merchant_oid ile bir sipariş bulunamazsa, bu durumu logla.
         logger.error(f"PayTR callback received for a non-existent merchant_oid: {merchant_oid}")
         # Yine de PayTR'a 'OK' dönerek bildirimi sonlandırması istenir.
         return HttpResponse("OK")
     except Exception as e:
         # Beklenmedik bir hata oluşursa logla
         logger.exception(
-            f"An unexpected error occurred during PayTR callback processing for merchant_oid: {merchant_oid}")
+            f"An unexpected error occurred during PayTR callback processing for merchant_oid: {merchant_oid}"
+        )
         # Hata durumunda 500 dönebilirsiniz, bu PayTR'ın bildirimi tekrar denemesini sağlar.
         return HttpResponse("An internal error occurred.", status=500)
 
