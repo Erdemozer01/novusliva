@@ -27,18 +27,20 @@
     </div><!-- End Page Title -->
 
     <!-- Portfolio Details Section -->
-    <section id="portfolio-details" class="portfolio-details section">
+    <section id="portfolio-details" class="portfolio-details section ">
         <div class="container" data-aos="fade-up">
-            <div class="portfolio-details-slider swiper init-swiper">
+            <div class="portfolio-details-slider swiper init-swiper" data-aos="fade-up" data-aos-delay="100" style="margin-top: -20%;">
                 <div class="swiper-wrapper align-items-center">
+                    {% if item.main_image %}
+                        <div class="swiper-slide">
+                            <img src="{{ item.main_image.url }}" alt="{{ item.title }}">
+                        </div>
+                    {% endif %}
                     {% for image in item.images.all %}
                         <div class="swiper-slide">
                             <img src="{{ image.image.url }}" alt="{{ item.title }}">
                         </div>
-                    {% empty %}
-                        <div class="swiper-slide">
-                            <img src="{{ item.main_image.url }}" alt="{{ item.title }}">
-                        </div>
+
                     {% endfor %}
                 </div>
                 <div class="swiper-button-prev"></div>
@@ -92,4 +94,29 @@
             </div>
         </div>
     </section>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            new Swiper('.portfolio-details-slider', {
+                loop: true,
+                speed: 600,
+                autoplay: {
+                    delay: 5000,
+                    disableOnInteraction: false
+                },
+                slidesPerView: 'auto',
+                pagination: {
+                    el: '.swiper-pagination',
+                    type: 'bullets',
+                    clickable: true
+                },
+                navigation: {
+                    nextEl: '.swiper-button-next',
+                    prevEl: '.swiper-button-prev',
+                }
+            });
+        });
+    </script>
 {% endblock %}

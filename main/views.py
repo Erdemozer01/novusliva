@@ -28,6 +28,7 @@ from django.db import IntegrityError
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from ipware import get_client_ip
 
 from .forms import (
     ContactForm, CommentForm, UserRegisterForm, SubscriberForm,
@@ -133,7 +134,6 @@ def verify_iyzico_signature(response, secret_key):
 
 
 def send_email_wrapper(subject, recipient_list, html_content, plain_content=None):
-
     if plain_content is None:
         plain_content = strip_tags(html_content)
 
@@ -186,7 +186,6 @@ def services_view(request):
         'features': features,
     }
 
-
     return render(request, 'services.html', context)
 
 
@@ -203,7 +202,6 @@ def portfolio_view(request):
 
 def portfolio_details_view(request, item_id):
     item = get_object_or_404(PortfolioItem, pk=item_id)
-
     context = {
         'item': item
     }
@@ -387,7 +385,6 @@ def subscribe_view(request):
     return JsonResponse({'success': False, 'message': _("Please enter a valid email address.")})
 
 
-
 def service_details_view(request, service_id):
     service = get_object_or_404(Service, pk=service_id)
     all_services = Service.objects.all()
@@ -552,9 +549,19 @@ def checkout_view(request):
                 # --- PAYTR ENTEGRASYON BLOĞU ---
                 elif order.payment_method == 'paytr':
                     try:
+                        # IP adresini django-ipware ile güvenli bir şekilde alın
+                        client_ip, is_routable = get_client_ip(request)
+                        if client_ip is None:
+                            # IP adresi tespit edilemezse, hata ver ve işlemi durdur
+                            messages.error(request,
+                                           'IP adresiniz tespit edilemediği için ödeme işlemine devam edilemiyor.')
+                            logger.warning("PayTR işlemi için IP adresi tespit edilemedi.")
+                            return redirect('checkout')
+
+                        # Kodun geri kalanı client_ip değişkenini kullanacak
+                        user_ip = client_ip
+
                         merchant_oid = f'{order.id}{uuid.uuid4().hex}'
-                        user_ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0] or request.META.get(
-                            'REMOTE_ADDR', '127.0.0.1')
                         email = order.billing_email
 
                         if order.currency != 'TRY':
@@ -571,18 +578,16 @@ def checkout_view(request):
                         max_installment = "0"
                         test_mode = "1" if settings.DEBUG else "0"
 
-                        hash_str = (
-                                str(settings.PAYTR_MERCHANT_ID) +
-                                str(user_ip) +
-                                str(merchant_oid) +
-                                str(email) +
-                                str(payment_amount) +
-                                str(user_basket_base64) +
-                                str(no_installment) +
-                                str(max_installment) +
-                                str(order.currency) +
-                                str(test_mode)
-                        )
+                        # Okunabilirlik için f-string kullanımı daha iyi olabilir
+                        hash_str = f"{settings.PAYTR_MERCHANT_ID}{user_ip}{merchant_oid}{email}{payment_amount}{user_basket_base64}{no_installment}{max_installment}{order.currency}{test_mode}{settings.PAYTR_MERCHANT_SALT}"
+
+                        # --- Hata ayıklama için bu bölüm kalabilir ---
+                        print("=" * 50)
+                        print("PAYTR HASH İÇİN KULLANILAN GÜNCEL VERİLER:")
+                        print(f"Oluşturulan Hash String: {hash_str}")
+                        print("=" * 50)
+                        # --- Hata ayıklama sonu ---
+
                         hash_bytes = hmac.new(settings.PAYTR_MERCHANT_KEY.encode('utf-8'), hash_str.encode('utf-8'),
                                               hashlib.sha256).digest()
                         paytr_token = base64.b64encode(hash_bytes).decode('utf-8')
@@ -608,12 +613,12 @@ def checkout_view(request):
                             'lang': 'tr',
                         }
 
-                        # Proxy kullanmamak için proxies={} parametresi eklendi
-                        response = requests.post(settings.PAYTR_API_URL, data=post_data, proxies={})
+                        response = requests.post(settings.PAYTR_API_URL, post_data)
 
-                        # --- HATA AYIKLAMA SATIRI ---
-                        logger.debug(f"PayTR API yanıt metni: {response.text}")
-                        # -----------------------------
+                        # --- HATA AYIKLAMA İÇİN EKLENECEK BÖLÜM 2 ---
+                        print(f"PayTR Yanıt Status Kodu: {response.status_code}")
+                        print(f"PayTR Yanıt İçeriği (Text): {response.text}")
+                        # --- HATA AYIKLAMA SONU ---
 
                         response_data = response.json()
 
@@ -639,7 +644,6 @@ def checkout_view(request):
                         logger.exception("PayTR API isteği sırasında genel hata")
                         return redirect('checkout')
 
-                # --- DİĞER ÖDEME YÖNTEMLERİ ---
                 elif order.payment_method in ['bank_transfer', 'cash']:
                     order.status = 'pending'
                     order.save()
@@ -769,7 +773,6 @@ def iyzico_callback_view(request):
 
 @login_required
 def order_success_view(request, order_id):
-
     try:
         order = get_object_or_404(Order, id=order_id)
     except Exception as e:
@@ -822,7 +825,8 @@ def apply_discount_view(request):
 
             # Eğer zaten bir indirim kodu uygulanmışsa
             if cart.discount_code:
-                return JsonResponse({'success': False, 'message': _("A discount code has already been applied to the cart.")})
+                return JsonResponse(
+                    {'success': False, 'message': _("A discount code has already been applied to the cart.")})
 
             # İndirimi uygula
             subtotal = cart.get_subtotal_cost()
