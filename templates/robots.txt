@@ -1,5 +1,5 @@
 User-agent: *
 Disallow: /admin/
 Disallow: /accounts/
-
+Disallow: /index.php
 Sitemap: {{ request.scheme }}://{{ request.get_host }}{% url 'django.contrib.sitemaps.views.sitemap' %}
