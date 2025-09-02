@@ -2,6 +2,7 @@ import base64
 import hashlib
 import hmac
 import json
+import os
 import uuid
 
 import requests
@@ -613,13 +614,19 @@ def checkout_view(request):
                             'lang': 'tr',
                         }
 
-                        scraperapi_key = "5a275ef41f9cf522baea57a38b95c58b"
+                        scraperapi_key = os.environ.get('SCRAPERAPI_KEY')
+                        target_url = settings.PAYTR_API_URL
+
+                        headers = {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
 
                         params = {
                             'api_key': scraperapi_key,
-                            'url': settings.PAYTR_API_URL,
+                            'url': target_url,
                             'method': 'POST',
-                            'body': post_data
+                            'body': '&'.join([f"{k}={v}" for k, v in post_data.items()]),
+                            'headers': json.dumps(headers)
                         }
 
                         response = requests.get("http://api.scraperapi.com", params=params)
