@@ -2,7 +2,6 @@ import base64
 import hashlib
 import hmac
 import json
-import os
 import uuid
 
 import requests
@@ -582,13 +581,6 @@ def checkout_view(request):
                         # Okunabilirlik için f-string kullanımı daha iyi olabilir
                         hash_str = f"{settings.PAYTR_MERCHANT_ID}{user_ip}{merchant_oid}{email}{payment_amount}{user_basket_base64}{no_installment}{max_installment}{order.currency}{test_mode}{settings.PAYTR_MERCHANT_SALT}"
 
-                        # --- Hata ayıklama için bu bölüm kalabilir ---
-                        print("=" * 50)
-                        print("PAYTR HASH İÇİN KULLANILAN GÜNCEL VERİLER:")
-                        print(f"Oluşturulan Hash String: {hash_str}")
-                        print("=" * 50)
-                        # --- Hata ayıklama sonu ---
-
                         hash_bytes = hmac.new(settings.PAYTR_MERCHANT_KEY.encode('utf-8'), hash_str.encode('utf-8'),
                                               hashlib.sha256).digest()
                         paytr_token = base64.b64encode(hash_bytes).decode('utf-8')
@@ -614,27 +606,7 @@ def checkout_view(request):
                             'lang': 'tr',
                         }
 
-                        scraperapi_key = os.environ.get('SCRAPERAPI_KEY')
-                        target_url = settings.PAYTR_API_URL
-
-                        headers = {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        }
-
-                        params = {
-                            'api_key': scraperapi_key,
-                            'url': target_url,
-                            'method': 'POST',
-                            'body': '&'.join([f"{k}={v}" for k, v in post_data.items()]),
-                            'headers': json.dumps(headers)
-                        }
-
-                        response = requests.get("http://api.scraperapi.com", params=params)
-
-                        # --- HATA AYIKLAMA İÇİN EKLENECEK BÖLÜM 2 ---
-                        print(f"PayTR Yanıt Status Kodu: {response.status_code}")
-                        print(f"PayTR Yanıt İçeriği (Text): {response.text}")
-                        # --- HATA AYIKLAMA SONU ---
+                        response = requests.post(settings.PAYTR_API_URL, post_data)
 
                         response_data = response.json()
 
