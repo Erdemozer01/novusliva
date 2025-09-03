@@ -875,7 +875,7 @@ def paytr_callback_view(request):
     )
 
     # Kendi hash'imizi HMAC-SHA256 ile oluşturuyoruz
-    calculated_hash_bytes = hmac.new(merchant_key, hash_str.encode('utf-8'), hashlib.sha256).digest()
+    calculated_hash_bytes = hmac.new(merchant_key.encode('utf-8'), hash_str.encode('utf-8'), hashlib.sha256).digest()
     calculated_hash = base64.b64encode(calculated_hash_bytes).decode('utf-8')
 
     # Hash'ler eşleşmiyorsa, işlemi reddet
@@ -912,8 +912,11 @@ def paytr_callback_view(request):
                 # Güncel ödeme tutarını `total_amount` üzerinden al (kuruş cinsindendir)
                 final_amount = float(post_data.get('total_amount')) / 100.0
                 order.total_paid = final_amount
+                order.payment_date = timezone.now()
 
                 logger.info(f"Order {order.id} payment successful via PayTR. Amount: {final_amount}")
+
+                order.save()
 
                 # İndirim kodu kullanıldıysa kullanım sayısını artır
                 if order.discount_code:
