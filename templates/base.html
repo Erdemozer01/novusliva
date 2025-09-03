@@ -36,7 +36,6 @@
     <link href="{% static 'assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
     <link href="{% static 'assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet">
 
-
     <link href="{% static 'assets/css/main.css' %}" rel="stylesheet">
 
     <style>
@@ -339,50 +338,50 @@
 <script src="{% static 'assets/js/main.js' %}"></script>
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('newsletter-form');
-    const messageDiv = document.getElementById('newsletter-message');
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('newsletter-form');
+            const messageDiv = document.getElementById('newsletter-message');
 
-    if (!form || !messageDiv) return;
+            if (!form || !messageDiv) return;
 
-    form.addEventListener('submit', async function (e) {
-        e.preventDefault();
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
 
-        const formData = new FormData(form);
-        const csrfToken = formData.get('csrfmiddlewaretoken');
+                const formData = new FormData(form);
+                const csrfToken = formData.get('csrfmiddlewaretoken');
 
-        messageDiv.style.display = 'block';
-        messageDiv.className = 'text-info mt-2';
-        messageDiv.textContent = 'Processing...';
+                messageDiv.style.display = 'block';
+                messageDiv.className = 'text-info mt-2';
+                messageDiv.textContent = 'Processing...';
 
-        try {
-            const response = await fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': csrfToken,
-                    'Accept': 'text/html'
-                },
-                credentials: 'same-origin'
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': csrfToken,
+                            'Accept': 'text/html'
+                        },
+                        credentials: 'same-origin'
+                    });
+
+                    const html = await response.text();
+                    messageDiv.className = '';
+                    messageDiv.innerHTML = html;
+
+                    if (response.status === 201) {
+                        form.reset();
+                    }
+                } catch (error) {
+                    console.error('Subscription error:', error);
+                    messageDiv.className = 'alert alert-danger mt-2';
+                    messageDiv.textContent = '{% trans "An error occurred. Please try again." %}';
+                }
             });
-
-            const html = await response.text();
-            messageDiv.className = '';
-            messageDiv.innerHTML = html;
-
-            if (response.status === 201) {
-                form.reset();
-            }
-        } catch (error) {
-            console.error('Subscription error:', error);
-            messageDiv.className = 'alert alert-danger mt-2';
-            messageDiv.textContent = '{% trans "An error occurred. Please try again." %}';
-        }
-    });
-});
-</script>
+        });
+    </script>
 {% endblock %}
 
 </body>
