@@ -368,21 +368,23 @@ def register_view(request):
     return render(request, 'registration/register.html', context)
 
 
+
+
 @require_POST
 def subscribe_view(request):
-    email = request.POST.get('email')
-    if email:
-        try:
-            # The email address is added to the database. The `unique=True` error is caught.
-            Subscriber.objects.create(email=email)
-            return JsonResponse({'success': True, 'message': _("You have successfully subscribed to our newsletter!")})
-        except IntegrityError:
-            # unique constraint error (email is already registered)
-            return JsonResponse({'success': False, 'message': _("This email address is already registered.")})
-        except Exception:
-            # Other potential errors
-            return JsonResponse({'success': False, 'message': _("An error occurred. Please try again.")})
-    return JsonResponse({'success': False, 'message': _("Please enter a valid email address.")})
+    email = (request.POST.get('email') or '').strip()
+    if not email:
+        return HttpResponse('<div class="alert alert-danger mt-2">Please enter a valid email address.</div>', status=400)
+
+    try:
+        Subscriber.objects.create(email=email.lower())
+        return HttpResponse('<div class="alert alert-success mt-2">You have successfully subscribed to our newsletter!</div>', status=201)
+    except IntegrityError:
+        return HttpResponse('<div class="alert alert-warning mt-2">This email address is already registered.</div>', status=409)
+    except Exception:
+        return HttpResponse('<div class="alert alert-danger mt-2">An error occurred. Please try again.</div>', status=500)
+
+
 
 
 def service_details_view(request, service_id):
