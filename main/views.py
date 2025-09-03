@@ -606,7 +606,7 @@ def checkout_view(request):
                             'lang': 'tr',
                         }
 
-                        response = requests.post(settings.PAYTR_API_URL, post_data)
+                        response = requests.post(settings.PAYTR_API_URL, data=post_data, proxies={})
 
                         response_data = response.json()
 
