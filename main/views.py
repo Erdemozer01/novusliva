@@ -892,7 +892,11 @@ def paytr_callback_view(request):
 
     try:
         # 1. ADIM: merchant_oid ile ilgili siparişi veritabanından bul.
-        order = get_object_or_404(Order, paytr_merchant_oid=merchant_oid)
+        try:
+            order = Order.objects.get(paytr_merchant_oid=merchant_oid)
+        except Order.DoesNotExist:
+            logger.error(f"PayTR callback received for a non-existent merchant_oid: {merchant_oid}")
+            return HttpResponse("OK")
 
         # 2. ADIM: Siparişin durumunu kontrol et (Mükerrer bildirim önleme).
         # Eğer sipariş zaten 'completed' veya 'failed' ise, aynı bildirimin tekrar
