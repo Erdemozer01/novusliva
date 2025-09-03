@@ -339,60 +339,48 @@
 <script src="{% static 'assets/js/main.js' %}"></script>
 
 {% block extra_js %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const newsletterForm = document.getElementById('newsletter-form');
-            const newsletterMessage = document.getElementById('newsletter-message');
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('newsletter-form');
+    const messageDiv = document.getElementById('newsletter-message');
 
-            if (newsletterForm) {
-                newsletterForm.addEventListener('submit', function (event) {
-                    event.preventDefault();
+    if (!form) return;
 
-                    const formData = new FormData(newsletterForm);
+    form.addEventListener('submit', function (e) {
+        e.preventDefault(); // Sayfa yenilenmesini engelle
 
-                    // Manually adding the CSRF token to FormData might be more secure.
-                    // This is optional since you are already using the `{{ csrf_token }}` tag.
-                    // formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        const formData = new FormData(form);
+        const csrfToken = formData.get('csrfmiddlewaretoken');
 
-                    // Clear the message area and show loading status.
-                    newsletterMessage.textContent = 'Processing...';
-                    newsletterMessage.className = 'text-info'; // Or you can just add a spinner.
+        messageDiv.style.display = 'block';
+        messageDiv.textContent = 'Processing...';
+        messageDiv.className = 'text-info mt-2';
 
-                    fetch(newsletterForm.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            // Sending the CSRF token in the header is more robust.
-                            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-                        }
-                    })
-                        .then(response => {
-                            if (!response.ok) {
-                                // Throw an error if the server returns a non-200 HTTP response
-                                throw new Error('Network response was not ok');
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            newsletterMessage.style.display = 'block';
-                            if (data.success) {
-                                newsletterMessage.className = 'alert alert-success mt-2';
-                                newsletterForm.reset();
-                            } else {
-                                newsletterMessage.className = 'alert alert-danger mt-2';
-                            }
-                            newsletterMessage.textContent = data.message;
-                        })
-                        .catch(error => {
-                            console.error('Subscription error:', error);
-                            newsletterMessage.className = 'alert alert-danger mt-2';
-                            newsletterMessage.textContent = '{% trans "An error occurred. Please try again." %}';
-                        });
-                });
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
             }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                messageDiv.className = 'alert alert-success mt-2';
+                form.reset();
+            } else {
+                messageDiv.className = 'alert alert-danger mt-2';
+            }
+            messageDiv.textContent = data.message;
+        })
+        .catch(() => {
+            messageDiv.className = 'alert alert-danger mt-2';
+            messageDiv.textContent = '{% trans "An error occurred. Please try again." %}';
         });
-    </script>
+    });
+});
+</script>
 {% endblock %}
 
 </body>
