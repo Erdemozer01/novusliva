@@ -370,19 +370,24 @@ def register_view(request):
 
 
 
+
+def _alert(level, text):
+    return f'<div class="alert alert-{level} mt-2" role="alert">{text}</div>'
+
 @require_POST
 def subscribe_view(request):
-    email = (request.POST.get('email') or '').strip()
+    email = (request.POST.get('email') or '').strip().lower()
     if not email:
-        return HttpResponse('<div class="alert alert-danger mt-2">Please enter a valid email address.</div>', status=400)
+        return HttpResponse(_alert('danger', _("Please enter a valid email address.")), status=400)
 
     try:
-        Subscriber.objects.create(email=email.lower())
-        return HttpResponse('<div class="alert alert-success mt-2">You have successfully subscribed to our newsletter!</div>', status=201)
+        Subscriber.objects.create(email=email)
+        return HttpResponse(_alert('success', _("You have successfully subscribed to our newsletter!")), status=201)
     except IntegrityError:
-        return HttpResponse('<div class="alert alert-warning mt-2">This email address is already registered.</div>', status=409)
+        return HttpResponse(_alert('warning', _("This email address is already registered.")), status=409)
     except Exception:
-        return HttpResponse('<div class="alert alert-danger mt-2">An error occurred. Please try again.</div>', status=500)
+        return HttpResponse(_alert('danger', _("An error occurred. Please try again.")), status=500)
+
 
 
 

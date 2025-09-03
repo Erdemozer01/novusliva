@@ -253,7 +253,6 @@
 <footer id="footer" class="footer dark-background">
     <div class="container footer-top">
         <div class="row gy-4">
-
             <div class="col-lg-4 col-md-6 footer-about">
                 <a href="{% url 'index' %}" class="logo d-flex align-items-center">
                     <span class="sitename">NovusLiva</span>
@@ -345,40 +344,42 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('newsletter-form');
     const messageDiv = document.getElementById('newsletter-message');
 
-    if (!form) return;
+    if (!form || !messageDiv) return;
 
-    form.addEventListener('submit', function (e) {
-        e.preventDefault(); // Sayfa yenilenmesini engelle
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
 
         const formData = new FormData(form);
         const csrfToken = formData.get('csrfmiddlewaretoken');
 
         messageDiv.style.display = 'block';
-        messageDiv.textContent = 'Processing...';
         messageDiv.className = 'text-info mt-2';
+        messageDiv.textContent = 'Processing...';
 
-        fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                messageDiv.className = 'alert alert-success mt-2';
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken,
+                    'Accept': 'text/html'
+                },
+                credentials: 'same-origin'
+            });
+
+            const html = await response.text();
+            messageDiv.className = '';
+            messageDiv.innerHTML = html;
+
+            if (response.status === 201) {
                 form.reset();
-            } else {
-                messageDiv.className = 'alert alert-danger mt-2';
             }
-            messageDiv.textContent = data.message;
-        })
-        .catch(() => {
+        } catch (error) {
+            console.error('Subscription error:', error);
             messageDiv.className = 'alert alert-danger mt-2';
             messageDiv.textContent = '{% trans "An error occurred. Please try again." %}';
-        });
+        }
     });
 });
 </script>
