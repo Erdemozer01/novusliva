@@ -364,7 +364,6 @@ class Profile(models.Model):
 # --- Sipariş ve Sepet Sistemi ---
 
 class Order(models.Model):
-
     STATUS_CHOICES = (
         ('cart', _('In Cart')),
         ('pending', _('Payment Pending')),
@@ -373,6 +372,8 @@ class Order(models.Model):
         ('completed', _('Completed')),
         ('payment_failed', _('Payment Failed')),
         ('cancelled', _('Cancelled')),
+        ('refunded', _('Refunded')),  # YENİ
+        ('partially_refunded', _('Partially Refunded')),  # YENİ
     )
 
     PAYMENT_METHOD_CHOICES = (
@@ -408,6 +409,14 @@ class Order(models.Model):
         verbose_name=_("Payment Error Message"),
         help_text=_("Error message returned from the payment gateway on failure.")
     )
+
+    refunded_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name=_("Refunded Amount")
+    )
+
     # --- EKLENEN ALANLARIN SONU ---
 
     # Iyzico fields

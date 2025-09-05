@@ -53,4 +53,6 @@ urlpatterns = [
     path('paytr/callback/', views.paytr_callback_view, name='paytr_callback'),
     path('checkout/start-payment/', views.start_paytr_payment, name='start_paytr_payment'),
 
+    path('iyzico/webhook/', views.iyzico_webhook_view, name='iyzico_webhook'),
+
 ]

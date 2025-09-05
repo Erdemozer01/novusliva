@@ -119,6 +119,7 @@ def prepare_iyzico_request(order, user, phone_number, request):
 
     return iyzico_request, conversation_id
 
+
 def initialize_iyzico_payment(iyzico_request, options):
     checkout_form_initialize = iyzipay.CheckoutFormInitialize().create(iyzico_request, options)
     return json.loads(checkout_form_initialize.read().decode("utf-8"))
@@ -148,6 +149,79 @@ def verify_iyzico_signature(response, secret_key):
     except Exception as sig_err:
         logger.warning(f"Iyzico signature verify failed: {sig_err}")
         return False
+
+
+@csrf_exempt
+@require_POST
+def iyzico_webhook_view(request: HttpRequest) -> HttpResponse:
+    """
+    Iyzico'dan gelen webhook bildirimlerini (örn: iade) işler.
+    Güvenlik için Iyzico imzasını doğrular.
+    """
+    secret_key = settings.IYZICO_SECRET_KEY
+    signature_header = request.headers.get('x-iyz-signature-v1')
+    request_body = request.body
+
+    # 1. Adım: İmza Doğrulaması (Güvenlik için Zorunlu)
+    if not signature_header:
+        logger.warning("Iyzico webhook: İmza başlığı (signature header) eksik.")
+        return HttpResponseForbidden("Signature header missing.")
+
+    # Iyzico'nun imza oluşturma kuralı: base64(hmac-sha256(secretKey, requestBody))
+    calculated_hash = hmac.new(secret_key.encode('utf-8'), request_body, hashlib.sha256).digest()
+    calculated_signature = base64.b64encode(calculated_hash).decode('utf-8')
+
+    if not hmac.compare_digest(calculated_signature, signature_header):
+        logger.warning("Iyzico webhook: Geçersiz imza.")
+        return HttpResponseForbidden("Invalid signature.")
+
+    # 2. Adım: Gelen Bildirimi İşleme
+    try:
+        data = json.loads(request_body)
+        event_type = data.get('eventType')
+        conversation_id = data.get('paymentConversationId')
+
+        logger.info(f"Iyzico webhook'tan yeni bildirim alındı: {event_type} - {conversation_id}")
+
+        if not conversation_id:
+            logger.error(f"Iyzico webhook: Conversation ID bulunamadı. Data: {data}")
+            return HttpResponse("Conversation ID missing.", status=400)
+
+        # İlgili siparişi bul
+        order = Order.objects.get(iyzi_conversation_id=conversation_id)
+
+        # Sadece iade bildirimlerini işle
+        if event_type in ["REFUND", "PARTIAL_REFUND"]:
+            with transaction.atomic():
+                refund_amount = data.get("refundAmount", 0)
+
+                # Siparişi tekrar çekerek kilitle (pessimistic lock)
+                order_for_update = Order.objects.select_for_update().get(pk=order.pk)
+
+                # F() ifadesi ile race condition'a karşı güvenli artırma
+                order_for_update.refunded_amount = F('refunded_amount') + float(refund_amount)
+
+                # Tam iade mi, kısmi iade mi olduğunu belirle
+                if event_type == "REFUND":
+                    order_for_update.status = 'refunded'
+                elif event_type == "PARTIAL_REFUND":
+                    order_for_update.status = 'partially_refunded'
+
+                order_for_update.save()
+                logger.info(
+                    f"Order #{order.id} için iade işlemi işlendi. Durum: {order_for_update.status}, Tutar: {refund_amount}")
+
+    except Order.DoesNotExist:
+        logger.error(f"Iyzico webhook: İlgili sipariş bulunamadı. Conversation ID: {conversation_id}")
+        # Hata olsa bile Iyzico'ya "OK" dönüyoruz ki tekrar denemesin.
+        return HttpResponse("Order not found but notification acknowledged.", status=200)
+    except Exception as e:
+        logger.exception(f"Iyzico webhook işlenirken hata oluştu: {e}")
+        # Hata durumunda 500 dönerek Iyzico'nun tekrar denemesini sağlayabiliriz.
+        return HttpResponse("Internal Server Error", status=500)
+
+    # Iyzico'ya bildirimi başarıyla aldığımızı söylüyoruz.
+    return HttpResponse(status=200)
 
 
 def send_email_wrapper(subject, recipient_list, html_content, plain_content=None):
@@ -886,12 +960,14 @@ def paytr_callback_view(request: HttpRequest) -> HttpResponse:
     # PayTR sistemine işlemin başarıyla alındığını bildir.
     return HttpResponse("OK")
 
+
 @login_required
 def payment_failed_view(request):
     """
     Ödeme başarısız olduğunda veya iptal edildiğinde kullanıcıyı bilgilendirir.
     """
-    messages.error(request, 'Ödeme işlemi başarısız oldu veya sizin tarafınızdan iptal edildi. Sepetinizdeki ürünler korunmaktadır.')
+    messages.error(request,
+                   'Ödeme işlemi başarısız oldu veya sizin tarafınızdan iptal edildi. Sepetinizdeki ürünler korunmaktadır.')
     return render(request, 'order_failed.html')
 
 
@@ -977,7 +1053,6 @@ def start_paytr_payment(request):
         response.raise_for_status()
         result = response.json()
 
-
         if result.get('status') == 'success':
             token = result.get('token')
             request.session['paytr_token'] = token
@@ -1003,6 +1078,7 @@ def start_paytr_payment(request):
         logger.exception("PayTR API'sine bağlanırken bir ağ hatası oluştu.")
         messages.error(request, "Ödeme sağlayıcıya bağlanırken bir sorun oluştu. Lütfen tekrar deneyin.")
         return redirect('checkout')
+
 
 @login_required
 def paytr_checkout_embed_view(request):
