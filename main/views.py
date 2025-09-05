@@ -955,13 +955,11 @@ def start_paytr_payment(request):
         'merchant_fail_url': request.build_absolute_uri(reverse('order_failed')),
     }
 
-    # 6. API isteğini gönder ve cevabı işle
-    logger.info(f"PayTR'a Token almak için gönderilen parametreler: {params_to_send}")
     try:
         response = requests.post('https://www.paytr.com/odeme/api/get-token', data=params_to_send, timeout=15)
         response.raise_for_status()
         result = response.json()
-        logger.info(f"PayTR Token API'sinden gelen cevap: {result}")
+
 
         if result.get('status') == 'success':
             token = result.get('token')
