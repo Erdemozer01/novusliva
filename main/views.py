@@ -852,8 +852,6 @@ def invoice_view(request, order_id):
 
 @csrf_exempt
 @require_POST
-@csrf_exempt
-@require_POST
 def paytr_callback_view(request: HttpRequest) -> HttpResponse:
     """
     Bu view, PayTR'dan gelen ödeme sonuç bildirimlerini işler.
