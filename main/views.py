@@ -44,27 +44,45 @@ logger = logging.getLogger(__name__)
 
 
 def prepare_iyzico_request(order, user, phone_number, request):
+    """
+    Sipariş ve kullanıcı bilgilerini alarak Iyzico API'sinin beklediği formatta
+    bir ödeme isteği sözlüğü (dictionary) oluşturur.
+    """
     subtotal = order.get_subtotal_cost()
     total = order.get_total_cost()
     conversation_id = f'ORDER-{order.id}-{random.randint(1000, 9999)}'
+
+    # --- Adı ve Soyadı Fatura Bilgisinden (billing_name) Ayırma Mantığı ---
+    # Kullanıcının forma girdiği tam adı alır ve boşluklara göre böler.
+    full_name = order.billing_name.strip()
+    name_parts = full_name.split()
+
+    # Eğer isimde boşluk varsa, ilk kelimeyi "ad", geri kalanını "soyad" olarak alır.
+    # Tek kelimelik isimler için soyad boş kalır.
+    buyer_name = name_parts[0] if name_parts else ''
+    buyer_surname = ' '.join(name_parts[1:]) if len(name_parts) > 1 else ''
+    # --------------------------------------------------------------------
 
     iyzico_request = {
         'locale': 'tr',
         'conversationId': conversation_id,
         'price': str(subtotal),
         'paidPrice': str(total),
-        'currency': order.currency,  # Dinamik olarak ayarla
+        'currency': order.currency,
         'basketId': str(order.id),
         'paymentGroup': 'PRODUCT',
         'callbackUrl': request.build_absolute_uri(reverse('iyzico_callback')),
         'enabledInstallments': ['2', '3', '6', '9'],
         'buyer': {
             'id': str(user.id),
-            'name': user.first_name or 'N/A',
-            'surname': user.last_name or 'N/A',
+            # --- GÜNCELLENEN KISIM ---
+            # Öncelik olarak Fatura Adını kullanır. Eğer boşsa, profil adını dener.
+            'name': buyer_name or user.first_name or 'Bilinmiyor',
+            'surname': buyer_surname or user.last_name or 'Bilinmiyor',
+            # --------------------------
             'gsmNumber': phone_number or '+905555555555',
             'email': order.billing_email,
-            'identityNumber': order.billing_identity_number,  # Yeni alan
+            'identityNumber': order.billing_identity_number,
             'lastLoginDate': user.last_login.strftime(
                 '%Y-%m-%d %H:%M:%S') if user.last_login else timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
             'registrationDate': user.date_joined.strftime('%Y-%m-%d %H:%M:%S'),
@@ -100,7 +118,6 @@ def prepare_iyzico_request(order, user, phone_number, request):
     }
 
     return iyzico_request, conversation_id
-
 
 def initialize_iyzico_payment(iyzico_request, options):
     checkout_form_initialize = iyzipay.CheckoutFormInitialize().create(iyzico_request, options)
