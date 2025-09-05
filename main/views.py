@@ -915,16 +915,28 @@ def start_paytr_payment(request):
         user_basket_items.append(item_data)
 
     # Base64 encode
-    user_basket = base64.b64encode(str(user_basket_items).encode()).decode()
-
+    # DOĞRU KOD
+    user_basket = base64.b64encode(json.dumps(user_basket_items).encode()).decode()
     user_name = order.billing_name
 
     # Adres ve telefon bilgilerini kullanıcının profilinden veya siparişten alın
     user_address = order.billing_address  # DOĞRU
     user_phone = order.billing_phone_number  # DOĞRU
 
+    no_installment = "0"
+
+    max_installment = "0"
+
+    currency = "TL"
+    test_mode = "1" if settings.DEBUG else "0"
+
+
+
+    client_ip, _ = get_client_ip(request)
+
+
     # PayTR'a özel hash oluşturma
-    hash_str = f"{merchant_id}{email}{payment_amount}{merchant_oid}{user_basket}{'1'}{'0'}{'0'}{'TL'}{'1'}"
+    hash_str = f"{merchant_id}{client_ip}{merchant_oid}{email}{payment_amount}{user_basket}{no_installment}{max_installment}{currency}{test_mode}"
     paytr_token_hash = hmac.new(merchant_key.encode(), (hash_str + merchant_salt).encode(), hashlib.sha256).digest()
     paytr_token = base64.b64encode(paytr_token_hash).decode()
 
