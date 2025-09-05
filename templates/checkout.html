@@ -98,20 +98,20 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="{{ form.phone_number.id_for_label }}"
-                                       class="form-label">{{ form.phone_number.label }} *</label>
-                                {{ form.phone_number }}
-                                {% if form.phone_number.errors %}
-                                    <div class="text-danger small mt-1">{{ form.phone_number.errors }}</div>
+                                <label for="{{ form.billing_phone_number.id_for_label }}"
+                                       class="form-label">{{ form.billing_phone_number.label }} *</label>
+                                {{ form.billing_phone_number }}
+                                {% if form.billing_phone_number.errors %}
+                                    <div class="text-danger small mt-1">{{ form.billing_phone_number.errors }}</div>
                                 {% endif %}
                             </div>
 
                             <div class="mb-3">
-                                <label for="{{ form.identity_number.id_for_label }}"
-                                       class="form-label">{{ form.identity_number.label }} *</label>
-                                {{ form.identity_number }}
-                                {% if form.identity_number.errors %}
-                                    <div class="text-danger small mt-1">{{ form.identity_number.errors }}</div>
+                                <label for="{{ form.billing_identity_number.id_for_label }}"
+                                       class="form-label">{{ form.billing_identity_number.label }} *</label>
+                                {{ form.billing_identity_number }}
+                                {% if form.billing_identity_number.errors %}
+                                    <div class="text-danger small mt-1">{{ form.billing_identity_number.errors }}</div>
                                 {% endif %}
                             </div>
 

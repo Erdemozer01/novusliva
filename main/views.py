@@ -508,8 +508,8 @@ def checkout_view(request):
                 order.billing_address = form.cleaned_data['billing_address']
                 order.billing_city = form.cleaned_data['billing_city']
                 order.billing_postal_code = form.cleaned_data['billing_postal_code']
-                order.billing_phone_number = form.cleaned_data['phone_number']
-                order.billing_identity_number = form.cleaned_data.get('identity_number')
+                order.billing_phone_number = form.cleaned_data['billing_phone_number']
+                order.billing_identity_number = form.cleaned_data.get('billing_identity_number')
                 order.payment_method = form.cleaned_data['payment_method']
                 order.currency = form.cleaned_data['currency']
                 order.save()
@@ -879,102 +879,99 @@ def payment_failed_view(request):
 
 
 @login_required
+@login_required
 def start_paytr_payment(request):
     """
-    Bu view, PayTR ödemesini başlatır, API'den token alır ve kullanıcıyı
-    iFrame'in gösterileceği sayfaya yönlendirir.
+    Kullanıcının sepet bilgilerini alır, PayTR API'sine bağlanarak bir ödeme token'ı oluşturur
+    ve kullanıcıyı ödeme iFrame'inin bulunduğu sayfaya yönlendirir.
     """
-    # 1. Aktif siparişi veya sepeti al
+    # 1. Aktif siparişi al ve doğrula
     try:
-        # Status'ü 'cart' olan son siparişi alıyoruz, sizin mantığınıza göre değişebilir
         order = request.user.order_set.filter(status='cart').latest('created_at')
         if not order.items.exists():
             messages.error(request, "Sepetiniz boş.")
-            return redirect('cart')  # Sepet sayfasının URL adı
+            return redirect('cart')
     except Order.DoesNotExist:
         messages.error(request, "Aktif bir sepet bulunamadı.")
-        return redirect('home')  # Anasayfa URL adı
+        return redirect('home')
 
-    # 2. PayTR için gerekli parametreleri hazırla
-    merchant_id = settings.PAYTR_MERCHANT_ID
-    merchant_key = settings.PAYTR_MERCHANT_KEY
-    merchant_salt = settings.PAYTR_MERCHANT_SALT
-
-    # Her ödeme denemesi için benzersiz bir Sipariş ID'si oluştur
-    merchant_oid = f"{order.id}-{int(timezone.now().timestamp())}"
-
-    email = request.user.email
-    # Tutar Kuruş olarak gönderilmelidir (örn: 125.50 TL -> 12550)
-    payment_amount = int(order.get_total_cost() * 100)
-
-    # Kullanıcı sepetini PayTR formatına çevir
-    user_basket_items = []
-    for item in order.items.all():
-        # [Ürün Adı, Birim Fiyat, Adet]
-        item_data = [item.portfolio_item.title, str(item.price), item.quantity]
-        user_basket_items.append(item_data)
-
-    # Base64 encode
-    # DOĞRU KOD
-    user_basket = base64.b64encode(json.dumps(user_basket_items).encode()).decode()
+    # 2. Gerekli bilgileri topla ve doğrula
     user_name = order.billing_name
+    user_address = order.billing_address
+    user_phone = order.billing_phone_number
+    email = order.billing_email
 
-    # Adres ve telefon bilgilerini kullanıcının profilinden veya siparişten alın
-    user_address = order.billing_address  # DOĞRU
-    user_phone = order.billing_phone_number  # DOĞRU
-
-    no_installment = "0"
-
-    max_installment = "0"
-
-    currency = "TL"
-    test_mode = "1" if settings.DEBUG else "0"
-
-
+    if not all([user_name, user_address, user_phone, email]):
+        messages.error(request, "Lütfen checkout sayfasındaki tüm fatura bilgilerini eksiksiz doldurun.")
+        return redirect('checkout')
 
     client_ip, _ = get_client_ip(request)
+    if not client_ip:
+        messages.error(request, 'IP adresiniz tespit edilemediği için ödeme işlemine devam edilemiyor.')
+        logger.warning("PayTR işlemi için IP adresi tespit edilemedi.")
+        return redirect('checkout')
 
+    # 3. PayTR için `user_basket` oluştur
+    user_basket_items = [[item.portfolio_item.title, str(item.price), item.quantity] for item in order.items.all()]
+    user_basket = base64.b64encode(json.dumps(user_basket_items).encode()).decode()
 
-    # PayTR'a özel hash oluşturma
+    # 4. PayTR Token için HASH oluştur
+    merchant_id = settings.PAYTR_MERCHANT_ID
+    merchant_key = settings.PAYTR_MERCHANT_KEY.encode()  # HMAC için bytes olmalı
+    merchant_salt = settings.PAYTR_MERCHANT_SALT  # HASH'e eklemek için string kalabilir
+
+    payment_amount = int(order.get_total_cost() * 100)
+    merchant_oid = f"{order.id}{int(timezone.now().timestamp())}{uuid.uuid4().hex}"
+    currency = "TL"
+    test_mode = "1" if settings.DEBUG else "0"
+    no_installment = "0"
+    max_installment = "0"
+
     hash_str = f"{merchant_id}{client_ip}{merchant_oid}{email}{payment_amount}{user_basket}{no_installment}{max_installment}{currency}{test_mode}"
-    paytr_token_hash = hmac.new(merchant_key.encode(), (hash_str + merchant_salt).encode(), hashlib.sha256).digest()
+
+    paytr_token_hash = hmac.new(merchant_key, (hash_str + merchant_salt).encode(), hashlib.sha256).digest()
     paytr_token = base64.b64encode(paytr_token_hash).decode()
 
-    # 3. PayTR API'sine gönderilecek veriyi oluştur
+    # 5. PayTR API'sine gönderilecek tüm verileri hazırla
     params_to_send = {
         'merchant_id': merchant_id,
-        'merchant_key': merchant_key,
-        'merchant_salt': merchant_salt,
-        'paytr_token': paytr_token,
+        'user_ip': client_ip,
         'merchant_oid': merchant_oid,
         'email': email,
         'payment_amount': payment_amount,
+        'paytr_token': paytr_token,
         'user_basket': user_basket,
+        'debug_on': "1",
+        'timeout_limit': "30",
+        'test_mode': test_mode,
+        'lang': 'tr',
+        'currency': currency,
+        'no_installment': no_installment,
+        'max_installment': max_installment,
         'user_name': user_name,
         'user_address': user_address,
         'user_phone': user_phone,
         'merchant_ok_url': request.build_absolute_uri(reverse('order_success', args=[order.id])),
         'merchant_fail_url': request.build_absolute_uri(reverse('order_failed')),
-        'debug_on': 1,
-        'test_mode': 1,
-        'no_installment': 0,
-        'max_installment': 0,
-        'currency': "TL"
     }
 
-    # 4. API isteğini yap ve token'ı al
+    # 6. API isteğini gönder ve cevabı işle
+    logger.info(f"PayTR'a Token almak için gönderilen parametreler: {params_to_send}")
     try:
-        response = requests.post('https://www.paytr.com/odeme/api/get-token', data=params_to_send, timeout=10)
+        response = requests.post('https://www.paytr.com/odeme/api/get-token', data=params_to_send, timeout=15)
         response.raise_for_status()
         result = response.json()
+        logger.info(f"PayTR Token API'sinden gelen cevap: {result}")
 
         if result.get('status') == 'success':
             token = result.get('token')
             request.session['paytr_token'] = token
-            # Siparişin merchant_oid'sini kaydet
-            order.paytr_merchant_oid = merchant_oid
-            order.save()
-            # Kullanıcıyı iFrame'in olduğu sayfaya yönlendir
+
+            with transaction.atomic():
+                order.paytr_merchant_oid = merchant_oid
+                order.status = 'pending_paytr_approval'
+                order.save()
+
             return redirect('paytr_checkout_embed')
         else:
             error_reason = result.get('reason', 'Bilinmeyen bir hata.')
@@ -983,11 +980,14 @@ def start_paytr_payment(request):
                            f"Ödeme başlatılamadı. Lütfen bilgilerinizi kontrol edip tekrar deneyin. ({error_reason})")
             return redirect('checkout')
 
+    except requests.exceptions.Timeout:
+        logger.error("PayTR API'sine bağlanırken zaman aşımı yaşandı.")
+        messages.error(request, "Ödeme sağlayıcıya bağlanırken zaman aşımı yaşandı. Lütfen tekrar deneyin.")
+        return redirect('checkout')
     except requests.exceptions.RequestException as e:
         logger.exception("PayTR API'sine bağlanırken bir ağ hatası oluştu.")
-        messages.error(request, "Ödeme sağlayıcıya bağlanırken bir sorun oluştu.")
+        messages.error(request, "Ödeme sağlayıcıya bağlanırken bir sorun oluştu. Lütfen tekrar deneyin.")
         return redirect('checkout')
-
 
 @login_required
 def paytr_checkout_embed_view(request):

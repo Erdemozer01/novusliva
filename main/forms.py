@@ -135,112 +135,100 @@ class ProfileUpdateForm(forms.ModelForm):
 
 
 class CheckoutForm(forms.ModelForm):
-    phone_number = forms.CharField(
-        max_length=20,
-        required=True,
-        label=_("Phone Number"),
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': _('Enter your phone number'),
-        })
-    )
-
-    identity_number = forms.CharField(
-        max_length=11,
-        required=True,
-        label=_("Identity Number"),
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': _('Enter your identity number')
-        })
-    )
-
-    payment_method = forms.ChoiceField(
-        choices=Order.PAYMENT_METHOD_CHOICES,
-        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
-        initial='iyzico',
-        label=_("Payment Method")
-    )
-
-    currency = forms.ChoiceField(
-        choices=Order.CURRENCY_CHOICES,
-        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
-        initial='TRY',
-        label=_("Currency")
-    )
-
     class Meta:
         model = Order
+        # Doğrudan modeldeki alanları kullanıyoruz
         fields = [
             'billing_name',
             'billing_email',
-            'phone_number',
-            'identity_number',
+            'billing_phone_number',  # 'phone_number' yerine
+            'billing_identity_number',  # 'identity_number' yerine
             'billing_address',
             'billing_city',
             'billing_postal_code',
             'payment_method',
             'currency',
         ]
+        # Tüm widget ve label tanımlamalarını Meta içinde topluyoruz
         widgets = {
-            'billing_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'required': True,
-                'placeholder': _('Enter your first and last name')
-            }),
-            'billing_email': forms.EmailInput(attrs={
-                'class': 'form-control',
-                'required': True,
-                'placeholder': _('Enter your email address')
-            }),
-            'billing_address': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'required': True,
-                'placeholder': _('Enter your full address')
-            }),
-            'billing_city': forms.TextInput(attrs={
-                'class': 'form-control',
-                'required': True,
-                'placeholder': _('Enter city name')
-            }),
-            'billing_postal_code': forms.TextInput(attrs={
-                'class': 'form-control',
-                'required': True,
-                'placeholder': _('Enter postal code')
-            }),
+            'billing_name': forms.TextInput(
+                attrs={'class': 'form-control', 'placeholder': _('Enter your first and last name')}),
+            'billing_email': forms.EmailInput(
+                attrs={'class': 'form-control', 'placeholder': _('Enter your email address')}),
+            'billing_phone_number': forms.TextInput(
+                attrs={'class': 'form-control', 'placeholder': _('Enter your phone number')}),
+            'billing_identity_number': forms.TextInput(
+                attrs={'class': 'form-control', 'placeholder': _('Enter your identity number')}),
+            'billing_address': forms.Textarea(
+                attrs={'class': 'form-control', 'rows': 3, 'placeholder': _('Enter your full address')}),
+            'billing_city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Enter city name')}),
+            'billing_postal_code': forms.TextInput(
+                attrs={'class': 'form-control', 'placeholder': _('Enter postal code')}),
+            'payment_method': forms.RadioSelect(attrs={'class': 'form-check-input'}),
+            'currency': forms.RadioSelect(attrs={'class': 'form-check-input'}),
         }
         labels = {
             'billing_name': _('Full Name'),
             'billing_email': _('Email Address'),
+            'billing_phone_number': _('Phone Number'),
+            'billing_identity_number': _('Identity Number'),
             'billing_address': _('Address'),
             'billing_city': _('City'),
             'billing_postal_code': _('Postal Code'),
+            'payment_method': _("Payment Method"),
+            'currency': _("Currency"),
+        }
+        help_texts = {
+            'billing_identity_number': _('TC Identity Number must be 11 digits.'),
         }
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        # Reorder fields
+        # Alanları formda istediğimiz sırada gösterelim
         self.order_fields([
-            'payment_method',
-            'currency',
             'billing_name',
             'billing_email',
-            'phone_number',
-            'identity_number',
+            'billing_phone_number',
+            'billing_identity_number',
             'billing_address',
             'billing_city',
             'billing_postal_code',
+            'payment_method',
+            'currency',
         ])
 
-        if user:
+        # Seçeneklerin başlangıç değerlerini atayalım
+        self.fields['payment_method'].initial = 'paytr'
+        self.fields['currency'].initial = 'TRY'
+
+        # Formu kullanıcı bilgileriyle önceden dolduralım
+        if user and user.is_authenticated:
             full_name = f"{user.first_name} {user.last_name}".strip()
             self.fields['billing_name'].initial = full_name or user.username
             self.fields['billing_email'].initial = user.email
             if hasattr(user, 'profile'):
-                self.fields['phone_number'].initial = user.profile.phone_number
+                self.fields['billing_phone_number'].initial = user.profile.phone_number
+
+    # --- ÖZEL DOĞRULAMA METOTLARI ---
+
+    def clean_billing_identity_number(self):
+        identity_number = self.cleaned_data.get('billing_identity_number')
+        if identity_number:
+            if not identity_number.isdigit():
+                raise forms.ValidationError(_("Identity number must only contain digits."))
+            if len(identity_number) != 11:
+                raise forms.ValidationError(_("Identity number must be exactly 11 digits."))
+        return identity_number
+
+    def clean_billing_phone_number(self):
+        phone_number = self.cleaned_data.get('billing_phone_number')
+        # Gerekirse burada telefon numarası formatı için daha karmaşık kontroller yapabilirsiniz.
+        # Örnek: Sadece rakamlardan oluştuğunu kontrol etme
+        if phone_number and not all(char.isdigit() or char in '()+- ' for char in phone_number):
+            raise forms.ValidationError(_("Please enter a valid phone number."))
+        return phone_number
 
 
 class CampaignEmailForm(forms.Form):
