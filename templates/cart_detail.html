@@ -43,8 +43,10 @@
                                                  alt="{{ item.portfolio_item.title }}" class="img-fluid me-3"
                                                  style="width: 80px; height: 80px; object-fit: cover;">
                                             <div>
-                                                <a href="{% url 'portfolio_details' item_id=item.portfolio_item.pk %}"
-                                                   class="fw-bold text-decoration-none">{{ item.portfolio_item.title }}</a>
+                                                <a href="{% url 'portfolio_details' slug=item.portfolio_item.slug %}"
+                                                   class="fw-bold text-decoration-none">
+                                                    {{ item.portfolio_item.title }}
+                                                </a>
                                                 <div class="text-muted small">{{ item.portfolio_item.short_description|truncatechars:50 }}</div>
                                             </div>
                                         </div>

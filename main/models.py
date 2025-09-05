@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
@@ -7,9 +8,10 @@ from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import JSONField
 
+# --- E-Ticaret ve Satış Modelleri ---
 
 class DiscountCode(models.Model):
-    """Represents discount codes that can be used on the site."""
+    """Sitede kullanılabilecek indirim kodlarını temsil eder."""
     code = models.CharField(
         max_length=50,
         unique=True,
@@ -40,14 +42,17 @@ class DiscountCode(models.Model):
     )
     used_count = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("Used Count")
+        verbose_name=_("Used Count"),
+        # NOT: Bu alanın artırılması işleminin race condition'ları önlemek için
+        # view katmanında F() ifadeleri ve transaction ile yapılması önerilir.
+        editable=False
     )
 
     def __str__(self):
         return f"{self.code} - %{self.discount_percentage} discount"
 
     def is_valid(self):
-        """Checks if the coupon code is currently valid."""
+        """Kupon kodunun şu anda geçerli olup olmadığını kontrol eder."""
         now = timezone.now()
         is_active = self.is_active and (self.valid_from <= now <= self.valid_to)
         has_uses_left = (self.max_uses == 0) or (self.used_count < self.max_uses)
@@ -60,7 +65,7 @@ class DiscountCode(models.Model):
 
 
 class BankAccount(models.Model):
-    """Holds bank account information for bank transfer payments."""
+    """Banka havalesi ödemeleri için banka hesap bilgilerini tutar."""
     bank_name = models.CharField(max_length=100, verbose_name=_("Bank Name"))
     account_holder = models.CharField(max_length=100, verbose_name=_("Account Holder"))
     iban = models.CharField(max_length=34, verbose_name=_("IBAN"))
@@ -75,7 +80,7 @@ class BankAccount(models.Model):
         return f"{self.bank_name} - {self.account_holder}"
 
     def clean(self):
-        """Ensures that there is only one active account."""
+        """Sadece bir hesabın aktif olmasını sağlar."""
         if self.is_active:
             if BankAccount.objects.filter(is_active=True).exclude(pk=self.pk).exists():
                 raise ValidationError(
@@ -90,14 +95,14 @@ class BankAccount(models.Model):
         verbose_name = _("Bank Account")
         verbose_name_plural = _("Bank Accounts")
 
+# --- İçerik ve Portfolyo Modelleri ---
 
 class Service(models.Model):
     title = models.CharField(max_length=200, verbose_name=_("Title"))
     description = models.TextField(verbose_name=_("Description"))
     icon_class = models.CharField(max_length=100, verbose_name=_("Icon Class (Bootstrap Icons)"))
     color_class = models.CharField(max_length=50, verbose_name=_("Color Class (e.g: item-cyan)"))
-    image = models.ImageField(upload_to='service_images/', verbose_name=_("Service Detail Image"), blank=True,
-                              null=True)
+    image = models.ImageField(upload_to='service_images/', verbose_name=_("Service Detail Image"), blank=True, null=True)
 
     def __str__(self):
         return self.title
@@ -135,20 +140,21 @@ class BlogPost(models.Model):
     STATUS_CHOICES = (('draft', _('Draft')), ('published', _('Published')))
 
     title = models.CharField(max_length=255, verbose_name=_("Title"))
+    # ÖNERİ: django-ckeditor gibi bir paketle bu alanı zengin metin editörüne çevirebilirsiniz.
     content = models.TextField(verbose_name=_("Content"))
     meta_description = models.CharField(max_length=160, blank=True, verbose_name=_("Meta Description (for SEO)"))
     slug = models.SlugField(max_length=255, unique=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_posts', verbose_name=_("Author"))
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='blog_posts',
-                                 verbose_name=_("Category"))
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='blog_posts', verbose_name=_("Category"))
     tags = models.ManyToManyField(Tag, blank=True, related_name='blog_posts', verbose_name=_("Tags"))
+    # ÖNERİ: django-imagekit ile resim optimizasyonu yapabilirsiniz.
     image = models.ImageField(upload_to='blog_images/', verbose_name=_("Image"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft', verbose_name=_("Status"))
 
     def get_absolute_url(self):
-        return reverse('blog_details', kwargs={'post_id': self.pk})
+        return reverse('blog_details', kwargs={'slug': self.slug}) # slug kullanmak daha SEO dostudur
 
     def __str__(self):
         return self.title
@@ -178,8 +184,7 @@ class PortfolioItem(models.Model):
     client = models.CharField(max_length=200, verbose_name=_("Client"), blank=True)
     meta_description = models.CharField(max_length=160, blank=True, verbose_name=_("Meta Description"))
     slug = models.SlugField(max_length=255, unique=True)
-    category = models.ForeignKey(PortfolioCategory, on_delete=models.SET_NULL, null=True, blank=True,
-                                 related_name='items', verbose_name=_("Category"))
+    category = models.ForeignKey(PortfolioCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='items', verbose_name=_("Category"))
     project_date = models.DateField(null=True, blank=True, verbose_name=_("Project Date"))
     project_url = models.URLField(blank=True, verbose_name=_("Project Link"))
     main_image = models.ImageField(upload_to='portfolio_images/', verbose_name=_("Main Image"))
@@ -187,7 +192,7 @@ class PortfolioItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
 
     def get_absolute_url(self):
-        return reverse('portfolio_details', kwargs={'item_id': self.pk})
+        return reverse('portfolio_details', kwargs={'slug': self.slug})
 
     def __str__(self):
         return self.title
@@ -199,8 +204,7 @@ class PortfolioItem(models.Model):
 
 
 class PortfolioImage(models.Model):
-    portfolio_item = models.ForeignKey(PortfolioItem, on_delete=models.CASCADE, related_name='images',
-                                       verbose_name=_("Belongs to Project"))
+    portfolio_item = models.ForeignKey(PortfolioItem, on_delete=models.CASCADE, related_name='images', verbose_name=_("Belongs to Project"))
     image = models.ImageField(upload_to='portfolio_images/details/', verbose_name=_("Additional Image"))
 
     def __str__(self):
@@ -210,6 +214,7 @@ class PortfolioImage(models.Model):
         verbose_name = _("Project Image")
         verbose_name_plural = _("Project Images")
 
+# --- Site ve Şirket Tanıtım Modelleri ---
 
 class TeamMember(models.Model):
     full_name = models.CharField(max_length=100, verbose_name=_("Full Name"))
@@ -235,8 +240,7 @@ class Testimonial(models.Model):
     title = models.CharField(max_length=100, verbose_name=_("Title (e.g: CEO, Designer)"))
     comment = models.TextField(verbose_name=_("Comment"))
     photo = models.ImageField(upload_to='testimonials/', verbose_name=_("Photo"))
-    rating = models.IntegerField(default=5, validators=[MinValueValidator(1), MaxValueValidator(5)],
-                                 verbose_name=_("Rating (1-5)"))
+    rating = models.IntegerField(default=5, validators=[MinValueValidator(1), MaxValueValidator(5)], verbose_name=_("Rating (1-5)"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
 
     def __str__(self):
@@ -250,8 +254,7 @@ class Testimonial(models.Model):
 
 class Skill(models.Model):
     name = models.CharField(max_length=100, verbose_name=_("Skill Name (e.g: HTML)"))
-    percentage = models.PositiveIntegerField(validators=[MaxValueValidator(100)],
-                                             verbose_name=_("Percentage Value (1-100)"))
+    percentage = models.PositiveIntegerField(validators=[MaxValueValidator(100)], verbose_name=_("Percentage Value (1-100)"))
     order = models.PositiveIntegerField(default=0, help_text=_("Used for sorting."))
 
     def __str__(self):
@@ -276,6 +279,7 @@ class Client(models.Model):
 
 
 class AboutPage(models.Model):
+    # ÖNERİ: Bu modelden sadece 1 tane olmalı. django-solo paketi ile bunu garantileyebilirsiniz.
     story_title = models.CharField(max_length=200, verbose_name=_("Story Title"))
     story_subtitle = models.CharField(max_length=100, verbose_name=_("Story Subtitle"))
     story_description = models.TextField(verbose_name=_("Story Description"))
@@ -292,6 +296,7 @@ class AboutPage(models.Model):
         verbose_name = _("About Page")
         verbose_name_plural = _("About Page")
 
+# --- Kullanıcı Etkileşim Modelleri ---
 
 class ContactMessage(models.Model):
     name = models.CharField(max_length=100, verbose_name=_("Full Name"))
@@ -356,9 +361,10 @@ class Profile(models.Model):
         verbose_name = _("Profile")
         verbose_name_plural = _("Profiles")
 
+# --- Sipariş ve Sepet Sistemi ---
 
 class Order(models.Model):
-    """Represents the user's orders and cart."""
+
     STATUS_CHOICES = (
         ('cart', _('In Cart')),
         ('pending', _('Payment Pending')),
@@ -388,62 +394,38 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='cart', verbose_name=_("Status"))
 
-    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, null=True, blank=True,
-                                      verbose_name=_("Payment Method"))
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, null=True, blank=True, verbose_name=_("Payment Method"))
     payment_date = models.DateTimeField(null=True, blank=True, verbose_name=_("Payment Date"))
 
+    # --- PAYTR CALLBACK İÇİN EKLENEN ALANLAR ---
+    total_paid = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        verbose_name=_("Total Amount Paid"),
+        help_text=_("The final amount paid by the customer, confirmed by the payment gateway.")
+    )
+    payment_error_message = models.CharField(
+        max_length=255, blank=True, null=True,
+        verbose_name=_("Payment Error Message"),
+        help_text=_("Error message returned from the payment gateway on failure.")
+    )
+    # --- EKLENEN ALANLARIN SONU ---
+
     # Iyzico fields
-    iyzi_conversation_id = models.CharField(
-        max_length=64, blank=True, null=True, unique=True,
-        help_text="ConversationId generated during CF-Initialize"
-    )
-    iyzi_token_last = models.CharField(
-        max_length=64, blank=True, null=True,
-        help_text="Last token that will come to the callback after CF-Initialize (optional)"
-    )
-    iyzi_paymentId = models.CharField(
-        max_length=255, blank=True, null=True, unique=True,
-        help_text="Final paymentId returned by CF-Retrieve (unique)"
-    )
-    iyzi_payment_status = models.CharField(
-        max_length=32, blank=True, null=True,
-        help_text="CF-Retrieve paymentStatus: SUCCESS/FAILURE/INIT_THREEDS/..."
-    )
-    iyzi_price = models.DecimalField(
-        max_digits=12, decimal_places=2, blank=True, null=True,
-        help_text="CF-Initialize 'price' (sum of items)"
-    )
-    iyzi_paid_price = models.DecimalField(
-        max_digits=12, decimal_places=2, blank=True, null=True,
-        help_text="CF-Retrieve 'paidPrice' (final collection including installment commission)"
-    )
-    iyzi_currency = models.CharField(
-        max_length=3, blank=True, null=True, default="TRY",
-        help_text="TRY / USD / EUR / GBP (important for international sales)"
-    )
-    iyzi_installment = models.PositiveSmallIntegerField(
-        blank=True, null=True, help_text="Number of installments (1,2,3,6,9,12)"
-    )
-    iyzi_fraud_status = models.SmallIntegerField(
-        blank=True, null=True,
-        help_text="CF-Retrieve fraudStatus: -2/-1/0/1/2"
-    )
-    iyzi_bin_number = models.CharField(
-        max_length=6, blank=True, null=True, help_text="First 6 digits of the card (BIN)"
-    )
-    iyzi_card_family = models.CharField(
-        max_length=32, blank=True, null=True, help_text="Bonus/Axess/World/Maximum/Paraf/..."
-    )
-    iyzi_raw_response = JSONField(
-        blank=True, null=True,
-        help_text="Final CF-Retrieve (or webhook) JSON response (for debug/reporting)"
-    )
+    iyzi_conversation_id = models.CharField(max_length=64, blank=True, null=True, unique=True, help_text="ConversationId generated during CF-Initialize")
+    iyzi_token_last = models.CharField(max_length=64, blank=True, null=True, help_text="Last token that will come to the callback after CF-Initialize (optional)")
+    iyzi_paymentId = models.CharField(max_length=255, blank=True, null=True, unique=True, help_text="Final paymentId returned by CF-Retrieve (unique)")
+    iyzi_payment_status = models.CharField(max_length=32, blank=True, null=True, help_text="CF-Retrieve paymentStatus: SUCCESS/FAILURE/INIT_THREEDS/...")
+    iyzi_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True, help_text="CF-Initialize 'price' (sum of items)")
+    iyzi_paid_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True, help_text="CF-Retrieve 'paidPrice' (final collection including installment commission)")
+    iyzi_currency = models.CharField(max_length=3, blank=True, null=True, default="TRY", help_text="TRY / USD / EUR / GBP (important for international sales)")
+    iyzi_installment = models.PositiveSmallIntegerField(blank=True, null=True, help_text="Number of installments (1,2,3,6,9,12)")
+    iyzi_fraud_status = models.SmallIntegerField(blank=True, null=True, help_text="CF-Retrieve fraudStatus: -2/-1/0/1/2")
+    iyzi_bin_number = models.CharField(max_length=6, blank=True, null=True, help_text="First 6 digits of the card (BIN)")
+    iyzi_card_family = models.CharField(max_length=32, blank=True, null=True, help_text="Bonus/Axess/World/Maximum/Paraf/...")
+    iyzi_raw_response = JSONField(blank=True, null=True, help_text="Final CF-Retrieve (or webhook) JSON response (for debug/reporting)")
 
     # PayTR field
-    paytr_merchant_oid = models.CharField(
-        max_length=255, null=True, blank=True, unique=True,
-        verbose_name=_("PayTR Order ID")
-    )
+    paytr_merchant_oid = models.CharField(max_length=255, null=True, blank=True, unique=True, verbose_name=_("PayTR Order ID"))
 
     # Common order information
     billing_name = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("Billing Name"))
@@ -451,38 +433,26 @@ class Order(models.Model):
     billing_address = models.TextField(null=True, blank=True, verbose_name=_("Billing Address"))
     billing_city = models.CharField(max_length=50, null=True, blank=True, verbose_name=_("City"))
     billing_postal_code = models.CharField(max_length=10, null=True, blank=True, verbose_name=_("Postal Code"))
-    billing_phone_number = models.CharField(max_length=20, null=True, blank=True,
-                                            verbose_name=_("Billing Phone Number"))
+    billing_phone_number = models.CharField(max_length=20, null=True, blank=True, verbose_name=_("Billing Phone Number"))
     billing_identity_number = models.CharField(max_length=11, null=True, blank=True, verbose_name=_("Identity Number"))
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='TRY', verbose_name=_("Currency"))
-    identity_number = models.CharField(max_length=11, null=True, blank=True, verbose_name=_("Identity Number"))
 
-    discount_code = models.ForeignKey(
-        'DiscountCode',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='orders',
-        verbose_name=_("Discount Code")
-    )
+    discount_code = models.ForeignKey('DiscountCode', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders', verbose_name=_("Discount Code"))
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
 
-    discount_amount = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0,
-        validators=[MinValueValidator(0)]
-    )
-
-    def get_subtotal_cost(self):
-        """Returns the subtotal without discounts."""
+    def get_subtotal_cost(self) -> Decimal:
+        """İndirimler hariç alt toplamı döndürür."""
+        # related_name='items' olan OrderItem modeline erişim
         return sum(item.get_cost() for item in self.items.all())
 
-    def get_total_cost(self):
-        """Returns the final amount to be paid after discount."""
+    def get_total_cost(self) -> Decimal:
+        """İndirim sonrası ödenecek nihai tutarı döndürür."""
         subtotal = self.get_subtotal_cost()
         total = subtotal - self.discount_amount
-        return max(total, 0)
+        return max(total, Decimal('0.00'))
 
     def apply_iyzico_result(self, result: dict):
-        """Applies the result of CF-Retrieve (or webhook) to the model."""
+        """CF-Retrieve (veya webhook) sonucunu modele uygular."""
         self.iyzi_payment_status = result.get("paymentStatus")
         self.iyzi_paymentId = result.get("paymentId") or self.iyzi_paymentId
         self.iyzi_paid_price = result.get("paidPrice") or self.iyzi_paid_price
@@ -492,9 +462,13 @@ class Order(models.Model):
         self.iyzi_bin_number = result.get("binNumber") or self.iyzi_bin_number
         self.iyzi_card_family = result.get("cardFamily") or self.iyzi_card_family
         self.iyzi_raw_response = result
+
         if self.iyzi_payment_status == "SUCCESS":
             self.status = "completed"
             self.payment_date = timezone.now()
+            # Ödeme başarılı olduğunda genel `total_paid` alanını da güncelleyebiliriz
+            self.total_paid = self.iyzi_paid_price
+            self.payment_error_message = "" # Hata mesajını temizle
         elif self.iyzi_payment_status == "FAILURE":
             self.status = "payment_failed"
 
@@ -506,16 +480,15 @@ class Order(models.Model):
         verbose_name_plural = _("Orders/Carts")
         ordering = ['-created_at']
 
-
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE, verbose_name=_("Order"))
-    portfolio_item = models.ForeignKey('PortfolioItem', related_name='order_items', on_delete=models.CASCADE,
-                                       verbose_name=_("Project"))
+    portfolio_item = models.ForeignKey('PortfolioItem', related_name='order_items', on_delete=models.CASCADE, verbose_name=_("Project"))
+    # NOT: Fiyatın burada saklanması çok önemlidir. Ana ürünün fiyatı değişse bile siparişin tutarı sabit kalır.
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Unit Price"))
     quantity = models.PositiveIntegerField(default=1, verbose_name=_("Quantity"))
 
-    def get_cost(self):
-        """Calculates the total cost for this item."""
+    def get_cost(self) -> Decimal:
+        """Bu kalem için toplam maliyeti hesaplar."""
         return self.price * self.quantity
 
     def __str__(self):
@@ -526,6 +499,8 @@ class OrderItem(models.Model):
         verbose_name_plural = _("Order Items")
 
 
+# --- Genel Site ve Arayüz Modelleri ---
+
 class Feature(models.Model):
     title = models.CharField(max_length=200)
     icon_class = models.CharField(max_length=50)  # Bootstrap ikon sınıfı
@@ -535,35 +510,13 @@ class Feature(models.Model):
 
 
 class CarouselItem(models.Model):
-    title = models.CharField(
-        max_length=100,
-        verbose_name=_("Title")
-    )
-    description = models.TextField(
-        verbose_name=_("Description")
-    )
-    image = models.ImageField(
-        upload_to='carousel/',
-        verbose_name=_("Image")
-    )
-    button_text = models.CharField(
-        max_length=50,
-        default=_("Read More"),
-        verbose_name=_("Button Text")
-    )
-    button_url = models.CharField(
-        max_length=200,
-        default='/about',
-        verbose_name=_("Button URL")
-    )
-    is_active = models.BooleanField(
-        default=False,
-        verbose_name=_("Is Active?")
-    )
-    order = models.IntegerField(
-        default=0,
-        verbose_name=_("Order")
-    )
+    title = models.CharField(max_length=100, verbose_name=_("Title"))
+    description = models.TextField(verbose_name=_("Description"))
+    image = models.ImageField(upload_to='carousel/', verbose_name=_("Image"))
+    button_text = models.CharField(max_length=50, default=_("Read More"), verbose_name=_("Button Text"))
+    button_url = models.CharField(max_length=200, default='/about', verbose_name=_("Button URL"))
+    is_active = models.BooleanField(default=False, verbose_name=_("Is Active?"))
+    order = models.IntegerField(default=0, verbose_name=_("Order"))
 
     class Meta:
         ordering = ['order']
@@ -575,11 +528,11 @@ class CarouselItem(models.Model):
 
 
 class SiteSetting(models.Model):
-    """A model to hold general site settings."""
+    """Genel site ayarlarını tutmak için bir model."""
+    # ÖNERİ: Bu modelden sadece 1 tane olmalı. django-solo paketi ile bunu garantileyebilirsiniz.
     address = models.CharField(max_length=255, verbose_name=_("Address"))
     phone = models.CharField(max_length=20, verbose_name=_("Phone Number"))
     email = models.EmailField(verbose_name=_("Email Address"))
-
     twitter_url = models.URLField(blank=True, null=True, verbose_name=_("Twitter Link"))
     facebook_url = models.URLField(blank=True, null=True, verbose_name=_("Facebook Link"))
     instagram_url = models.URLField(blank=True, null=True, verbose_name=_("Instagram Link"))

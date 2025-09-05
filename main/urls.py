@@ -21,7 +21,7 @@ urlpatterns = [
 
     # Portfolyo
     path('portfolio/', views.portfolio_view, name='portfolio'),
-    path('portfolio/<int:item_id>/', views.portfolio_details_view, name='portfolio_details'),
+    path('portfolio/<slug:slug>/', views.portfolio_details_view, name='portfolio_details'),
 
     # Kullanıcı ve Profil Yönetimi
     path('register/', views.register_view, name='register'),
@@ -50,5 +50,7 @@ urlpatterns = [
 
     path('checkout/paytr/', views.paytr_checkout_embed_view, name='paytr_checkout_embed'),
     path('paytr/callback/', views.paytr_callback_view, name='paytr_callback'),
+
+    path('checkout/start-payment/', views.start_paytr_payment, name='start_paytr_payment'),
 
 ]
