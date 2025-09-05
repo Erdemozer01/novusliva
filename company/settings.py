@@ -166,7 +166,6 @@ IYZICO_BASE_URL = os.getenv('IYZICO_BASE_URL')
 PAYTR_MERCHANT_ID = os.getenv('PAYTR_MERCHANT_ID')
 PAYTR_MERCHANT_SALT = os.getenv('PAYTR_MERCHANT_SALT')
 PAYTR_MERCHANT_KEY = os.getenv('PAYTR_MERCHANT_KEY')
-
 PAYTR_API_URL = "https://www.paytr.com/odeme/api/get-token"
 
 # LOGLAMA AYARLARI

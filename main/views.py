@@ -917,7 +917,8 @@ def start_paytr_payment(request):
     # Base64 encode
     user_basket = base64.b64encode(str(user_basket_items).encode()).decode()
 
-    user_name = request.user.get_full_name() or request.user.username
+    user_name = order.billing_name
+
     # Adres ve telefon bilgilerini kullanıcının profilinden veya siparişten alın
     user_address = order.billing_address  # DOĞRU
     user_phone = order.billing_phone_number  # DOĞRU
@@ -940,7 +941,7 @@ def start_paytr_payment(request):
         'user_name': user_name,
         'user_address': user_address,
         'user_phone': user_phone,
-        'merchant_ok_url': request.build_absolute_uri(reverse('order_success')),
+        'merchant_ok_url': request.build_absolute_uri(reverse('order_success', args=[order.id])),
         'merchant_fail_url': request.build_absolute_uri(reverse('order_failed')),
         'debug_on': 1,
         'test_mode': 1,
