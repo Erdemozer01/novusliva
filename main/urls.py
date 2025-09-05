@@ -41,6 +41,7 @@ urlpatterns = [
     path('payment-cancel/', views.payment_cancel_view, name='payment_cancel'),
 
     path('order/success/<int:order_id>/', views.order_success_view, name='order_success'),
+    path('order/failed/', views.payment_failed_view, name='order_failed'),
 
     # Iyzico Entegrasyon URL'si
     path('iyzico/callback/', views.iyzico_callback_view, name='iyzico_callback'),
@@ -50,7 +51,6 @@ urlpatterns = [
 
     path('checkout/paytr/', views.paytr_checkout_embed_view, name='paytr_checkout_embed'),
     path('paytr/callback/', views.paytr_callback_view, name='paytr_callback'),
-
     path('checkout/start-payment/', views.start_paytr_payment, name='start_paytr_payment'),
 
 ]

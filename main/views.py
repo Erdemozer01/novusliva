@@ -549,89 +549,7 @@ def checkout_view(request):
 
                 # --- PAYTR ENTEGRASYON BLOĞU ---
                 elif order.payment_method == 'paytr':
-                    try:
-                        # IP adresini django-ipware ile güvenli bir şekilde alın
-                        client_ip, is_routable = get_client_ip(request)
-                        if client_ip is None:
-                            # IP adresi tespit edilemezse, hata ver ve işlemi durdur
-                            messages.error(request,
-                                           'IP adresiniz tespit edilemediği için ödeme işlemine devam edilemiyor.')
-                            logger.warning("PayTR işlemi için IP adresi tespit edilemedi.")
-                            return redirect('checkout')
-
-                        # Kodun geri kalanı client_ip değişkenini kullanacak
-                        user_ip = client_ip
-
-                        merchant_oid = f'{order.id}{uuid.uuid4().hex}'
-                        email = order.billing_email
-
-                        if order.currency != 'TRY':
-                            messages.error(request, 'PayTR sadece Türk Lirası (TRY) para birimini destekler.')
-                            return redirect('checkout')
-
-                        payment_amount = int(order.get_total_cost() * 100)
-
-                        basket_items = [[item.portfolio_item.title, str(int(item.get_cost() * 100)), item.quantity] for
-                                        item in order.items.all()]
-                        user_basket_base64 = base64.b64encode(json.dumps(basket_items).encode()).decode('utf-8')
-
-                        no_installment = "0"
-                        max_installment = "0"
-                        test_mode = "1" if settings.DEBUG else "0"
-
-                        # Okunabilirlik için f-string kullanımı daha iyi olabilir
-                        hash_str = f"{settings.PAYTR_MERCHANT_ID}{user_ip}{merchant_oid}{email}{payment_amount}{user_basket_base64}{no_installment}{max_installment}{order.currency}{test_mode}{settings.PAYTR_MERCHANT_SALT}"
-
-                        hash_bytes = hmac.new(settings.PAYTR_MERCHANT_KEY.encode('utf-8'), hash_str.encode('utf-8'),
-                                              hashlib.sha256).digest()
-                        paytr_token = base64.b64encode(hash_bytes).decode('utf-8')
-
-                        post_data = {
-                            'merchant_id': settings.PAYTR_MERCHANT_ID,
-                            'user_ip': user_ip,
-                            'merchant_oid': merchant_oid,
-                            'email': email,
-                            'payment_amount': payment_amount,
-                            'paytr_token': paytr_token,
-                            'user_basket': user_basket_base64,
-                            'currency': order.currency,
-                            'no_installment': int(no_installment),
-                            'max_installment': int(max_installment),
-                            'test_mode': int(test_mode),
-                            'user_name': order.billing_name,
-                            'user_address': order.billing_address,
-                            'user_phone': order.billing_phone_number,
-                            'merchant_ok_url': request.build_absolute_uri(reverse('paytr_callback')),
-                            'merchant_fail_url': request.build_absolute_uri(reverse('payment_cancel')),
-                            'timeout_limit': 30,
-                            'lang': 'tr',
-                        }
-
-                        response = requests.post(settings.PAYTR_API_URL, data=post_data, proxies={})
-
-                        response_data = response.json()
-
-                        if response_data.get('status') == 'success':
-                            token = response_data.get('token')
-                            request.session['paytr_token'] = token
-                            order.status = 'pending_paytr_approval'
-                            order.paytr_merchant_oid = merchant_oid
-                            order.save()
-                            return redirect('paytr_checkout_embed')
-                        else:
-                            error_message = response_data.get('reason', 'PayTR ile ödeme başlatılamadı.')
-                            messages.error(request, error_message)
-                            logger.error(f"PayTR API hatası: {response_data}")
-                            return redirect('checkout')
-
-                    except requests.exceptions.RequestException as req_err:
-                        messages.error(request, 'PayTR sunucusuna bağlanırken bir hata oluştu. Lütfen tekrar deneyin.')
-                        logger.exception(f"PayTR bağlantı hatası: {req_err}")
-                        return redirect('checkout')
-                    except Exception as e:
-                        messages.error(request, 'PayTR ödeme işlemi sırasında beklenmedik bir hata oluştu.')
-                        logger.exception("PayTR API isteği sırasında genel hata")
-                        return redirect('checkout')
+                    return redirect('start_paytr_payment')
 
                 elif order.payment_method in ['bank_transfer', 'cash']:
                     order.status = 'pending'
@@ -951,6 +869,14 @@ def paytr_callback_view(request: HttpRequest) -> HttpResponse:
     # PayTR sistemine işlemin başarıyla alındığını bildir.
     return HttpResponse("OK")
 
+@login_required
+def payment_failed_view(request):
+    """
+    Ödeme başarısız olduğunda veya iptal edildiğinde kullanıcıyı bilgilendirir.
+    """
+    messages.error(request, 'Ödeme işlemi başarısız oldu veya sizin tarafınızdan iptal edildi. Sepetinizdeki ürünler korunmaktadır.')
+    return render(request, 'order_failed.html')
+
 
 @login_required
 def start_paytr_payment(request):
@@ -993,8 +919,8 @@ def start_paytr_payment(request):
 
     user_name = request.user.get_full_name() or request.user.username
     # Adres ve telefon bilgilerini kullanıcının profilinden veya siparişten alın
-    user_address = "Adres bilgisi gerekli"  # order.billing_address
-    user_phone = "Telefon bilgisi gerekli"  # order.billing_phone_number
+    user_address = order.billing_address  # DOĞRU
+    user_phone = order.billing_phone_number  # DOĞRU
 
     # PayTR'a özel hash oluşturma
     hash_str = f"{merchant_id}{email}{payment_amount}{merchant_oid}{user_basket}{'1'}{'0'}{'0'}{'TL'}{'1'}"
@@ -1014,8 +940,8 @@ def start_paytr_payment(request):
         'user_name': user_name,
         'user_address': user_address,
         'user_phone': user_phone,
-        'merchant_ok_url': request.build_absolute_uri('/order/success/'),  # Ödeme başarılı olunca döneceği sayfa
-        'merchant_fail_url': request.build_absolute_uri('/order/failed/'),  # Ödeme başarısız olunca döneceği sayfa
+        'merchant_ok_url': request.build_absolute_uri(reverse('order_success')),
+        'merchant_fail_url': request.build_absolute_uri(reverse('order_failed')),
         'debug_on': 1,
         'test_mode': 1,
         'no_installment': 0,
