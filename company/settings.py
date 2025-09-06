@@ -89,11 +89,6 @@ DATABASES = {
         'PASSWORD': os.getenv('MYSQL_PASSWORD'),
         'HOST': 'novusliva.mysql.pythonanywhere-services.com',
         'PORT': '3306',
-        'OPTIONS': {
-            'ssl': {
-                'ca': '/etc/ssl/certs/ca-certificates.crt'
-            }
-        },
     }
 }
 # Password validation
