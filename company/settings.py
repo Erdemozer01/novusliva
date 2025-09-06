@@ -89,6 +89,14 @@ DATABASES = {
         'PASSWORD': os.getenv('MYSQL_PASSWORD'),
         'HOST': 'novusliva.mysql.pythonanywhere-services.com',
         'PORT': '3306',
+        # SSL SORUNUNU VE STRICT MODE UYARISINI ÇÖZEN NİHAİ BLOK
+        'OPTIONS': {
+            'ssl': {
+                'ca': '/etc/ssl/certs/ca-certificates.crt'
+            },
+            # Strict Mode uyarısını çözmek için bu satırı ekliyoruz
+            'sql_mode': 'STRICT_TRANS_TABLES',
+        },
     }
 }
 # Password validation
