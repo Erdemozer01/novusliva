@@ -90,8 +90,9 @@ DATABASES = {
         'HOST': 'novusliva.mysql.pythonanywhere-services.com',
         'PORT': '3306',
         'OPTIONS': {
-            # Bu satır PythonAnywhere'de güvenli bağlantı için önemlidir.
-            'ssl': {'ca': '/etc/ssl/certs/ca-certificates.crt'}
+            'ssl': {
+                'ca': '/etc/ssl/certs/ca-certificates.crt'
+            }
         },
     }
 }
