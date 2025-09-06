@@ -92,7 +92,7 @@ DATABASES = {
         # SSL SORUNUNU VE STRICT MODE UYARISINI ÇÖZEN NİHAİ BLOK
         'OPTIONS': {
             'ssl': {
-                'ca': '/etc/ssl/certs/ca-certificates.crt'
+                'ca': os.path.join("/etc/ssl/certs/ca-certificates.crt")
             },
             # Strict Mode uyarısını çözmek için bu satırı ekliyoruz
             'sql_mode': 'STRICT_TRANS_TABLES',
