@@ -80,13 +80,21 @@ WSGI_APPLICATION = 'company.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# YENİ MYSQL AYARI
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'novusliva$default',
+        'USER': 'novusliva',
+        'PASSWORD': os.getenv('MYSQL_PASSWORD'),
+        'HOST': 'novusliva.mysql.pythonanywhere-services.com',
+        'PORT': '3306',
+        'OPTIONS': {
+            # Bu satır PythonAnywhere'de güvenli bağlantı için önemlidir.
+            'ssl': {'ca': '/etc/ssl/certs/ca-certificates.crt'}
+        },
     }
 }
-
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
