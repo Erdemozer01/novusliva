@@ -22,6 +22,7 @@ from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
 from django.views.generic import TemplateView
 from main.sitemaps import StaticViewSitemap, BlogPostSitemap, PortfolioItemSitemap
+from django_ckeditor_5.views import upload_file
 
 sitemaps = {
     'static': StaticViewSitemap,
@@ -40,6 +41,10 @@ urlpatterns = [
     path('', include('main.urls')),
 
     path('i18n/', include('django.conf.urls.i18n')),
+
+    path("ckeditor5/", include('django_ckeditor_5.urls')),
+
+    path("ckeditor5_upload_file/", upload_file, name="ckeditor5_upload_file"),
 
 ]
 

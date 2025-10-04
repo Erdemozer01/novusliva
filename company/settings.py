@@ -13,6 +13,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from django.utils.translation import gettext_lazy as _
+import socket
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,6 +29,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+HOSTNAME = socket.gethostname().lower()
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "novusliva.pythonanywhere.com"]
 
@@ -41,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sitemaps',
     'main.apps.MainConfig',
+    'django_ckeditor_5',
 ]
 
 MIDDLEWARE = [
@@ -81,22 +85,33 @@ WSGI_APPLICATION = 'company.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # YENİ MYSQL AYARI
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'novusliva$default',
-        'USER': 'novusliva',
-        'PASSWORD': os.getenv('MYSQL_PASSWORD'),
-        'HOST': 'novusliva.mysql.pythonanywhere-services.com',
-        'PORT': '3306',
-        # SSL SORUNUNU VE STRICT MODE UYARISINI ÇÖZEN NİHAİ BLOK
-        'OPTIONS': {
-            'ssl': {'ssl-ca': '/etc/ssl/certs/ca-certificates.crt'},
-            # Strict Mode uyarısını çözmek için bu satırı ekliyoruz
-            'sql_mode': 'STRICT_TRANS_TABLES',
-        },
+if 'pythonanywhere' in HOSTNAME:
+    # YEREL SUNUCU (DEVELOPMENT) AYARLARI
+    # DEBUG = True ise burası çalışır
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'novusliva$default',
+            'USER': 'novusliva',
+            'PASSWORD': os.getenv('MYSQL_PASSWORD'),
+            'HOST': 'novusliva.mysql.pythonanywhere-services.com',
+            'PORT': '3306',
+            'OPTIONS': {
+                'ssl': {'ssl-ca': '/etc/ssl/certs/ca-certificates.crt'},
+                'sql_mode': 'STRICT_TRANS_TABLES',
+            },
+        }
     }
-}
+
+else:
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -215,3 +230,361 @@ LOGGING = {
         },
     },
 }
+
+
+customColorPalette = [
+    {
+        'color': 'hsl(4, 90%, 58%)',
+        'label': 'Red'
+    },
+    {
+        'color': 'hsl(340, 82%, 52%)',
+        'label': 'Pink'
+    },
+    {
+        'color': 'hsl(291, 64%, 42%)',
+        'label': 'Purple'
+    },
+    {
+        'color': 'hsl(262, 52%, 47%)',
+        'label': 'Deep Purple'
+    },
+    {
+        'color': 'hsl(231, 48%, 48%)',
+        'label': 'Indigo'
+    },
+    {
+        'color': 'hsl(207, 90%, 54%)',
+        'label': 'Blue'
+    },
+]
+
+
+CKEDITOR_5_CONFIGS = {
+    'default': {
+        'language': 'tr',
+        'toolbar': ['heading', '|', 'bold', 'italic', 'link',
+                    'bulletedList', 'numberedList', 'blockQuote', 'imageUpload', ],
+    },
+    'extends': {
+        'toolbar': {
+            'items': [
+
+                'undo', 'redo', '|', 'heading', 'Alignment',
+
+                '|',
+
+                {
+                    'label': 'Font',
+                    'items': [
+                        'bold', 'italic', 'link', 'underline', 'strikethrough', 'fontfamily', 'fontsize', 'fontColor',
+                        'fontBackgroundColor', 'highlight',
+                    ],
+                    'icon': 'text',
+                    'withText': 'true',
+                    'shouldNotGroupWhenFull': 'false',
+                },
+
+                '|',
+
+                {
+                    'label': 'Media',
+                    'items': [
+                        'imageUpload',
+                        'mediaEmbed',
+                        'Image',
+                        'ImageCaption',
+                        'ImageStyle',
+                        'ImageToolbar',
+                        'ImageResize',
+                        'insertImage',
+                        'fileUpload',
+                    ],
+                    'icon': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#74C0FC" d="M256 0L576 0c35.3 0 64 28.7 64 64l0 224c0 35.3-28.7 64-64 64l-320 0c-35.3 0-64-28.7-64-64l0-224c0-35.3 28.7-64 64-64zM476 106.7C471.5 100 464 96 456 96s-15.5 4-20 10.7l-56 84L362.7 169c-4.6-5.7-11.5-9-18.7-9s-14.2 3.3-18.7 9l-64 80c-5.8 7.2-6.9 17.1-2.9 25.4s12.4 13.6 21.6 13.6l80 0 48 0 144 0c8.9 0 17-4.9 21.2-12.7s3.7-17.3-1.2-24.6l-96-144zM336 96a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zM64 128l96 0 0 256 0 32c0 17.7 14.3 32 32 32l128 0c17.7 0 32-14.3 32-32l0-32 160 0 0 64c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64L0 192c0-35.3 28.7-64 64-64zm8 64c-8.8 0-16 7.2-16 16l0 16c0 8.8 7.2 16 16 16l16 0c8.8 0 16-7.2 16-16l0-16c0-8.8-7.2-16-16-16l-16 0zm0 104c-8.8 0-16 7.2-16 16l0 16c0 8.8 7.2 16 16 16l16 0c8.8 0 16-7.2 16-16l0-16c0-8.8-7.2-16-16-16l-16 0zm0 104c-8.8 0-16 7.2-16 16l0 16c0 8.8 7.2 16 16 16l16 0c8.8 0 16-7.2 16-16l0-16c0-8.8-7.2-16-16-16l-16 0zm336 16l0 16c0 8.8 7.2 16 16 16l16 0c8.8 0 16-7.2 16-16l0-16c0-8.8-7.2-16-16-16l-16 0c-8.8 0-16 7.2-16 16z"/></svg>',
+                    'withText': 'true',
+                },
+
+                '|',
+
+                {
+                    'label': 'List',
+                    'items': [
+                        'bulletedList', 'numberedList', 'todoList',
+                    ],
+
+                    'withText': 'true',
+                },
+
+                '|',
+
+                {
+                    'label': 'Ekle',
+                    'items': [
+                        'insertTable',
+                        "TableToolbar",
+                        "TableCaption",
+                        "TableProperties",
+                        "TableCellProperties",
+                        'codeBlock',
+                        'Link',
+                    ],
+                    'icon': 'plus',
+                    'withText': 'true',
+                },
+
+                '|',
+
+                {
+                    'label': 'Diğer',
+                    'items': [
+                        'code', 'subscript', 'superscript', 'sourceEditing', 'blockQuote', '|', 'removeFormat',
+                    ],
+                    'icon': False,
+                    'withText': 'true',
+                },
+
+                '|',
+
+                "FullScreen", "exportPdf"
+
+            ],
+            'shouldNotGroupWhenFull': "false",
+        },
+
+        'style': {
+            "definitions": [
+                {
+                    "name": 'Article category',
+                    "element": 'h3',
+                    "classes": ['category']
+                },
+                {
+                    "name": 'Title',
+                    "element": 'h2',
+                    "classes": ['document-title']
+                },
+                {
+                    "name": 'Subtitle',
+                    "element": 'h3',
+                    "classes": ['document-subtitle']
+                },
+                {
+                    "name": 'Info box',
+                    "element": 'p',
+                    "classes": ['info-box']
+                },
+                {
+                    "name": 'Side quote',
+                    "element": 'blockquote',
+                    "classes": ['side-quote']
+                },
+                {
+                    "name": 'Marker',
+                    "element": 'span',
+                    "classes": ['marker']
+                },
+                {
+                    "name": 'Spoiler',
+                    "element": 'span',
+                    "classes": ['spoiler']
+                },
+                {
+                    "name": 'Code (dark)',
+                    "element": 'pre',
+                    "classes": ['fancy-code', 'fancy-code-dark']
+                },
+                {
+                    "name": 'Code (bright)',
+                    "element": 'pre',
+                    "classes": ['fancy-code', 'fancy-code-bright']
+                },
+            ]
+        },
+
+        'heading': {
+            'options': [
+                {'model': 'paragraph', 'title': 'Paragraph', 'class': 'ck-heading_paragraph'},
+                {'model': 'heading1', 'view': 'h1', 'title': 'Heading 1', 'class': 'ck-heading_heading1'},
+                {'model': 'heading2', 'view': 'h2', 'title': 'Heading 2', 'class': 'ck-heading_heading2'},
+                {'model': 'heading3', 'view': 'h3', 'title': 'Heading 3', 'class': 'ck-heading_heading3'},
+                {'model': 'heading4', 'view': 'h4', 'title': 'Heading 4', 'class': 'ck-heading_heading4'},
+                {'model': 'heading5', 'view': 'h5', 'title': 'Heading 5', 'class': 'ck-heading_heading5'},
+            ]
+        },
+
+        'balloonToolbar': {
+            'items': ['bold', 'italic', '|', 'link', 'insertImage', '|', 'bulletedList', 'numberedList']
+        },
+
+        'blockToolbar': [
+            'fontSize',
+            'fontColor',
+            'fontBackgroundColor',
+            '|',
+            'bold',
+            'italic',
+            '|',
+            'link',
+            'insertImage',
+            'insertTable',
+            '|',
+            'bulletedList',
+            'numberedList',
+            'outdent',
+            'indent'
+        ],
+
+        'fontFamily': {
+            "options": [
+                'default',
+                'Arial, Helvetica, sans-serif',
+                'Courier New, Courier, monospace',
+                'Georgia, serif',
+                'Lucida Sans Unicode, Lucida Grande, sans-serif',
+                'Tahoma, Geneva, sans-serif',
+                'Times New Roman, Times, serif',
+                'Trebuchet MS, Helvetica, sans-serif',
+                'Verdana, Geneva, sans-serif'
+            ],
+            'supportAllValues': "true"
+        },
+
+        "exportPdf": {
+            "stylesheets": [
+                'https://cdn.ckeditor.com/ckeditor5/44.1.0/ckeditor5.css',
+                'EDITOR_STYLES',
+                'https://cdn.ckeditor.com/ckeditor5-premium-features/44.1.0/ckeditor5-premium-features.css'
+            ],
+            "fileName": 'export-pdf-demo.pdf',
+            "converterOptions": {
+                "format": 'Tabloid',
+                "margin_top": '20mm',
+                "margin_bottom": '20mm',
+                "margin_right": '24mm',
+                "margin_left": '24mm',
+                "page_orientation": 'portrait'
+            }
+        },
+
+        "image": {
+            "toolbar": [
+                'toggleImageCaption',
+                'imageTextAlternative',
+                '|',
+                'imageStyle:inline',
+                'imageStyle:wrapText',
+                'imageStyle:breakText',
+                '|',
+                'resizeImage',
+                '|',
+                'ckboxImageEdit'
+            ]
+        },
+
+        'table': {
+            'contentToolbar': ['tableColumn', 'tableRow', 'mergeTableCells',
+                               'tableProperties', 'tableCellProperties'],
+            'tableProperties': {
+                'borderColors': customColorPalette,
+                'backgroundColors': customColorPalette
+            },
+            'tableCellProperties': {
+                'borderColors': customColorPalette,
+                'backgroundColors': customColorPalette
+            }
+        },
+
+        'list': {
+            'properties': {
+                'styles': 'true',
+                'startIndex': 'true',
+                'reversed': 'true',
+            },
+        },
+
+        "fontSize": {
+            "options": [8, 10, 12, 14, 'default', 18, 20, 22],
+            "supportAllValues": "true"
+        },
+
+        'language': 'tr',
+
+        "menuBar": {
+            "isVisible": "true"
+        },
+
+        "link": {
+            "addTargetToExternalLinks": "true",
+            "defaultProtocol": 'https://',
+            "decorators": {
+                "toggleDownloadable": {
+                    "mode": 'manual',
+                    "label": 'Downloadable',
+                    "attributes": {
+                        "download": 'file'
+                    }
+                }
+            }
+        },
+
+        "htmlSupport": {
+            "allow": [
+                {
+                    "name": "/^.*$/,",
+                    "styles": "true",
+                    "attributes": "true",
+                    "classes": "true"
+                }
+            ]
+        },
+
+        "mediaEmbed": {"previewsInData": "true"},
+
+        'simpleUpload': {
+            'uploadUrl': '/ckeditor5/image_upload/',
+        },
+
+        "placeholder": 'İçeriği kopyala ve yapıştır!',
+
+    }
+}
+
+
+CKEDITOR_5_FILE_UPLOAD_PERMISSION = "staff"
+CKEDITOR_5_IMAGE_UPLOAD_PERMISSION = "staff"
+CKEDITOR_5_IMAGE_UPLOAD_BACKEND = "django_cleanup.backends.imagekit.ImageKitBackend"
+
+CKEDITOR_5_IMAGE_BACKEND = "sorl.thumbnail"
+CKEDITOR_5_THUMBNAIL_BACKEND = "sorl.thumbnail"
+
+CK_EDITOR_5_UPLOAD_FILE_VIEW_NAME = "ckeditor5_upload_file"
+
+CKEDITOR_5_IMAGE_THUMBNAIL_PROCESSORS = (
+    'thumbnailor.processors.fit_in',
+    'thumbnailor.processors.format',
+    'thumbnailor.processors.resize',
+    'thumbnailor.processors.rotate',
+    'thumbnailor.processors.flip',
+    'thumbnailor.processors.flop',
+    'thumbnailor.processors.exif',
+    'thumbnailor.processors.quality',
+    'thumbnailor.processors.progressive',
+    'thumbnailor.processors.format_opt',
+    'thumbnailor.processors.background',
+    'thumbnailor.processors.blur',
+    'thumbnailor.processors.contrast',
+    'thumbnailor.processors.sharpen',
+    'thumbnailor.processors.grayscale',
+    'thumbnailor.processors.colorize',
+    'thumbnailor.processors.emboss',
+    'thumbnailor.processors.edge_enhance',
+)
+
+FILE_UPLOAD_HANDLERS = [
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+    'django.core.files.uploadhandler.MemoryFileUploadHandler',
+]
+
+CKEDITOR_5_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+CKEDITOR_5_ALLOW_ALL_FILE_TYPES = True

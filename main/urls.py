@@ -10,12 +10,12 @@ urlpatterns = [
     path('team/', views.team_view, name='team'),
     path('testimonials/', views.testimonials_view, name='testimonials'),
     path('contact/', views.contact_view, name='contact'),
-    path('service/<int:service_id>/', views.service_details_view, name='service_details'),
+    path('service/<slug:slug>/', views.service_details_view, name='service_details'),
     path('subscribe/', views.subscribe_view, name='subscribe'),
 
     # Blog ve İçerik Yönetimi
     path('blog/', views.blog_view, name='blog'),
-    path('blog/<int:post_id>/', views.blog_details_view, name='blog_details'),
+    path('blog/<slug:slug>/', views.blog_details_view, name='blog_details'),
     path('blog/category/<slug:category_slug>/', views.posts_by_category_view, name='posts_by_category'),
     path('search/', views.search_view, name='search'),
 

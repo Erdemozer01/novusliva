@@ -244,13 +244,19 @@ def send_email_wrapper(subject, recipient_list, html_content, plain_content=None
 
 def index_view(request):
     about_content = AboutPage.objects.first()
-    latest_portfolio_items = PortfolioItem.objects.all()[:6]
     clients = Client.objects.all()
+
+    # En son 3 blog yazısını alıyoruz
+    latest_blog_posts = BlogPost.objects.filter(status='published').order_by('-created_at')[:3]
+
+    # Ana sayfadaki hizmetler bölümü için
+    services = Service.objects.all()
 
     context = {
         'about_page': about_content,
-        'latest_portfolio_items': latest_portfolio_items,
         'clients': clients,
+        'latest_blog_posts': latest_blog_posts,  # Şablona gönderiyoruz
+        'services': services,  # Hizmetler bölümü için bunu da gönderiyoruz
     }
     return render(request, 'index.html', context)
 
@@ -281,15 +287,34 @@ def services_view(request):
 
 
 def portfolio_view(request):
-    items = PortfolioItem.objects.all()
-    categories = PortfolioCategory.objects.all()
+    # URL'den 'service' adında bir parametre gelip gelmediğini kontrol et
+    service_id = request.GET.get('service')
+
+    selected_service = None
+
+    if service_id:
+        # Eğer bir service ID'si geldiyse:
+        # 1. İlgili hizmeti bul (bulunamazsa 404 hatası döner)
+        selected_service = get_object_or_404(Service, id=service_id)
+
+        # 2. Sadece bu hizmete ait PortfolioItem'ları (ürünleri) filtrele
+        items = PortfolioItem.objects.filter(service=selected_service)
+
+        # 3. Sadece filtrelenmiş bu ürünlerin sahip olduğu kategorileri al
+        #    .filter(items__in=items) -> bu kategorinin en az bir ürünü `items` listesinde olmalı
+        #    .distinct() -> her kategoriyi sadece bir kez listeye ekler
+        categories = PortfolioCategory.objects.filter(items__in=items).distinct()
+    else:
+        # Eğer bir service ID'si gelmediyse, her zamanki gibi tüm ürünleri ve kategorileri göster
+        items = PortfolioItem.objects.all()
+        categories = PortfolioCategory.objects.all()
 
     context = {
         'items': items,
         'categories': categories,
+        'selected_service': selected_service,  # Bunu şablona gönderiyoruz ki başlıkta kullanabilelim
     }
     return render(request, 'portfolio.html', context)
-
 
 def portfolio_details_view(request, slug):
     # Sorguyu artık 'slug' alanına göre yapıyoruz.
@@ -361,8 +386,9 @@ def contact_view(request):
     return render(request, 'contact.html', context)
 
 
-def blog_details_view(request, post_id):
-    post = get_object_or_404(BlogPost, pk=post_id, status='published')
+def blog_details_view(request, slug):  # Değişiklik 1: 'post_id' yerine 'slug'
+    # Değişiklik 2: Veritabanı sorgusu artık 'pk' yerine 'slug' ile yapılıyor
+    post = get_object_or_404(BlogPost, slug=slug, status='published')
     comments = post.comments.filter(active=True)
 
     if request.method == 'POST':
@@ -398,7 +424,6 @@ def blog_details_view(request, post_id):
         'all_tags': all_tags,
     }
     return render(request, 'blog-details.html', context)
-
 
 def starter_view(request):
     context = {}
@@ -477,8 +502,9 @@ def subscribe_view(request):
         return HttpResponse(_alert('danger', _("An error occurred. Please try again.")), status=500)
 
 
-def service_details_view(request, service_id):
-    service = get_object_or_404(Service, pk=service_id)
+def service_details_view(request, slug): # Değişken adı 'slug' oldu
+    # Arama artık 'pk' (ID) yerine 'slug' alanına göre yapılıyor
+    service = get_object_or_404(Service, slug=slug)
     all_services = Service.objects.all()
     context = {
         'service': service,

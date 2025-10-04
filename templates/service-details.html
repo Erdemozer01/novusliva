@@ -28,7 +28,7 @@
         <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
           <div class="services-list">
             {% for s in all_services %}
-              <a href="{% url 'service_details' s.id %}" class="{% if s.id == service.id %}active{% endif %}">{{ s.title }}</a>
+              <a href="{{ s.get_absolute_url }}" class="{% if s.slug == service.slug %}active{% endif %}">{{ s.title }}</a>
             {% endfor %}
           </div>
           <h4>{% trans "We empower your business to grow" %}</h4>
@@ -37,7 +37,6 @@
 
         <div class="col-lg-8" data-aos="fade-up" data-aos-delay="200">
 
-          <!-- RESİM ETİKETİNİ DİNAMİK HALE GETİRİYORUZ -->
           {% if service.image %}
             <img src="{{ service.image.url }}" alt="{{ service.title }}" class="img-fluid services-img">
           {% else %}
@@ -45,10 +44,17 @@
           {% endif %}
 
           <h3>{{ service.title }}</h3>
+
           <p>
             {{ service.description|linebreaks }}
           </p>
-        </div>
+
+          <div class="mt-4">
+              <a href="{% url 'portfolio' %}?service={{ service.id }}" class="btn btn-primary">
+                  <i class="bi bi-box-seam me-2"></i>{% trans "View Products for this Service" %}
+              </a>
+          </div>
+          </div>
 
       </div>
     </div>

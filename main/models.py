@@ -7,6 +7,8 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import JSONField
+from django.utils.text import slugify  # Bu importu eklemeyi unutmayın
+from django_ckeditor_5.fields import CKEditor5Field # YENİ İMPORT
 
 # --- E-Ticaret ve Satış Modelleri ---
 
@@ -102,7 +104,23 @@ class Service(models.Model):
     description = models.TextField(verbose_name=_("Description"))
     icon_class = models.CharField(max_length=100, verbose_name=_("Icon Class (Bootstrap Icons)"))
     color_class = models.CharField(max_length=50, verbose_name=_("Color Class (e.g: item-cyan)"))
-    image = models.ImageField(upload_to='service_images/', verbose_name=_("Service Detail Image"), blank=True, null=True)
+    image = models.ImageField(upload_to='service_images/', verbose_name=_("Service Detail Image"), blank=True,
+                              null=True)
+
+    # === GÜNCELLENMİŞ ALAN ===
+    slug = models.SlugField(max_length=255, unique=True, null=True, blank=True, verbose_name=_("Slug"))
+
+    def get_absolute_url(self):
+        """Bu hizmetin detay sayfasının URL'sini döndürür."""
+        return reverse('service_details', kwargs={'slug': self.slug})
+
+    def save(self, *args, **kwargs):
+        """Model kaydedilirken, eğer slug boşsa, başlıktan otomatik olarak bir slug oluşturur."""
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    # ==========================
 
     def __str__(self):
         return self.title
@@ -141,7 +159,7 @@ class BlogPost(models.Model):
 
     title = models.CharField(max_length=255, verbose_name=_("Title"))
     # ÖNERİ: django-ckeditor gibi bir paketle bu alanı zengin metin editörüne çevirebilirsiniz.
-    content = models.TextField(verbose_name=_("Content"))
+    content = CKEditor5Field('Content', config_name='extends') # YENİ ALAN
     meta_description = models.CharField(max_length=160, blank=True, verbose_name=_("Meta Description (for SEO)"))
     slug = models.SlugField(max_length=255, unique=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_posts', verbose_name=_("Author"))
@@ -178,13 +196,24 @@ class PortfolioCategory(models.Model):
 
 
 class PortfolioItem(models.Model):
+    service = models.ForeignKey(
+        Service,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_("Related Service"),
+        related_name='portfolio_items'
+    )
+    category = models.ForeignKey(PortfolioCategory, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name='items', verbose_name=_("Category"))
+
     title = models.CharField(max_length=255, verbose_name=_("Project Title"))
     short_description = models.CharField(max_length=255, verbose_name=_("Short Description"))
     long_description = models.TextField(verbose_name=_("Long Description"))
     client = models.CharField(max_length=200, verbose_name=_("Client"), blank=True)
     meta_description = models.CharField(max_length=160, blank=True, verbose_name=_("Meta Description"))
     slug = models.SlugField(max_length=255, unique=True)
-    category = models.ForeignKey(PortfolioCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='items', verbose_name=_("Category"))
+
     project_date = models.DateField(null=True, blank=True, verbose_name=_("Project Date"))
     project_url = models.URLField(blank=True, verbose_name=_("Project Link"))
     main_image = models.ImageField(upload_to='portfolio_images/', verbose_name=_("Main Image"))
